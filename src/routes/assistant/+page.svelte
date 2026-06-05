@@ -8,6 +8,7 @@
 	import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 	import { appServices, initAppServiceListener } from '$lib/stores/appData';
 	import { cart } from '$lib/stores/booking';
+	import { processQuery } from '../api/assistant/nlpEngine';
 
 	let messages: { 
 		role: 'user' | 'assistant'; 
@@ -144,13 +145,22 @@
 					handleBookingEvent(data.booking);
 				}
 			} else {
+				const fallback = processQuery(messageText);
 				messages[messages.length - 1] = {
 					role: 'assistant',
-					text: "I'm sorry, I'm having trouble connecting right now."
+					text: fallback.text,
+					action: fallback.action,
+					mapEmbed: fallback.mapEmbed
 				};
 			}
 		} catch (e) {
-			messages[messages.length - 1] = { role: 'assistant', text: "I'm offline at the moment." };
+			const fallback = processQuery(messageText);
+			messages[messages.length - 1] = {
+				role: 'assistant',
+				text: fallback.text,
+				action: fallback.action,
+				mapEmbed: fallback.mapEmbed
+			};
 		}
 		scrollToBottom();
 	}
