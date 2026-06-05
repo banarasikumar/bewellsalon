@@ -3886,7 +3886,7 @@
 		border-radius: 20px;
 		box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
 		display: inline-block;
-		margin-bottom: 12px;
+		margin-bottom: 8px;
 	}
 
 	.premium-qr-img {
@@ -3900,7 +3900,7 @@
 	.premium-divider {
 		height: 1px;
 		background: rgba(0,0,0,0.06);
-		margin: 0 -24px 20px -24px;
+		margin: 0 -24px 12px -24px;
 	}
 
 	.premium-payee-info {
