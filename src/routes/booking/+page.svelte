@@ -1343,7 +1343,7 @@
 										<div class="checkbox-custom"></div>
 										<span class="checkbox-text">I confirm I have made the payment</span>
 									</label>
-									<p class="warning-text">(Only choose if you have successfully made the payment)</p>
+									<p class="warning-text">(Only select if you have successfully made the payment)</p>
 								</div>
 							</div>
 						{/if}
