@@ -41,6 +41,20 @@ function createUploadStore() {
 			const storageRef = ref(storage, storagePath);
 			const uploadTask = uploadBytesResumable(storageRef, file);
 
+			let timeoutId: ReturnType<typeof setTimeout>;
+			const resetTimeout = () => {
+				if (timeoutId) clearTimeout(timeoutId);
+				timeoutId = setTimeout(() => {
+					uploadTask.cancel();
+					update((items) =>
+						items.map((item) =>
+							item.id === id ? { ...item, status: 'error', error: 'Upload taking too long. Failed.' } : item
+						)
+					);
+				}, 30000);
+			};
+			resetTimeout();
+
 			update((items) =>
 				items.map((item) => (item.id === id ? { ...item, status: 'uploading' } : item))
 			);
@@ -48,15 +62,18 @@ function createUploadStore() {
 			uploadTask.on(
 				'state_changed',
 				(snapshot) => {
+					resetTimeout();
 					const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
 					update((items) => items.map((item) => (item.id === id ? { ...item, progress } : item)));
 				},
 				(error: any) => {
+					clearTimeout(timeoutId);
 					const code = error?.code || '';
 					let userMessage = error.message;
 					if (code === 'storage/unauthorized') {
 						userMessage = 'Permission denied. Check Firebase Storage rules.';
 					} else if (code === 'storage/canceled') {
+						// Don't overwrite the timeout message if we cancelled it
 						userMessage = 'Upload was cancelled.';
 					} else if (code === 'storage/unknown') {
 						userMessage = 'Upload failed. Firebase Storage may not be enabled for this project.';
@@ -67,13 +84,22 @@ function createUploadStore() {
 						userMessage = 'Storage bucket not found. Firebase Storage needs to be set up.';
 					}
 					console.error(`[UploadStore] Upload failed (${code}):`, error);
-					update((items) =>
-						items.map((item) =>
-							item.id === id ? { ...item, status: 'error', error: userMessage } : item
-						)
-					);
+					update((items) => {
+						return items.map((item) => {
+							if (item.id === id) {
+								// Keep the existing error if it was a timeout
+								const finalMessage =
+									item.error && item.error.includes('taking too long')
+										? item.error
+										: userMessage;
+								return { ...item, status: 'error', error: finalMessage };
+							}
+							return item;
+						});
+					});
 				},
 				async () => {
+					clearTimeout(timeoutId);
 					try {
 						const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
 						// Update firestore document

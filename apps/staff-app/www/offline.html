@@ -6,7 +6,7 @@
 			name="viewport"
 			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
 		/>
-		<title>Blancbeu - Offline</title>
+		<title>BeWell - Offline</title>
 		<style>
 			@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
 
@@ -311,7 +311,7 @@
 				if (!navigator.onLine || isReconnecting) return;
 
 				// Test real connection
-				fetch('https://blancbeu-sveltekit.vercel.app/favicon.ico', {
+				fetch('https://BeWell-sveltekit.vercel.app/favicon.ico', {
 					mode: 'no-cors',
 					cache: 'no-store'
 				})
@@ -356,7 +356,7 @@
 				}
 
 				setTimeout(() => {
-					window.location.href = 'https://blancbeu-sveltekit.vercel.app/staff';
+					window.location.href = 'https://BeWell-sveltekit.vercel.app/staff';
 				}, 800);
 			}
 		</script>

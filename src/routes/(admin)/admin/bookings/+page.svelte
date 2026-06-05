@@ -87,10 +87,10 @@
 	}
 
 	function selectAll() {
-		if (selectedIds.size === paginatedBookings.length) {
+		if (selectedIds.size === filteredBookings.length) {
 			selectedIds = new Set();
 		} else {
-			selectedIds = new Set(paginatedBookings.map((b) => b.id));
+			selectedIds = new Set(filteredBookings.map((b) => b.id));
 		}
 	}
 
@@ -401,13 +401,13 @@
 {#if isManageMode}
 	<div class="admin-manage-toolbar">
 		<button class="admin-manage-select-all" onclick={selectAll}>
-			{#if selectedIds.size === paginatedBookings.length && paginatedBookings.length > 0}
+			{#if selectedIds.size === filteredBookings.length && filteredBookings.length > 0}
 				<CheckSquare size={18} />
 			{:else}
 				<Square size={18} />
 			{/if}
 			<span>
-				{selectedIds.size === paginatedBookings.length && paginatedBookings.length > 0
+				{selectedIds.size === filteredBookings.length && filteredBookings.length > 0
 					? 'Deselect All'
 					: 'Select All'}
 			</span>

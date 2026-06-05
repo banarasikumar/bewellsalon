@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">BStaff</string>
-    <string name="title_activity_main">BStaff</string>
+    <string name="app_name">BeWell Staff</string>
+    <string name="title_activity_main">BeWell Staff</string>
     <string name="package_name">in.bewell.staff</string>
     <string name="custom_url_scheme">in.bewell.staff</string>
 </resources>

@@ -5,7 +5,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  */
 const config: CapacitorConfig = {
 	appId: 'in.bewell.admin',
-	appName: 'BAdmin',
+	appName: 'BeWell Admin',
 	// The Live Wrapper Configuration
 	webDir: 'www',
 	server: {

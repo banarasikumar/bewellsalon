@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">BAdmin</string>
-    <string name="title_activity_main">BAdmin</string>
+    <string name="app_name">BeWell Admin</string>
+    <string name="title_activity_main">BeWell Admin</string>
     <string name="package_name">in.bewell.admin</string>
     <string name="custom_url_scheme">in.bewell.admin</string>
 </resources>
