@@ -46,15 +46,7 @@ const config: CapacitorConfig = {
 		}
 	},
 
-	includePlugins: [
-		'@capacitor-firebase/authentication',
-		'@capacitor/push-notifications',
-		'@capacitor/app',
-		'@capacitor/browser',
-		'@capacitor/status-bar',
-		'@capacitor/share',
-		'@capacitor/filesystem'
-	]
+
 };
 
 export default config;
