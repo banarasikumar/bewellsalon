@@ -9,10 +9,10 @@
 			badge: 'HOT DEAL',
 			badgeClass: 'hot',
 			icon: '✂️',
-			title: 'All Haircuts @ ₹99',
-			description: 'Get any haircut style for just ₹99! Limited time offer on all cuts.',
-			oldPrice: '₹100-600',
-			newPrice: '₹99',
+			title: 'Haircuts Starting @ ₹299',
+			description: 'Get premium haircut styles starting at just ₹299! Limited time offer.',
+			oldPrice: '₹400-600',
+			newPrice: '₹299',
 			discount: null
 		},
 		{
@@ -21,9 +21,9 @@
 			badgeClass: 'festive',
 			icon: '🪔',
 			title: 'Festive Beauty Package',
-			description: '50% off* prices are inclusive of the offer',
+			description: '15% off* prices are inclusive of the offer',
 			oldPrice: null,
-			newPrice: '50% OFF*',
+			newPrice: '15% OFF*',
 			discount: null
 		},
 		{
