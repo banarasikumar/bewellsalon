@@ -1316,16 +1316,6 @@
 											
 											<div class="premium-divider"></div>
 
-											<div class="premium-payee-info">
-												<div class="premium-payee-avatar">
-													<span>A</span>
-												</div>
-												<div class="premium-payee-details">
-													<span class="premium-payee-name">Anil Rammilan Yadav <ShieldCheck size={14} class="verified-icon" /></span>
-													<span class="premium-payee-subtitle">Verified Merchant</span>
-												</div>
-											</div>
-
 											<div class="premium-upi-box">
 												<span class="premium-upi-label">UPI ID</span>
 												<div class="premium-upi-row">
@@ -1333,6 +1323,16 @@
 													<button class="premium-copy-btn" on:click|preventDefault={copyUpiId}>
 														<FileText size={16} />
 													</button>
+												</div>
+											</div>
+
+											<div class="premium-payee-info">
+												<div class="premium-payee-avatar">
+													<span>A</span>
+												</div>
+												<div class="premium-payee-details">
+													<span class="premium-payee-name">Anil Rammilan Yadav <ShieldCheck size={14} class="verified-icon" /></span>
+													<span class="premium-payee-subtitle">Verified Merchant</span>
 												</div>
 											</div>
 										</div>
@@ -3914,7 +3914,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 12px;
-		margin-bottom: 20px;
+		margin-bottom: 0;
 	}
 
 	.premium-payee-avatar {
@@ -3964,6 +3964,7 @@
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 8px;
+		margin-bottom: 20px;
 	}
 
 	.premium-upi-label {
