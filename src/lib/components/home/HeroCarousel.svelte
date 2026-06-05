@@ -13,26 +13,26 @@
 		{
 			id: 1,
 			src: img1,
-			alt: 'Redefining Elegance',
-			eyebrow: 'WELCOME TO BLANCBEU',
-			title: 'Redefining Elegance',
-			subtitle: 'Experience the pinnacle of luxury beauty services.'
+			alt: 'Art. Beauty. Bewell.',
+			eyebrow: 'WELCOME TO BEWELL',
+			title: 'Art. Beauty. Bewell.',
+			subtitle: 'Step into a world of beauty and self-care.'
 		},
 		{
 			id: 2,
 			src: img2,
-			alt: 'Premium Spa',
-			eyebrow: 'RELAX & REJUVENATE',
-			title: 'Sanctuary of Peace',
-			subtitle: 'Relax with our world-class spa treatments.'
+			alt: 'Transformation You Can Trust',
+			eyebrow: 'YOUR STYLE, ELEVATED',
+			title: 'Transformation You Can Trust',
+			subtitle: 'Let your hair shine with confidence and style!'
 		},
 		{
 			id: 3,
 			src: img3,
-			alt: 'Expert Styling',
-			eyebrow: 'ARTISTRY IN MOTION',
-			title: 'Expert Styling',
-			subtitle: 'Where expert styling meets your personal vision.'
+			alt: 'Comfort You Can Feel',
+			eyebrow: 'BEST SALON IN BHANDUP',
+			title: 'Comfort You Can Feel',
+			subtitle: 'Celebrate the joy of new beginnings with a fresh look.'
 		}
 	];
 
