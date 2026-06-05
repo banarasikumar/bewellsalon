@@ -2,27 +2,69 @@
 	const testimonials = [
 		{
 			stars: '⭐⭐⭐⭐⭐',
-			text: 'Blancbeu gave me the best haircut ever! The professionalism and care are unmatched. Highly recommended!',
-			author: 'Sarah Johnson',
-			label: 'Premium Member'
+			text: 'Best experience ever at Dwell Family Salon & Tattoo! I recently visited Dwell Family Salon & Tattoo, and I must say it was one of the...',
+			author: 'Dnyrajit Yadav',
+			label: '7 months ago'
 		},
 		{
 			stars: '⭐⭐⭐⭐⭐',
-			text: 'The bridal makeup service was absolutely stunning. I felt like a queen on my special day!',
-			author: 'Priya Patel',
-			label: 'Bridal Customer'
+			text: 'I recently visited this salon for a full hair colour and was very impressed with the service. The stylist named Rahul knew exactly what I wanted, suggested a few options without pushing anything, and delivered...',
+			author: 'Archi Gancer',
+			label: '7 months ago'
 		},
 		{
 			stars: '⭐⭐⭐⭐⭐',
-			text: 'Spa treatments are heavenly! I always leave feeling completely rejuvenated and refreshed.',
-			author: 'Anjali Sharma',
-			label: 'Regular Customer'
+			text: 'Customer care were greetings, minimal wait times and are smooth with personalized consultation on hair.',
+			author: 'Shakir Ansari',
+			label: '8 months ago'
 		},
 		{
 			stars: '⭐⭐⭐⭐⭐',
-			text: "Best facial treatment I've ever had. The staff is so knowledgeable and friendly!",
-			author: 'Meera Singh',
-			label: 'Skincare Enthusiast'
+			text: 'Good salon, friendly and professional staff. Hygienic, beautiful, and they offer excellent haircuts, facials, and make-up.',
+			author: 'Hilary Ghosh',
+			label: '8 months ago'
+		},
+		{
+			stars: '⭐⭐⭐⭐⭐',
+			text: 'The many people in the salon were very helpful. I chose it based on their social media page. I wanted a hair treatment and hair colour done. When I arrived at the salon at 2 PM, the staff was so...',
+			author: 'AARTI LAMOTI',
+			label: '3 years ago'
+		},
+		{
+			stars: '⭐⭐⭐⭐⭐',
+			text: 'Awesome experience. Staff is very friendly and every one takes care to make you feel at home. Services...',
+			author: 'Name partially unreadable',
+			label: '8 months ago'
+		},
+		{
+			stars: '⭐⭐⭐⭐⭐',
+			text: 'Jassi and Vandna have a very friendly nature and their clients very well, and I like to talk about the staff they are also very good.',
+			author: 'Shikha Upadhyay',
+			label: '5 months ago'
+		},
+		{
+			stars: '⭐⭐⭐⭐⭐',
+			text: 'I have done hydrafacial from Dwell, Ranchi. Recommended to all. Do visit here. Thank you for the great service.',
+			author: 'Name partially unreadable',
+			label: '2 years ago'
+		},
+		{
+			stars: '⭐⭐⭐⭐⭐',
+			text: 'Good behaved family salon providing decent services, while maintaining good levels of hygiene. The environment is relaxing and the staff are accommodating to specific questions and requests.',
+			author: 'Fizam Ji',
+			label: '5 years ago'
+		},
+		{
+			stars: '⭐⭐⭐⭐⭐',
+			text: 'Awesome Experience. worth every penny for trying this salon.',
+			author: 'Aditi Prajapati',
+			label: '8 months ago'
+		},
+		{
+			stars: '⭐⭐⭐⭐⭐',
+			text: 'Hi! a guy, must say I’m very glad and satisfied with the haircut. The haircut was as I wanted and the staff was polite.',
+			author: 'Dhiraj Debnath',
+			label: '3 years ago'
 		}
 	];
 
