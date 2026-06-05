@@ -170,7 +170,7 @@ export async function generateAndShareInvoice(params: {
 	doc.setFont(headingFont, 'bold');
 	doc.setFontSize(13);
 	doc.setTextColor(100, 100, 100);
-	doc.text('BEAUTY SALON', px(640), py(159), { align: 'right' });
+	doc.text('FAMILY SALON', px(640), py(159), { align: 'right' });
 
 	doc.setFont(bodyFont, 'italic');
 	doc.setFontSize(8.5);

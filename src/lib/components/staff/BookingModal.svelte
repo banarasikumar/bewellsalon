@@ -1565,15 +1565,6 @@
 				</div>
 			</div>
 		{/if}
-		
-		{#if isGeneratingInvoice}
-			<div class="generating-overlay">
-				<div class="generating-card">
-					<Loader size={120} message="Generating Invoice..." />
-					<p class="overlay-subtext">This will open a share sheet in a moment</p>
-				</div>
-			</div>
-		{/if}
 	</div>
 {/if}
 

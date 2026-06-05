@@ -850,16 +850,6 @@
 			{/if}
 		</div>
 
-		<!-- GENERATING OVERLAY -->
-		{#if isGenerating}
-			<div class="generating-overlay">
-				<div class="generating-card">
-					<Loader size={80} fullPage={false} message="Generating Invoice..." />
-					<p class="generating-hint">Please wait a moment</p>
-				</div>
-			</div>
-		{/if}
-
 		<!-- FULLSCREEN QR PAYMENT -->
 		{#if showQrModal}
 			<div class="qr-fullscreen">
