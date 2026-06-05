@@ -330,7 +330,7 @@ export async function generateAndShareInvoice(params: {
 	try {
 		if (!cachedQRCode) cachedQRCode = (await import('qrcode')).default;
 		const QRCode = cachedQRCode;
-		const upiUri = `upi://pay?pa=Q714475106@ybl&pn=Bewell Family Salon&mc=0000&mode=02&purpose=00&am=${totalAmount}&cu=INR&tn=${invoiceNum}`;
+		const upiUri = `upi://pay?pa=mab0450550a0279816@yesbank&pn=Bewell Family Salon&am=${totalAmount}&cu=INR&tn=${invoiceNum}`;
 		const qrDataUrl = await QRCode.toDataURL(upiUri, {
 			width: 200,
 			margin: 1,
@@ -546,7 +546,7 @@ export async function generateAndShareInvoice(params: {
 	doc.setFont(headingFont, 'bold');
 	doc.setFontSize(14);
 	doc.setTextColor(140, 45, 80);
-	const line1Text = 'Art. Beauty. Bewell.';
+	const line1Text = 'You came beautiful. You leave radiant.';
 	const line1Width = doc.getTextWidth(line1Text);
 	const heartSize1 = 11;
 	const line1TotalW = line1Width + 3 + heartSize1;
