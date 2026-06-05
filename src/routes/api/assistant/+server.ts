@@ -68,6 +68,10 @@ If you need to navigate the user to a specific page (like Try-On, or their Profi
 - For Virtual Try-On: path="/try-on"
 - For viewing bookings/profile: path="/you"
 
+LOCATION & MAPS:
+If the user asks for the location, address, or directions, you MUST add this exact tag at the END:
+[MapEmbed: url="https://maps.google.com/maps?q=Bewell%20Family%20Salon%20Tattoos%2C%20Bhandup%20West%2C%20Mumbai&t=&z=17&ie=UTF8&iwloc=B&output=embed"]
+
 BOOKING SYSTEM:
 You can book salon appointments! When the user wants to book a service, follow these rules:
 - ONLY use services from the SERVICE CATALOG provided below.
@@ -113,6 +117,14 @@ Respond as Assistant:
 			text = text.replace(/\[Action:.*?\]/i, '').trim();
 		}
 
+		// Extract [MapEmbed]
+		let mapEmbed = null;
+		const mapMatch = text.match(/\[MapEmbed:\s*url="([^"]+)"\]/i);
+		if (mapMatch) {
+			mapEmbed = mapMatch[1];
+			text = text.replace(/\[MapEmbed:.*?\]/i, '').trim();
+		}
+
 		// Extract [Booking]
 		let booking = null;
 		const bookingMatch = text.match(/\[Booking:\s*(.+?)\]/i);
@@ -153,7 +165,7 @@ Respond as Assistant:
 			}
 		}
 
-		return json({ reply: text, suggestions, booking, action });
+		return json({ reply: text, suggestions, booking, action, mapEmbed });
 	} catch (error) {
 		console.error('Error in assistant API:', error);
 		return json(
