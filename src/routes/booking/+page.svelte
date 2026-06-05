@@ -1308,6 +1308,7 @@
 												<span class="payee-name">Anil Rammilan Yadav</span>
 												<span class="payee-amount">{fmt(paymentType === 'token' ? 50 : finalTotal)}</span>
 											</div>
+											<p class="upi-hint-text">Pay with any UPI app</p>
 										</div>
 										<a href={qrCodeUrl} download="bewellsalon-payment-qr.png" class="qr-download-btn">
 											<Download size={18} />
@@ -1372,10 +1373,8 @@
 							Confirming...
 						{:else if paymentType === 'free'}
 							Confirm Appointment
-						{:else if paymentType === 'token'}
-							Book with ₹50 & Confirm
 						{:else}
-							Pay {fmt(finalTotal)} & Book
+							Confirm & Book
 						{/if}
 					</button>
 					<p
@@ -3845,6 +3844,13 @@
 		gap: 4px;
 	}
 
+	.upi-hint-text {
+		font-size: 0.85rem;
+		color: #666;
+		margin-top: 8px;
+		font-weight: 500;
+	}
+
 	.payee-name {
 		font-weight: 700;
 		font-size: 1.1rem;
@@ -3939,7 +3945,7 @@
 	.checkbox-custom {
 		width: 24px;
 		height: 24px;
-		border: 2px solid rgba(255, 255, 255, 0.3);
+		border: 2px solid var(--color-accent-gold);
 		border-radius: 6px;
 		display: flex;
 		align-items: center;
