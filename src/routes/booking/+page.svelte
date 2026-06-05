@@ -1317,13 +1317,11 @@
 											<div class="premium-divider"></div>
 
 											<div class="premium-upi-box">
-												<span class="premium-upi-label">UPI ID</span>
-												<div class="premium-upi-row">
-													<span class="premium-upi-text">mab0450550a0279816@yesbank</span>
-													<button class="premium-copy-btn" on:click|preventDefault={copyUpiId}>
-														<FileText size={16} />
-													</button>
-												</div>
+												<span class="premium-upi-label">UPI:</span>
+												<span class="premium-upi-text">mab0450550a0279816@yesbank</span>
+												<button class="premium-copy-btn" on:click|preventDefault={copyUpiId}>
+													<FileText size={16} />
+												</button>
 											</div>
 
 											<div class="premium-payee-info">
@@ -3892,7 +3890,7 @@
 	.premium-qr-img {
 		display: block;
 		width: 100%;
-		max-width: 220px;
+		max-width: 260px;
 		height: auto;
 		border-radius: 12px;
 	}
@@ -3921,41 +3919,32 @@
 
 	.premium-upi-box {
 		background: #f8f9fa;
-		border-radius: 16px;
-		padding: 16px;
+		border-radius: 12px;
+		padding: 10px 14px;
 		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
 		gap: 8px;
 		margin-bottom: 20px;
+		width: 100%;
+		border: 1px solid rgba(0,0,0,0.04);
+		box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 	}
 
 	.premium-upi-label {
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 		color: #666;
 		font-weight: 700;
 		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		margin-left: 4px;
-	}
-
-	.premium-upi-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		width: 100%;
-		background: #fff;
-		padding: 12px 16px;
-		border-radius: 12px;
-		box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-		border: 1px solid rgba(0,0,0,0.04);
 	}
 
 	.premium-upi-text {
 		font-family: monospace;
-		font-size: 1.05rem;
+		font-size: 1rem;
 		color: #111;
 		font-weight: 700;
+		white-space: nowrap;
 	}
 
 	.premium-copy-btn {
