@@ -165,15 +165,15 @@ const intents: Intent[] = [
 	{
 		id: 'hours',
 		keywords: ['hours', 'open', 'close', 'time', 'baje'],
-		response: () => ({ text: 'We are open every day, Monday to Sunday, from 10:00 AM to 8:00 PM.' })
+		response: () => ({ text: 'We are open every day, from 9:00 AM to 11:00 PM.' })
 	},
 	{
 		id: 'location',
 		keywords: ['location', 'address', 'where', 'shop', 'kaha', 'kahan', 'kidhar'],
 		response: () => ({
-			text: 'Our salon is located at:\nBewell Salon, Bhandup West, Mumbai, Jharkhand 834001, India.\n\nWe look forward to seeing you!',
+			text: 'Our salon is located at:\nShop 2/3, Master Niwas, Quarry Rd, near Mangatram petrol pump, Ganesh Nagar, Bhandup West, Mumbai, Maharashtra 400078.\n\nWe look forward to seeing you!',
 			action: { label: 'Get Directions', path: 'https://maps.app.goo.gl/v45B3sD3BuPLpftr6' },
-			mapEmbed: 'https://maps.google.com/maps?q=Bewell%20Salon%2C%20Upper%20Bazar%2C%20Ranchi%2C%20Jharkhand%20834001&t=&z=17&ie=UTF8&iwloc=B&output=embed'
+			mapEmbed: 'https://maps.google.com/maps?q=Bewell%20Family%20Salon%20Tattoos%2C%20Bhandup%20West%2C%20Mumbai&t=&z=17&ie=UTF8&iwloc=B&output=embed'
 		})
 	},
 	{
