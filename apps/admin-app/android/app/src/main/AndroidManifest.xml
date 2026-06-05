@@ -23,7 +23,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="admin.blancbeu.in" />
+                <data android:scheme="https" android:host="admin.bewellfamilysalon.in" />
                 <data android:scheme="https" android:host="blancbeu-sveltekit.vercel.app" android:pathPrefix="/admin" />
             </intent-filter>
         </activity>

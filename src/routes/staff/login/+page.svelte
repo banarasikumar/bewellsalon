@@ -56,7 +56,7 @@
 			<div class="brand-logo">
 				<span class="brand-logo-letter">B</span>
 			</div>
-			<h1>Blancbeu</h1>
+			<h1>Bewell</h1>
 			<span class="brand-badge">Stylist Portal</span>
 		</div>
 

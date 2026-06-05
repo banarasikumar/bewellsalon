@@ -40,11 +40,11 @@
 		{#if isPickerMode}
 			CHOOSE STYLES
 		{:else if isAssistantPage}
-			<span style="font-size: 1.1rem; letter-spacing: 0.1em;">BLANCBEU ASSISTANT</span>
+			<span style="font-size: 1.1rem; letter-spacing: 0.1em;">Bewell ASSISTANT</span>
 		{:else if isTryOnPage}
 			VIRTUAL TRY ON
 		{:else}
-			BLANCBEU
+			Bewell
 		{/if}
 	</div>
 

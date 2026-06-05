@@ -107,7 +107,7 @@
 					<span class="emoji">✨</span>
 				</div>
 
-				<h2 class="title">Welcome to Blancbeu!</h2>
+				<h2 class="title">Welcome to Bewell!</h2>
 				<p class="subtitle">We're so glad you're here.</p>
 
 				<div class="bonus-box">

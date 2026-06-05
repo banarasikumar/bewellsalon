@@ -32,9 +32,9 @@
 			badgeClass: 'student',
 			icon: '🎓',
 			title: 'College Student Discount',
-			description: 'Get 25% off on all services with valid student ID',
+			description: 'Get 15% off on all services with valid student ID',
 			oldPrice: null,
-			newPrice: '25% OFF',
+			newPrice: '15% OFF',
 			discount: null
 		}
 	];

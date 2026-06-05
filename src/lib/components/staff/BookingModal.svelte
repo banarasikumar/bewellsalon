@@ -545,7 +545,7 @@
 		},
 		completed: {
 			title: 'Service Completed 🎉',
-			body: (b) => `Your service on ${b.date} is complete. Thank you for visiting Blancbeu!`
+			body: (b) => `Your service on ${b.date} is complete. Thank you for visiting Bewell!`
 		}
 	};
 

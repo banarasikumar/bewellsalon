@@ -1,5 +1,5 @@
 /**
- * pushService.ts — Unified push notification bridge for Blancbeu.
+ * pushService.ts — Unified push notification bridge for Bewell.
  *
  * Strategy:
  *   • If running inside the Capacitor native APK  → use @capacitor/push-notifications

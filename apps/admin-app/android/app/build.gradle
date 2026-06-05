@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "in.blancbeu.admin"
+    namespace = "in.bewell.admin"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "in.blancbeu.admin"
+        applicationId "in.bewell.admin"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

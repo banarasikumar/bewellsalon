@@ -4,7 +4,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * Capacitor configuration for the Blancbeu Admin native Android app.
  */
 const config: CapacitorConfig = {
-	appId: 'in.blancbeu.admin',
+	appId: 'in.bewell.admin',
 	appName: 'BAdmin',
 	// The Live Wrapper Configuration
 	webDir: 'www',

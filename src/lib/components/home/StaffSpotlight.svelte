@@ -81,7 +81,7 @@
 							{/each}
 						</div>
 						<a
-							href="https://wa.me/919229915277?text=Hi%2C%20I%20want%20to%20book%20with%20{member.name}"
+							href="https://wa.me/918928390360?text=Hi%2C%20I%20want%20to%20book%20with%20{member.name}"
 							target="_blank"
 							class="book-btn">Book with {member.name.split(' ')[0]}</a
 						>

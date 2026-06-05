@@ -17,7 +17,7 @@
 	}[] = $state([
 		{
 			role: 'assistant',
-			text: 'Hello! I am your Blancbeu virtual assistant. How can I help you elevate your style today?'
+			text: 'Hello! I am your Bewell virtual assistant. How can I help you elevate your style today?'
 		}
 	]);
 	let inputText = $state('');
@@ -360,7 +360,7 @@
 
 				<input
 					type="text"
-					placeholder="Ask Blancbeu..."
+					placeholder="Ask Bewell..."
 					bind:value={inputText}
 					onkeydown={handleKeydown}
 				/>

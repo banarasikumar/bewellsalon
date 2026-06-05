@@ -1,4 +1,4 @@
-package in.blancbeu.admin;
+package in.bewell.admin;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;

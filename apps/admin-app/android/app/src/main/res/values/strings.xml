@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">BAdmin</string>
     <string name="title_activity_main">BAdmin</string>
-    <string name="package_name">in.blancbeu.admin</string>
-    <string name="custom_url_scheme">in.blancbeu.admin</string>
+    <string name="package_name">in.bewell.admin</string>
+    <string name="custom_url_scheme">in.bewell.admin</string>
 </resources>

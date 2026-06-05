@@ -144,7 +144,7 @@
 			const image = canvas.toDataURL('image/png');
 			const link = document.createElement('a');
 			link.href = image;
-			link.download = `Blancbeu-Ticket-${bookingId || 'Booking'}.png`;
+			link.download = `Bewell-Ticket-${bookingId || 'Booking'}.png`;
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);
@@ -168,7 +168,7 @@
 			const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
 			if (!blob) throw new Error('Blob creation failed');
 
-			const fileName = `Blancbeu-Ticket-${bookingId || 'Booking'}.png`;
+			const fileName = `Bewell-Ticket-${bookingId || 'Booking'}.png`;
 
 			// Detect Capacitor native runtime
 			const isCapacitor =
@@ -200,8 +200,8 @@
 				});
 
 				await Share.share({
-					title: 'My Blancbeu Appointment',
-					text: 'Here is my appointment ticket for Blancbeu!',
+					title: 'My Bewell Appointment',
+					text: 'Here is my appointment ticket for Bewell!',
 					url: writeResult.uri,
 					dialogTitle: 'Share Ticket via'
 				});
@@ -216,8 +216,8 @@
 
 				if (navigator.canShare({ files: [file] })) {
 					await navigator.share({
-						title: 'My Blancbeu Appointment',
-						text: 'Here is my appointment ticket for Blancbeu!',
+						title: 'My Bewell Appointment',
+						text: 'Here is my appointment ticket for Bewell!',
 						files: [file]
 					});
 				} else {
@@ -354,7 +354,7 @@
 							<span class="brand-small"
 								>{isConfirmed ? 'CONFIRMED APPOINTMENT' : 'AWAITING CONFIRMATION'}</span
 							>
-							<h2 class="salon-name">Blancbeu Beauty Salon</h2>
+							<h2 class="salon-name">Bewell Family Salon</h2>
 						</div>
 						<!-- Holographic Badge Moved Here -->
 						<div class="holo-badge">

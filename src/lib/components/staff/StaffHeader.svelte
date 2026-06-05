@@ -6,7 +6,7 @@
 	import { unreadCount } from '$lib/stores/staffNotificationsList';
 
 	let {
-		title = 'Blancbeu Stylist',
+		title = 'Bewell Stylist',
 		showNotifications = true,
 		notificationCount = 0
 	}: {

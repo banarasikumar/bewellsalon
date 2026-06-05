@@ -5,7 +5,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-const STORAGE_KEY = 'blancbeu-staff-theme';
+const STORAGE_KEY = 'Bewell-staff-theme';
 
 function getInitialTheme(): ThemeMode {
 	if (!browser) return 'light';

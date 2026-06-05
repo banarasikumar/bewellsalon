@@ -7,7 +7,7 @@ import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 
 // Initialize with project ID (uses Application Default Credentials or just project config)
-admin.initializeApp({ projectId: 'blancbeu-60b2a' });
+admin.initializeApp({ projectId: 'bewellsalon-6d64e' });
 const db = admin.firestore();
 
 // Read contacts

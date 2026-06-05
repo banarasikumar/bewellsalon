@@ -220,7 +220,7 @@
 			label: 'Reminder',
 			color: 'var(--admin-green)',
 			title: '\uD83D\uDCC5 Appointment Reminder',
-			body: 'Just a friendly reminder about your upcoming appointment at Blancbeu Salon.',
+			body: 'Just a friendly reminder about your upcoming appointment at Bewell Salon.',
 			builtIn: true
 		},
 		{
@@ -243,7 +243,7 @@
 			id: '_general',
 			label: 'General',
 			color: 'var(--admin-indigo)',
-			title: '\uD83D\uDD14 Hello from Blancbeu!',
+			title: '\uD83D\uDD14 Hello from Bewell!',
 			body: "We miss you! It's been a while since your last visit. Book your next appointment today.",
 			builtIn: true
 		}
@@ -914,7 +914,7 @@
 						<input
 							id="notif-url"
 							type="url"
-							placeholder="https://blancbeu.in/booking"
+							placeholder="https://bewellfamilysalon.in/booking"
 							bind:value={notifUrl}
 							maxlength="500"
 						/>
@@ -1017,7 +1017,7 @@
 												{#if notifUrl}
 													Chrome &bull; {notifUrl.replace(/^https?:\/\//, '').split('/')[0]} &bull; now
 												{:else}
-													BLANCBEU
+													Bewell
 												{/if}
 											</span>
 											<span class="phone-notif-time">{notifUrl ? '' : 'now'}</span>
@@ -1551,7 +1551,7 @@
 					<input
 						id="tpl-url"
 						type="url"
-						placeholder="https://blancbeu.in/booking"
+						placeholder="https://bewellfamilysalon.in/booking"
 						bind:value={tplUrl}
 						maxlength="500"
 					/>

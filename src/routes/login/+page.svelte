@@ -65,7 +65,7 @@
 				<div class="logo-wrapper">
 					<span class="logo-icon">✨</span>
 				</div>
-				<h1 class="guest-title">Welcome to Blancbeu</h1>
+				<h1 class="guest-title">Welcome to Bewell</h1>
 				<p class="guest-subtitle">
 					Sign in to unlock exclusive member benefits, track your rewards, and manage appointments.
 				</p>

@@ -21,7 +21,7 @@
 	);
 
 	let appTitle = $derived(
-		appType === 'admin' ? 'Admin Portal' : appType === 'staff' ? 'Stylist Portal' : 'Blancbeu App'
+		appType === 'admin' ? 'Admin Portal' : appType === 'staff' ? 'Stylist Portal' : 'Bewell App'
 	);
 
 	let appDesc = $derived(
@@ -118,6 +118,11 @@
 			isVisible = true;
 			console.log(`[PWA] Strictly scoped install prompt captured for: ${appType}`);
 		};
+
+		// 2. Immediately check if it was caught early by app.html
+		if ((window as any).deferredInstallPrompt) {
+			handleBeforeInstallPrompt((window as any).deferredInstallPrompt);
+		}
 
 		const handleAppInstalled = () => {
 			localStorage.setItem('pwa_installed', 'true');

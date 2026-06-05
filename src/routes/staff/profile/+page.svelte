@@ -512,7 +512,7 @@
 	</button>
 
 	<div class="app-version">
-		<p>Blancbeu Staff v2.0 • Premium Edition</p>
+		<p>Bewell Staff v2.0 • Premium Edition</p>
 	</div>
 
 	<!-- Permission Denied Modal -->
@@ -540,7 +540,7 @@
 						bookings, please open your device settings:
 					</p>
 					<div class="settings-instructions">
-						<strong>Settings &gt; Apps &gt; Blancbeu Staff &gt; Permissions</strong>
+						<strong>Settings &gt; Apps &gt; Bewell Staff &gt; Permissions</strong>
 					</div>
 					<p class="text-sm mt-2 text-center">and Allow Notifications.</p>
 				</div>

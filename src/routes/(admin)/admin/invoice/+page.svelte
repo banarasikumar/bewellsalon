@@ -324,7 +324,7 @@
 			<!-- Header -->
 			<div class="inv-header">
 				<div class="inv-brand">
-					<span class="inv-brand-name">BLANCBEU</span>
+					<span class="inv-brand-name">Bewell</span>
 					<span class="inv-brand-sub">Premium Salon & Spa</span>
 				</div>
 			</div>
@@ -419,7 +419,7 @@
 
 			<!-- Footer -->
 			<div class="inv-footer">
-				<span>Thank you for choosing Blancbeu! ♥</span>
+				<span>Thank you for choosing Bewell! ♥</span>
 			</div>
 		</div>
 	</div>

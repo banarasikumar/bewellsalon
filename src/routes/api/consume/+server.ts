@@ -23,10 +23,10 @@ async function handleConsume(url: URL, token: string | null | undefined) {
 
 	const getLoginUrl = (appType?: string) => {
 		if (appType === 'staff')
-			return isLocalHost ? '/staff/login' : 'https://staff.blancbeu.in/login';
+			return isLocalHost ? '/staff/login' : 'https://staff.bewellfamilysalon.in/login';
 		if (appType === 'admin')
-			return isLocalHost ? '/admin/login' : 'https://admin.blancbeu.in/login';
-		return isLocalHost ? '/login' : 'https://www.blancbeu.in/login';
+			return isLocalHost ? '/admin/login' : 'https://admin.bewellfamilysalon.in/login';
+		return isLocalHost ? '/login' : 'https://www.bewellfamilysalon.in/login';
 	};
 
 	const renderErrorPage = (title: string, message: string, appType?: string) => {

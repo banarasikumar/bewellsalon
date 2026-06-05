@@ -9,10 +9,10 @@
 			</p>
 
 			<div class="buttons">
-				<a href="tel:+919229915277" class="btn primary">
+				<a href="tel:+918928390360" class="btn primary">
 					<span>📞</span> Call Now
 				</a>
-				<a href="https://wa.me/919229915277" target="_blank" class="btn secondary">
+				<a href="https://wa.me/918928390360" target="_blank" class="btn secondary">
 					<span>💬</span> WhatsApp
 				</a>
 			</div>

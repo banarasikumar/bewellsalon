@@ -159,13 +159,13 @@ export async function generateAndShareInvoice(params: {
 	const py = (svgY: number) => ((svgY - oy) * pageHeight) / vh;
 
 	// ═══════════════════════════════════════════
-	//   BRAND — Larger "BLANCBEU" top-right
+	//   BRAND — Larger "Bewell" top-right
 	// ═══════════════════════════════════════════
 
 	doc.setFont(headingFont, 'bold');
 	doc.setFontSize(26);
 	doc.setTextColor(51, 51, 51);
-	doc.text('BLANCBEU', px(640), py(140), { align: 'right' });
+	doc.text('Bewell', px(640), py(140), { align: 'right' });
 
 	doc.setFont(headingFont, 'bold');
 	doc.setFontSize(13);
@@ -180,9 +180,9 @@ export async function generateAndShareInvoice(params: {
 	doc.setFont(bodyFont, 'normal');
 	doc.setFontSize(7);
 	doc.setTextColor(150, 150, 150);
-	doc.text('4th Floor, Victory Mall, Upper Bazar', px(640), py(188), { align: 'right' });
-	doc.text('Ranchi, Jharkhand \u2014 834001', px(640), py(200), { align: 'right' });
-	doc.text('Ph: 9229915277', px(640), py(212), { align: 'right' });
+	doc.text('Shop 2/3, Master Niwas, Quarry Rd, Bhandup West', px(640), py(188), { align: 'right' });
+	doc.text('Mumbai, Maharashtra \u2014 400078', px(640), py(200), { align: 'right' });
+	doc.text('Ph: 8928390360, 9702243497', px(640), py(212), { align: 'right' });
 
 	// ═══════════════════════════════════════════
 	//   "INVOICE" TITLE — Right-aligned
@@ -330,7 +330,7 @@ export async function generateAndShareInvoice(params: {
 	try {
 		if (!cachedQRCode) cachedQRCode = (await import('qrcode')).default;
 		const QRCode = cachedQRCode;
-		const upiUri = `upi://pay?pa=Q714475106@ybl&pn=BlancBeu Beauty Salon&mc=0000&mode=02&purpose=00&am=${totalAmount}&cu=INR&tn=${invoiceNum}`;
+		const upiUri = `upi://pay?pa=Q714475106@ybl&pn=Bewell Family Salon&mc=0000&mode=02&purpose=00&am=${totalAmount}&cu=INR&tn=${invoiceNum}`;
 		const qrDataUrl = await QRCode.toDataURL(upiUri, {
 			width: 200,
 			margin: 1,
@@ -419,11 +419,11 @@ export async function generateAndShareInvoice(params: {
 			doc.setLineJoin(0);
 		}
 
-		// "BlancBeu Beauty Salon" below QR
+		// "Bewell Family Salon" below QR
 		doc.setFont(bodyFont, 'bold');
 		doc.setFontSize(8);
 		doc.setTextColor(64, 64, 64);
-		doc.text('BlancBeu Beauty Salon', qrX + qrSize / 2, qrY + qrSize + 10, { align: 'center' });
+		doc.text('Bewell Family Salon', qrX + qrSize / 2, qrY + qrSize + 10, { align: 'center' });
 
 		// "Rina Kumari" below salon name
 		doc.setFont(bodyFont, 'bold');
@@ -562,14 +562,14 @@ export async function generateAndShareInvoice(params: {
 		heartSize1
 	);
 
-	// Line 2: "We can't wait to pamper you again  •  Book your next visit at" + [blancbeu.in pill]
+	// Line 2: "We can't wait to pamper you again  •  Book your next visit at" + [bewellfamilysalon.in pill]
 	doc.setFont(bodyFont, 'normal');
 	doc.setFontSize(9);
 	doc.setTextColor(150, 90, 115);
 
 	const footerY = pageHeight - 30;
 	const beforeLink = 'We can\u2019t wait to pamper you again  \u2022  Book your next visit at ';
-	const linkText = 'blancbeu.in';
+	const linkText = 'bewellfamilysalon.in';
 
 	// Measure widths
 	const beforeWidth = doc.getTextWidth(beforeLink);
@@ -604,7 +604,7 @@ export async function generateAndShareInvoice(params: {
 	doc.setFont(bodyFont, 'bold');
 	doc.setFontSize(9);
 	doc.setTextColor(190, 30, 90);
-	doc.textWithLink(linkText, pillX + pillPadH, footerY, { url: 'https://blancbeu.in' });
+	doc.textWithLink(linkText, pillX + pillPadH, footerY, { url: 'https://bewellfamilysalon.in' });
 
 	// Underline under link text
 	const underlineY = footerY + 1.5;
@@ -659,7 +659,7 @@ export async function generateAndShareInvoice(params: {
 			// Open native share sheet
 			await Share.share({
 				title: `Invoice – ${booking.userName || 'Client'}`,
-				text: `Invoice from Blancbeu Beauty Salon`,
+				text: `Invoice from Bewell Family Salon`,
 				url: writeResult.uri, // file:// URI on Android
 				dialogTitle: 'Send Invoice via'
 			});
@@ -681,7 +681,7 @@ export async function generateAndShareInvoice(params: {
 				await navigator.share({
 					files: [pdfFile],
 					title: `Invoice - ${booking.userName || 'Client'}`,
-					text: `Invoice from Blancbeu - ${booking.userName || 'Client'}`
+					text: `Invoice from Bewell - ${booking.userName || 'Client'}`
 				});
 			} else {
 				throw new Error('Web Share not supported');
@@ -766,11 +766,11 @@ export function startWhatsAppChat(params: {
 	const { booking, services, totalAmount, discountAmount = 0, extraCharge = 0 } = params;
 
 	// ── Build the message ────────────────────────────────────────────────────
-	let msg = `*Invoice from Blancbeu*\nHello ${booking.userName || ''},\nHere is your service summary:\n\n`;
+	let msg = `*Invoice from Bewell*\nHello ${booking.userName || ''},\nHere is your service summary:\n\n`;
 	services.forEach((s) => (msg += `- ${s.name}: ₹${s.price}\n`));
 	if (extraCharge > 0) msg += `Other Charges: ₹${extraCharge}\n`;
 	if (discountAmount > 0) msg += `Extra Discount: -₹${discountAmount}\n`;
-	msg += `\n*Total Amount: ₹${totalAmount}*\n\nThank you for choosing Blancbeu! 💖`;
+	msg += `\n*Total Amount: ₹${totalAmount}*\n\nThank you for choosing Bewell! 💖`;
 
 	const encodedMsg = encodeURIComponent(msg);
 

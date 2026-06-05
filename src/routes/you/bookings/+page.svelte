@@ -425,12 +425,12 @@
 										<MapPin size={16} />
 									</div>
 									<div class="loc-text">
-										<span class="salon-name">Blancbeu Salon</span>
-										<span class="salon-addr">4th Floor, Victory Mall, Upper Bazar</span>
+										<span class="salon-name">Bewell Salon</span>
+										<span class="salon-addr">Shop 2/3, Master Niwas, Quarry Rd, Bhandup West</span>
 									</div>
 								</div>
 								{#if booking.status === 'confirmed'}
-									<a href="tel:+919229915277" class="footer-call-btn">
+									<a href="tel:+91 8928390360, +91 9702243497" class="footer-call-btn">
 										<Phone size={20} />
 									</a>
 								{/if}
@@ -493,7 +493,7 @@
 
 							<div class="booking-location-bar small">
 								<div class="location-content">
-									<span class="salon-name text-muted">Blancbeu Salon</span>
+									<span class="salon-name text-muted">Bewell Salon</span>
 								</div>
 							</div>
 						</div>
@@ -589,12 +589,12 @@
 									<MapPin size={16} />
 								</div>
 								<div class="loc-text">
-									<span class="salon-name">Blancbeu Salon</span>
-									<span class="salon-addr">4th Floor, Victory Mall, Upper Bazar</span>
+									<span class="salon-name">Bewell Salon</span>
+									<span class="salon-addr">Shop 2/3, Master Niwas, Quarry Rd, Bhandup West</span>
 								</div>
 							</div>
 							{#if booking.status === 'confirmed'}
-								<a href="tel:+919229915277" class="footer-call-btn">
+								<a href="tel:+91 8928390360, +91 9702243497" class="footer-call-btn">
 									<Phone size={20} />
 								</a>
 							{/if}

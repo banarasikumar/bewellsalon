@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import admin from 'firebase-admin';
 
 // Secret token to secure the endpoint from unauthorized access (optional but recommended)
-const BOT_SECRET = process.env.BOT_SECRET || 'blancbeu-bot-secret';
+const BOT_SECRET = process.env.BOT_SECRET || 'Bewell-bot-secret';
 
 function isAuthorized(request: Request) {
 	// Basic auth check logic could go here
@@ -98,13 +98,13 @@ export const POST: RequestHandler = async ({ request }) => {
 		// from intercepting Staff/Admin logins from WhatsApp.
 		const isLocalhost = request.url.includes('localhost') || request.url.includes('127.0.0.1');
 
-		let baseUrl = isLocalhost ? 'http://localhost:5173' : 'https://www.blancbeu.in';
+		let baseUrl = isLocalhost ? 'http://localhost:5173' : 'https://www.bewellfamilysalon.in';
 
 		if (!isLocalhost) {
 			if (app_type === 'staff') {
-				baseUrl = 'https://staff.blancbeu.in';
+				baseUrl = 'https://staff.bewellfamilysalon.in';
 			} else if (app_type === 'admin') {
-				baseUrl = 'https://admin.blancbeu.in';
+				baseUrl = 'https://admin.bewellfamilysalon.in';
 			}
 		}
 

@@ -5,7 +5,7 @@
 <footer class="footer-section container">
 	<div class="footer-content">
 		<div class="brand-column">
-			<h2 class="footer-logo">Blancbeu</h2>
+			<h2 class="footer-logo">Bewell</h2>
 			<p class="footer-tagline">Premium Family Salon</p>
 		</div>
 
@@ -23,7 +23,7 @@
 			<h4>Follow Us</h4>
 			<div class="social-icons">
 				<a
-					href="https://youtube.com/@blancbeubeautysalon?si=_Go7ZSGSFzTS-j_M"
+					href="https://www.youtube.com/@bewellfamilysalon_tattoos"
 					target="_blank"
 					class="social-icon youtube"
 					aria-label="YouTube"
@@ -35,7 +35,7 @@
 					</svg>
 				</a>
 				<a
-					href="https://www.instagram.com/blancbeu_salon_ranchi?igsh=MTRpbGV0YWt4aHFzaw=="
+					href="https://www.instagram.com/bewellfamilysalon_tattoos"
 					target="_blank"
 					class="social-icon instagram"
 					aria-label="Instagram"
@@ -47,7 +47,7 @@
 					</svg>
 				</a>
 				<a
-					href="https://www.facebook.com/p/BlancBeu-Family-Beauty-Salon-61578977241367/"
+					href="https://www.facebook.com/bewellfamilysalon/"
 					target="_blank"
 					class="social-icon facebook"
 					aria-label="Facebook"
@@ -63,7 +63,7 @@
 	</div>
 
 	<div class="footer-bottom">
-		<p>&copy; Blancbeu {year}. All rights reserved.</p>
+		<p>&copy; Bewell {year}. All rights reserved.</p>
 	</div>
 </footer>
 

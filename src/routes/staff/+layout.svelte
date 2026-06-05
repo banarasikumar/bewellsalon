@@ -55,7 +55,7 @@
 								? 'Profile'
 								: page.url.pathname.includes('custom-services')
 									? 'Service Menu'
-									: 'Blancbeu Stylist'
+									: 'Bewell Stylist'
 	);
 
 	let isNavVisible = $derived(
@@ -149,7 +149,7 @@
 
 						// ── Regular push-notification / other deep-link path ─────
 						const path = url.pathname + url.search;
-						if (url.hostname.includes('staff.blancbeu.in')) {
+						if (url.hostname.includes('staff.bewellfamilysalon.in')) {
 							const routedPath = path.startsWith('/staff')
 								? path
 								: `/staff${path === '/' ? '' : path}`;
@@ -209,7 +209,7 @@
 					<span class="brand-mark-letter">B</span>
 					<div class="brand-mark-ring"></div>
 				</div>
-				<h1 class="brand-text">Blancbeu</h1>
+				<h1 class="brand-text">Bewell</h1>
 				<span class="brand-sub">Stylist Portal</span>
 			</div>
 			<Loader size={80} fullPage={false} />

@@ -14,9 +14,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Redirect rogue /favicon.ico requests to the correct app-specific PNG icon
 	if (path === '/favicon.ico') {
-		if (host.includes('admin.blancbeu.in')) {
+		if (host.includes('admin.bewellfamilysalon.in')) {
 			throw redirect(301, '/admin-favicon.png');
-		} else if (host.includes('staff.blancbeu.in')) {
+		} else if (host.includes('staff.bewellfamilysalon.in')) {
 			throw redirect(301, '/staff-favicon.png');
 		} else {
 			throw redirect(301, '/favicon.png');
@@ -30,10 +30,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	// 1. Handle Admin Subdomain
-	if (host.includes('admin.blancbeu.in')) {
+	if (host.includes('admin.bewellfamilysalon.in')) {
 		// If on admin subdomain but the path doesn't start with /admin, prefix it
 		if (!path.startsWith('/admin')) {
-			// e.g. admin.blancbeu.in/login -> admin.blancbeu.in/admin/login
+			// e.g. admin.bewellfamilysalon.in/login -> admin.bewellfamilysalon.in/admin/login
 			// Under the hood, SvelteKit will process this as /admin/login
 			// We use a redirect here because rewriting might clash with Vercel's SPA hydration
 			throw redirect(302, `/admin${path === '/' ? '' : path}${event.url.search}`);
@@ -41,24 +41,24 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	// 2. Handle Staff Subdomain
-	if (host.includes('staff.blancbeu.in')) {
+	if (host.includes('staff.bewellfamilysalon.in')) {
 		if (!path.startsWith('/staff')) {
 			throw redirect(302, `/staff${path === '/' ? '' : path}${event.url.search}`);
 		}
 	}
 
 	// 3. Prevent primary domain from accessing /admin or /staff directly to keep urls clean
-	if (host === 'www.blancbeu.in' || host === 'blancbeu.in') {
+	if (host === 'www.bewellfamilysalon.in' || host === 'bewellfamilysalon.in') {
 		if (path.startsWith('/admin')) {
 			throw redirect(
 				302,
-				`https://admin.blancbeu.in${path.replace('/admin', '')}${event.url.search}`
+				`https://admin.bewellfamilysalon.in${path.replace('/admin', '')}${event.url.search}`
 			);
 		}
 		if (path.startsWith('/staff')) {
 			throw redirect(
 				302,
-				`https://staff.blancbeu.in${path.replace('/staff', '')}${event.url.search}`
+				`https://staff.bewellfamilysalon.in${path.replace('/staff', '')}${event.url.search}`
 			);
 		}
 	}

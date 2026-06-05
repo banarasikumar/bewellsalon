@@ -437,7 +437,7 @@
 				<div
 					style="background: var(--admin-bg-secondary); padding: 16px; border-radius: 8px; text-align: center; font-family: monospace; font-size: 13px;"
 				>
-					<strong>Settings &gt; Apps &gt; Blancbeu Admin &gt; Permissions</strong>
+					<strong>Settings &gt; Apps &gt; Bewell Admin &gt; Permissions</strong>
 				</div>
 				<p style="margin-top: 8px; text-align: center; font-size: 13px;">
 					and Allow Notifications.

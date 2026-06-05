@@ -9,6 +9,12 @@
 			href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;700&display=swap"
 			rel="stylesheet"
 		/>
+		<script>
+			window.addEventListener('beforeinstallprompt', (e) => {
+				e.preventDefault();
+				window.deferredInstallPrompt = e;
+			});
+		</script>
 		%sveltekit.head%
 	</head>
 

@@ -66,7 +66,7 @@
 		</div>
 
 		<h1>Admin Panel</h1>
-		<p>Sign in with your authorized account to access the Blancbeu administration dashboard.</p>
+		<p>Sign in with your authorized account to access the Bewell administration dashboard.</p>
 
 		<button class="admin-login-btn" onclick={handleLogin} disabled={loading}>
 			{#if loading}

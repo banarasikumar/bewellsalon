@@ -16,7 +16,7 @@
 	let appName = $derived.by(() => {
 		if (appType === 'staff') return 'Stylist Portal';
 		if (appType === 'admin') return 'Admin Portal';
-		return 'Blancbeu'; // User app default
+		return 'Bewell'; // User app default
 	});
 
 	let appIconUrl = $derived.by(() => {
@@ -48,9 +48,10 @@
 
 			<div class="text-container">
 				{#if appType === 'user'}
-					<h1 class="brand-name">Blancbeu</h1>
+					<h1 class="brand-name">Bewell</h1>
+					<p class="app-descriptor family-salon">Family Salon</p>
 				{:else}
-					<h1 class="brand-name">Blancbeu</h1>
+					<h1 class="brand-name">Bewell</h1>
 					<p class="app-descriptor">{appName}</p>
 				{/if}
 			</div>
@@ -165,6 +166,11 @@
 		color: var(--text-color);
 		opacity: 0.6;
 		animation: splash-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+	}
+
+	.family-salon {
+		font-size: 18px;
+		letter-spacing: 0.25em;
 	}
 
 	/* Subtle Loading indicator under logo */

@@ -4,11 +4,11 @@
 	const faqs = [
 		{
 			q: 'What are your salon hours?',
-			a: 'We are open from 10:00 AM to 8:00 PM, Monday through Sunday. We recommend booking an appointment in advance to ensure your preferred time slot is available.'
+			a: 'We are open from 9:00 AM to 11:00 PM everyday. We recommend booking an appointment in advance to ensure your preferred time slot is available.'
 		},
 		{
 			q: 'How do I book an appointment?',
-			a: 'You can book an appointment by calling us at +91 92299 15277, messaging us on WhatsApp, or visiting our salon directly. We also accept walk-ins based on availability.'
+			a: 'You can book an appointment by calling us at +91 8928390360, +91 9702243497, messaging us on WhatsApp, or visiting our salon directly. We also accept walk-ins based on availability.'
 		},
 		{
 			q: 'What products do you use?',
@@ -24,7 +24,7 @@
 		},
 		{
 			q: 'Do you offer services for men?',
-			a: 'Absolutely! Blancbeu is a family salon that caters to men, women, and children. We offer a full range of grooming services for men including haircuts, beard styling, facials, and more.'
+			a: 'Absolutely! Bewell is a family salon that caters to men, women, and children. We offer a full range of grooming services for men including haircuts, beard styling, facials, and more.'
 		}
 	];
 

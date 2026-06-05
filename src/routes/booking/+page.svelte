@@ -159,7 +159,7 @@
 	let calendarDays: { day: number; dateStr: string; available: boolean; isPadding: boolean }[] = [];
 
 	// Constants
-	const CUTOFF_HOUR = 19;
+	const CUTOFF_HOUR = 22;
 	const CUTOFF_MINUTE = 30;
 
 	onMount(() => {
@@ -319,12 +319,12 @@
 			// 2. No dates beyond 3 months
 			const isBeyondLimit = dStr > maxDateStr;
 
-			// 3. Cutoff check for Today (7:30 PM)
+			// 3. Cutoff check for Today (10:30 PM)
 			let isTodayCutoff = false;
 			if (dStr === todayStr) {
 				const now = new Date();
-				// If strictly past 7:30 PM (19:30), Today is over.
-				if (now.getHours() > 19 || (now.getHours() === 19 && now.getMinutes() >= 30)) {
+				// If strictly past 10:30 PM (22:30), Today is over.
+				if (now.getHours() > 22 || (now.getHours() === 22 && now.getMinutes() >= 30)) {
 					isTodayCutoff = true;
 				}
 			}
@@ -403,8 +403,8 @@
 
 	function generateTimeSlots(dateStr: string) {
 		const slots = [];
-		const startH = 10;
-		const endH = 19; // 7 PM
+		const startH = 9;
+		const endH = 22; // 10 PM slots (up to 10:30 PM)
 
 		const now = new Date();
 
@@ -417,8 +417,8 @@
 		for (let h = startH; h <= endH; h++) {
 			const minutes = [0, 30];
 			minutes.forEach((m) => {
-				// 19:30 is the last slot
-				if (h === 19 && m > 30) return;
+				// 22:30 is the last slot
+				if (h === 22 && m > 30) return;
 
 				// Format Display
 				const d = new Date();
@@ -616,7 +616,7 @@
 						key: env.PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
 						amount: orderData.amount,
 						currency: orderData.currency,
-						name: 'Blancbeu Salon',
+						name: 'Bewell Salon',
 						description: 'Booking Payment',
 						order_id: orderData.orderId,
 						prefill: {

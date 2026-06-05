@@ -139,7 +139,7 @@
 		<div class="footer-detail">
 			<span class="footer-text">Error {status}</span>
 			<span class="footer-dot">·</span>
-			<span class="footer-text">Blancbeu</span>
+			<span class="footer-text">Bewell</span>
 		</div>
 	</div>
 </div>

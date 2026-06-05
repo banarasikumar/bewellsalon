@@ -171,17 +171,17 @@ const intents: Intent[] = [
 		id: 'location',
 		keywords: ['location', 'address', 'where', 'shop', 'kaha', 'kahan', 'kidhar'],
 		response: () => ({
-			text: 'Our salon is located at:\nBlancbeu Salon, Upper Bazar, Ranchi, Jharkhand 834001, India.\n\nWe look forward to seeing you!',
+			text: 'Our salon is located at:\nBewell Salon, Bhandup West, Mumbai, Jharkhand 834001, India.\n\nWe look forward to seeing you!',
 			action: { label: 'Get Directions', path: 'https://maps.app.goo.gl/v45B3sD3BuPLpftr6' },
-			mapEmbed: 'https://maps.google.com/maps?q=Blancbeu%20Salon%2C%20Upper%20Bazar%2C%20Ranchi%2C%20Jharkhand%20834001&t=&z=17&ie=UTF8&iwloc=B&output=embed'
+			mapEmbed: 'https://maps.google.com/maps?q=Bewell%20Salon%2C%20Upper%20Bazar%2C%20Ranchi%2C%20Jharkhand%20834001&t=&z=17&ie=UTF8&iwloc=B&output=embed'
 		})
 	},
 	{
 		id: 'contact',
 		keywords: ['contact', 'call', 'phone', 'number'],
 		response: () => ({
-			text: 'You can reach us directly at +91 92299 15277 or email us at hello@blancbeu.in. We are here to help!',
-			action: { label: 'Call Now', path: 'tel:+919229915277' }
+			text: 'You can reach us directly at +91 8928390360, +91 9702243497 or email us at hello@bewellfamilysalon.in. We are here to help!',
+			action: { label: 'Call Now', path: 'tel:+91 8928390360, +91 9702243497' }
 		})
 	},
 	{
@@ -269,7 +269,7 @@ export function processQuery(message: string): {
 	const tokens = tokenizeAndNormalize(message);
 
 	if (tokens.length === 0) {
-		return { text: "I'm here to help! What would you like to know about Blancbeu?" };
+		return { text: "I'm here to help! What would you like to know about Bewell?" };
 	}
 
 	let bestIntent: Intent | null = null;

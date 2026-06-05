@@ -127,7 +127,7 @@
 
 						// ── Regular push-notification / other deep-link path ─────
 						const path = url.pathname + url.search;
-						if (url.hostname.includes('admin.blancbeu.in')) {
+						if (url.hostname.includes('admin.bewellfamilysalon.in')) {
 							const routedPath = path.startsWith('/admin')
 								? path
 								: `/admin${path === '/' ? '' : path}`;
@@ -255,8 +255,8 @@
 </script>
 
 <svelte:head>
-	<title>Blancbeu Admin{pageTitle ? ` — ${pageTitle}` : ''}</title>
-	<meta name="description" content="Blancbeu Administration Panel" />
+	<title>Bewell Admin{pageTitle ? ` — ${pageTitle}` : ''}</title>
+	<meta name="description" content="Bewell Administration Panel" />
 	<meta name="theme-color" content={metaThemeColor} />
 	<link rel="manifest" href="/admin/manifest.json" />
 	<link

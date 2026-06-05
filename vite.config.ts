@@ -17,16 +17,20 @@ export default defineConfig({
 				globIgnores: ['**/node_modules/**', '**/dev-dist/**'],
 				maximumFileSizeToCacheInBytes: 10 * 1024 * 1024 // 10MB
 			},
-			manifest: false // Multi-scope: Manifests are handled manually in static/
+			manifest: false, // Multi-scope: Manifests are handled manually in static/
+			devOptions: {
+				enabled: true,
+				type: 'module'
+			}
 		})
 	],
 	server: {
 		host: true,
 		allowedHosts: [
-			'staff.blancbeu.in',
-			'admin.blancbeu.in',
-			'www.blancbeu.in',
-			'blancbeu.in',
+			'staff.bewellfamilysalon.in',
+			'admin.bewellfamilysalon.in',
+			'www.bewellfamilysalon.in',
+			'bewellfamilysalon.in',
 			'100.81.133.55'
 		]
 	},

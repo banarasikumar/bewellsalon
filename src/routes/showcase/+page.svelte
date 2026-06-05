@@ -337,7 +337,7 @@
 </script>
 
 <svelte:head>
-	<title>Blancbeu — Premium Salon & Spa Software Ecosystem</title>
+	<title>Bewell — Premium Salon & Spa Software Ecosystem</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 	<style>
@@ -605,7 +605,7 @@
 					</div>
 				</div>
 				<a
-					href="https://wa.me/917004574629?text=Hi%2C%20I'm%20interested%20in%20the%20Blancbeu%20Ecosystem.%20Selected%20total%3A%20%E2%82%B9{fmtInr}"
+					href="https://wa.me/917004574629?text=Hi%2C%20I'm%20interested%20in%20the%20Bewell%20Ecosystem.%20Selected%20total%3A%20%E2%82%B9{fmtInr}"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="sc-btn sc-btn-primary sc-btn-lg sc-wa-btn"

@@ -425,7 +425,7 @@
 	async function generateQrForAmount(amount: number) {
 		const QRCode = (await import('qrcode')).default;
 		const invoiceNum = `INV-${String(bookingId).slice(0, 8).toUpperCase()}`;
-		const upiUri = `upi://pay?pa=Q714475106@ybl&pn=BlancBeu Beauty Salon&mc=0000&mode=02&purpose=00&am=${amount}&cu=INR&tn=${invoiceNum}`;
+		const upiUri = `upi://pay?pa=Q714475106@ybl&pn=Bewell Family Salon&mc=0000&mode=02&purpose=00&am=${amount}&cu=INR&tn=${invoiceNum}`;
 
 		qrCodeDataUrl = await QRCode.toDataURL(upiUri, {
 			width: 300,

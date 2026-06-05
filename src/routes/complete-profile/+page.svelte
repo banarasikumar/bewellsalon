@@ -312,7 +312,7 @@
 						},
 						body: JSON.stringify({
 							title: 'New User Signup! 🎉',
-							body: `${name.trim()} has just completed their profile on Blancbeu.`,
+							body: `${name.trim()} has just completed their profile on Bewell.`,
 							targetRoles: ['admin'],
 							notificationType: 'newSignups'
 						})

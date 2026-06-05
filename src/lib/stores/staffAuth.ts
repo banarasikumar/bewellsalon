@@ -39,7 +39,7 @@ let loadingTimeout: ReturnType<typeof setTimeout> | null = null;
  */
 async function verifyStaffRole(uid: string, email: string | null): Promise<boolean> {
 	// Extract phone from uid if user logged in via WhatsApp
-	// Magic link users have uids like: "wa:+919229915277"
+	// Magic link users have uids like: "wa:+91 8928390360, +91 9702243497"
 	const phone = uid.startsWith('wa:') ? uid.replace('wa:', '') : null;
 
 	// Fast path: grant access immediately if email/phone is in the allowed list.
