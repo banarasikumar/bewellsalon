@@ -1303,11 +1303,11 @@
 								<div class="qr-box">
 									{#if qrCodeUrl}
 										<div class="qr-wrapper">
+											<img src={qrCodeUrl} alt="Payment QR Code" class="payment-qr" />
 											<div class="qr-payee-info">
-												<span class="payee-name">Bewell Family Salon</span>
+												<span class="payee-name">Anil Rammilan Yadav</span>
 												<span class="payee-amount">{fmt(paymentType === 'token' ? 50 : finalTotal)}</span>
 											</div>
-											<img src={qrCodeUrl} alt="Payment QR Code" class="payment-qr" />
 										</div>
 										<a href={qrCodeUrl} download="bewellsalon-payment-qr.png" class="qr-download-btn">
 											<Download size={18} />
@@ -3837,7 +3837,8 @@
 	}
 
 	.qr-payee-info {
-		margin-bottom: 12px;
+		margin-top: 12px;
+		margin-bottom: 0;
 		color: #111;
 		display: flex;
 		flex-direction: column;
