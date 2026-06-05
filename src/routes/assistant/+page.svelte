@@ -23,6 +23,7 @@
 	]);
 	let inputText = $state('');
 	let isListening = $state(false);
+	let shouldKeepListening = false;
 	let tagsExpanded = $state(true);
 	let smartReplies: string[] = $state([]);
 	let chatContainer: HTMLDivElement;
@@ -93,15 +94,34 @@
 				};
 
 				recognition.onend = () => {
-					isListening = false;
+					if (shouldKeepListening) {
+						try {
+							recognition.start();
+						} catch (e) {
+							isListening = false;
+							shouldKeepListening = false;
+						}
+					} else {
+						isListening = false;
+					}
 				};
 
 				recognition.onerror = (event: any) => {
 					console.error('Speech recognition error:', event.error);
-					isListening = false;
+					if (event.error !== 'no-speech') {
+						shouldKeepListening = false;
+						isListening = false;
+					}
 				};
 			}
 		}
+
+		return () => {
+			if (recognition) {
+				shouldKeepListening = false;
+				try { recognition.stop(); } catch(e){}
+			}
+		};
 	});
 
 	async function scrollToBottom() {
@@ -240,9 +260,11 @@
 		}
 
 		if (isListening) {
+			shouldKeepListening = false;
 			recognition.stop();
 		} else {
 			try {
+				shouldKeepListening = true;
 				recognition.start();
 				isListening = true;
 			} catch (e) {
