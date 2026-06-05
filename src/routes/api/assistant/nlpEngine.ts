@@ -192,14 +192,14 @@ const intents: Intent[] = [
 			action: { label: 'Book Now', path: '/booking' }
 		})
 	},
-	{
+/*	{
 		id: 'try_on',
 		keywords: ['try', 'on', 'tryon', 'virtual', 'look', 'style', 'camera'],
 		response: () => ({
 			text: 'Experience our Virtual Try-On! You can see how different styles and colors look on you instantly using your camera.',
 			action: { label: 'Open Virtual Try-On', path: '/try-on' }
 		})
-	},
+	},*/
 	{
 		id: 'bridal',
 		keywords: ['bridal', 'wedding', 'marriage', 'shadi', 'shaadi', 'dulhan'],

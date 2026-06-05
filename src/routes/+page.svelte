@@ -47,7 +47,7 @@
 	<HomeGallery />
 	<TransformationGallery />
 
-	<section class="container" style="margin-bottom: 40px; text-align: center;">
+<!--	<section class="container" style="margin-bottom: 40px; text-align: center;">
 		<a href="/try-on" class="virtual-tryon-btn">
 			<div class="btn-content">
 				<span class="icon">✨</span>
@@ -58,7 +58,7 @@
 				<span class="arrow">→</span>
 			</div>
 		</a>
-	</section>
+	</section> -->
 	<StaffSpotlight />
 	<Testimonials />
 	<AboutSection />

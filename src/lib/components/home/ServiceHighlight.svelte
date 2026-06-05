@@ -50,7 +50,7 @@
 			className="card-img"
 		/>
 		<div class="category-badge">{service.category}</div>
-		{#if !tryOnMode && service.category === 'Hair'}
+		<!-- {#if !tryOnMode && service.category === 'Hair'}
 			<button
 				class="tryon-pill"
 				onclick={(e) => {
@@ -62,7 +62,7 @@
 				<span>Try On</span>
 				<div class="icon-circle"><Wand2 size={10} strokeWidth={3} /></div>
 			</button>
-		{/if}
+		{/if} -->
 		{#if tryOnMode && isSelected}
 			<div class="selected-check"><Check size={16} strokeWidth={3} /></div>
 		{/if}

@@ -52,7 +52,7 @@
 		'📍 Location & Directions',
 		'📞 Contact Number',
 		'📅 Book Appointment',
-		'✨ Virtual Try-On',
+		// '✨ Virtual Try-On',
 		'💇‍♀️ Services & Pricing',
 		'👰 Bridal Packages',
 		'⏱️ Opening Hours',
@@ -398,35 +398,24 @@
 				/>
 				
 				<button 
-					class="mic-btn" 
-					class:listening={isListening}
-					onclick={toggleListen}
-					aria-label="Voice Typing"
-				>
-					{#if isListening}
-						<div class="mic-ripple-small"></div>
-					{/if}
-					<Mic strokeWidth={1.5} size={22} />
-				</button>
-
-				<button 
 					class="action-circle-btn" 
+					class:listening={isListening && inputText.trim().length === 0}
 					onclick={() => {
 						if (inputText.trim().length > 0) {
 							sendMessage();
 						} else {
-							if (typeof sessionStorage !== 'undefined') {
-								sessionStorage.setItem('fromAssistant', 'true');
-							}
-							goto('/assistant/companion');
+							toggleListen();
 						}
 					}}
-					aria-label={inputText.trim().length > 0 ? "Send Message" : "Live Assistant"}
+					aria-label={inputText.trim().length > 0 ? "Send Message" : "Voice Typing"}
 				>
 					{#if inputText.trim().length > 0}
 						<Send size={18} strokeWidth={2} />
 					{:else}
-						<AudioLines size={20} strokeWidth={2} />
+						{#if isListening}
+							<div class="mic-ripple-small"></div>
+						{/if}
+						<Mic size={20} strokeWidth={2} />
 					{/if}
 				</button>
 			</div>
