@@ -1,6 +1,6 @@
 {
-    "name": "BAdmin",
-    "short_name": "BAdmin",
+    "name": "BeWell Admin",
+    "short_name": "BeWell Admin",
     "version": "0.0.7",
     "start_url": "/admin?app=admin",
     "id": "/admin/",

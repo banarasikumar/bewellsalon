@@ -1,6 +1,6 @@
 {
-    "name": "BStaff",
-    "short_name": "BStaff",
+    "name": "BeWell Staff",
+    "short_name": "BeWell Staff",
     "version": "0.0.7",
     "start_url": "/staff?app=staff",
     "id": "/staff/",
