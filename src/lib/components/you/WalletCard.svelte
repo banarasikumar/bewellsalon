@@ -54,7 +54,7 @@
 				<Wallet size={24} />
 			</div>
 			<div class="wallet-info">
-				<span class="wallet-label">Beu Cash Balance</span>
+				<span class="wallet-label">Coupon Cash Balance</span>
 				<div class="balance-amount">
 					<span class="currency">₹</span>
 					{#if loading}

@@ -331,7 +331,7 @@
 					{bookingsCount}
 				/>
 
-				<!-- BEU CASH WALLET CARD -->
+				<!-- COUPON CASH WALLET CARD -->
 				<WalletCard balance={beuCash} loading={loadingProfile} />
 
 				<!-- LATEST BOOKING WIDGET (TICKET STYLE) -->

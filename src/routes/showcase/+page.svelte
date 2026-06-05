@@ -73,8 +73,8 @@
 			icon: '📱'
 		},
 		{
-			title: 'Coupons & Beu Cash',
-			desc: 'Built-in loyalty program with Beu Cash per user, plus robust promotional coupon management.',
+			title: 'Coupons & Coupon Cash',
+			desc: 'Built-in loyalty program with Coupon Cash per user, plus robust promotional coupon management.',
 			icon: '🎁'
 		},
 		{
@@ -100,7 +100,7 @@
 				'Virtual Try-On Integration',
 				'AI Voice Assistant Booking',
 				'Live Slot Availability',
-				'Coupons & Beu Cash Wallet'
+				'Coupons & Coupon Cash Wallet'
 			]
 		},
 		{
@@ -239,7 +239,7 @@
 				'3 Native Android Apps (APKs)',
 				'Virtual AI Assistant (Text & Voice)',
 				'Payment Gateway Integration',
-				'Coupons & Beu Cash Loyalty System',
+				'Coupons & Coupon Cash Loyalty System',
 				'Desktop Smartphone Simulator',
 				'Custom Branding & Logo',
 				'Priority Support (48hr SLA)'

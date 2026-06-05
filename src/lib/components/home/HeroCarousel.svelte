@@ -7,7 +7,7 @@
 	// Import images
 	import img1 from '$lib/assets/home/1.webp';
 	import img2 from '$lib/assets/home/bewell_banner1.png';
-	import img3 from '$lib/assets/home/backup/banner_service.webp';
+	import img3 from '$lib/assets/home/bewell_banner2.png';
 
 	const slides = [
 		{

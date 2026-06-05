@@ -250,13 +250,14 @@
 	}
 
 	.whatsapp-btn.secondary {
-		background: transparent;
-		color: #25d366;
+		background: #25d366;
+		color: white;
 		border: 1px solid #25d366;
 	}
 	.whatsapp-btn.secondary:hover {
-		background: rgba(37, 211, 102, 0.1);
-		box-shadow: 0 4px 15px rgba(37, 211, 102, 0.2);
+		background: #20bd5a;
+		border-color: #20bd5a;
+		box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
 	}
 
 	.whatsapp-hint {

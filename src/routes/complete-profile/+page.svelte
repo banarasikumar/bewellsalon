@@ -385,7 +385,7 @@
 						<Crown size={18} />
 					</div>
 					<div class="reward-text">
-						<span class="reward-amount">₹500 Beu Cash</span>
+						<span class="reward-amount">₹500 Coupon Cash</span>
 						<span class="reward-desc">Yours instantly — use it on your first glow-up!</span>
 					</div>
 				</div>

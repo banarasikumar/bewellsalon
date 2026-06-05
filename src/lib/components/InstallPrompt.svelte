@@ -31,7 +31,7 @@
 				? 'Manage the salon anywhere.'
 				: appType === 'staff'
 					? 'Manage your schedule on the go.'
-					: 'Install now & get a <strong>₹500 Coupon</strong> for your first booking!'
+					: 'Install now & get a <strong>₹500 Coupon</strong> that you can use 15% on your bookings!'
 	);
 
 	let btnText = $derived(promptMode === 'open' ? 'Open in App' : 'Install App');

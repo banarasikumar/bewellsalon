@@ -330,7 +330,7 @@
 				</div>
 				<div class="admin-ud-field">
 					<span class="admin-ud-field-label">
-						<Wallet size={10} /> Beu Cash
+						<Wallet size={10} /> Coupon Cash
 					</span>
 					<span class="admin-ud-field-value">₹{user.beuCash || user.walletBalance || 0}</span>
 				</div>

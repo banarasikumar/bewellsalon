@@ -123,28 +123,9 @@
 	let isApplyingCoupon = false;
 	let showCouponsModal = false;
 
-	const availableCoupons = [
-		{
-			code: 'SAVE20',
-			discountText: 'Flat ₹20 OFF',
-			description: 'Save ₹20 on your booking',
-			minBooking: 50
-		},
-		{
-			code: 'FLAT50',
-			discountText: 'Flat ₹50 OFF',
-			description: 'Save ₹50 on your booking',
-			minBooking: 100
-		},
-		{
-			code: 'FIRST100',
-			discountText: 'Flat ₹100 OFF',
-			description: 'Exclusive discount',
-			minBooking: 300
-		}
-	];
+	const availableCoupons: any[] = [];
 
-	// Beu Cash State
+	// Coupon Cash State
 	let beuCashBalance = 0;
 	let useBeuCash = false;
 
@@ -206,7 +187,7 @@
 				userEmail = user.email || '';
 				userPhone = user.phoneNumber || '';
 
-				// Fetch Beu Cash Balance
+				// Fetch Coupon Cash Balance
 				try {
 					const docRef = doc(db, 'users', user.uid);
 					const docSnap = await getDoc(docRef);
@@ -214,7 +195,7 @@
 						beuCashBalance = docSnap.data().beuCash || 0;
 					}
 				} catch (err) {
-					console.error('Error fetching Beu Cash balance:', err);
+					console.error('Error fetching Coupon Cash balance:', err);
 				}
 			} else {
 				if (browser) goto('/login');
@@ -549,47 +530,9 @@
 		setTimeout(() => {
 			const code = couponCode.trim().toUpperCase();
 
-			if (code === 'SAVE20') {
-				if (offerTotal >= 50) {
-					couponDiscount = 20;
-					couponApplied = true;
-					couponError = '';
-					showCouponsModal = false;
-					useBeuCash = false;
-				} else {
-					couponDiscount = 0;
-					couponApplied = false;
-					couponError = 'Minimum booking amount is ₹50 for this coupon';
-				}
-			} else if (code === 'FLAT50') {
-				if (offerTotal >= 100) {
-					couponDiscount = 50;
-					couponApplied = true;
-					couponError = '';
-					showCouponsModal = false;
-					useBeuCash = false;
-				} else {
-					couponDiscount = 0;
-					couponApplied = false;
-					couponError = 'Minimum booking amount is ₹100 for this coupon';
-				}
-			} else if (code === 'FIRST100') {
-				if (offerTotal >= 300) {
-					couponDiscount = 100;
-					couponApplied = true;
-					couponError = '';
-					showCouponsModal = false;
-					useBeuCash = false;
-				} else {
-					couponDiscount = 0;
-					couponApplied = false;
-					couponError = 'Minimum booking amount is ₹300 for this coupon';
-				}
-			} else {
-				couponDiscount = 0;
-				couponApplied = false;
-				couponError = 'Invalid coupon code';
-			}
+			couponDiscount = 0;
+			couponApplied = false;
+			couponError = 'Invalid coupon code';
 
 			isApplyingCoupon = false;
 		}, 500);
@@ -605,7 +548,7 @@
 	// Computed totals
 	$: offersDiscount = originalTotal - offerTotal;
 	$: subTotalAfterCoupon = Math.max(0, offerTotal - couponDiscount);
-	$: maxBeuCashAllowed = subTotalAfterCoupon * 0.3;
+	$: maxBeuCashAllowed = subTotalAfterCoupon * 0.15;
 	$: actualBeuCashApplied = useBeuCash ? Math.min(beuCashBalance, maxBeuCashAllowed) : 0;
 	$: totalSavings = offersDiscount + couponDiscount + actualBeuCashApplied;
 	$: finalTotal = Math.max(0, subTotalAfterCoupon - actualBeuCashApplied);
@@ -1165,19 +1108,19 @@
 							{/if}
 						</div>
 
-						<!-- Beu Cash Toggle -->
+						<!-- Coupon Cash Toggle -->
 						<div class="beu-cash-card {beuCashBalance === 0 ? 'empty-balance' : ''}">
 							<div class="beu-cash-info">
 								<div class="beu-cash-header">
 									<Gem size={16} class="text-gold" />
-									<span class="font-bold">Beu Cash Balance: {fmt(beuCashBalance)}</span>
+									<span class="font-bold">Coupon Cash Balance: {fmt(beuCashBalance)}</span>
 								</div>
 								{#if beuCashBalance > 0}
 									<p class="beu-cash-subtext">
 										Use up to 30% ({fmt(maxBeuCashAllowed)}) of your subtotal.
 									</p>
 								{:else}
-									<p class="beu-cash-subtext">Earn Beu Cash on your bookings to use here!</p>
+									<p class="beu-cash-subtext">Earn Coupon Cash on your bookings to use here!</p>
 								{/if}
 							</div>
 							<div class="beu-cash-action">
@@ -1224,7 +1167,7 @@
 
 								{#if actualBeuCashApplied > 0}
 									<div class="breakdown-row discount">
-										<span>Beu Cash Used</span>
+										<span>Coupon Cash Used</span>
 										<span class="text-green">-{fmt(actualBeuCashApplied)}</span>
 									</div>
 								{/if}
@@ -1451,35 +1394,7 @@
 						{/if}
 					</div>
 
-					<div class="section-divider mb-4"></div>
 
-					<h4 class="text-sm font-bold text-secondary uppercase tracking-wider mb-3">
-						Available Coupons
-					</h4>
-
-					<div class="coupons-list">
-						{#each availableCoupons as coupon}
-							<div class="coupon-card">
-								<div class="coupon-card-left">
-									<div class="coupon-code-badge">{coupon.code}</div>
-									<div class="coupon-desc-bold">{coupon.discountText}</div>
-									<div class="coupon-desc-sub">{coupon.description}</div>
-									<div class="coupon-min-booking">On min. booking of {fmt(coupon.minBooking)}</div>
-								</div>
-								<div class="coupon-card-right">
-									<button
-										class="apply-text-btn"
-										on:click={() => {
-											couponCode = coupon.code;
-											applyCoupon();
-										}}
-									>
-										APPLY
-									</button>
-								</div>
-							</div>
-						{/each}
-					</div>
 				</div>
 			</div>
 		</div>
@@ -3580,7 +3495,7 @@
 		color: white;
 		box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
 	}
-	/* BEU CASH CARD UI */
+	/* COUPON CASH CARD UI */
 	.beu-cash-card {
 		display: flex;
 		justify-content: space-between;

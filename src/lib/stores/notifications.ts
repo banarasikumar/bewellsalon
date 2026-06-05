@@ -94,7 +94,7 @@ function createNotificationsStore() {
 				priority: 'high',
 				unread: !welcomeRead,
 				title: '✨ First time here?',
-				message: 'Welcome to Bewell! Get Rs. 500 Beu Cash to use for your bookings. T&C apply.',
+				message: 'Welcome to Bewell! Get Rs. 500 Coupon Cash to use for your bookings. T&C apply.',
 				createdAt: welcomeTimestamp,
 				time,
 				dateCategory,

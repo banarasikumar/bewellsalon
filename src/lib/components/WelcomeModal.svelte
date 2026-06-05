@@ -78,7 +78,7 @@
 				welcomeBonusClaimed: true,
 				beuCash: increment(500)
 			});
-			console.log('Welcome bonus claimed and Beu Cash updated.');
+			console.log('Welcome bonus claimed and Coupon Cash updated.');
 		} catch (error) {
 			console.error('Error claiming welcome bonus:', error);
 		}
@@ -116,7 +116,7 @@
 						<span class="currency">₹</span>
 						<span class="amount">500</span>
 					</div>
-					<span class="bonus-text">Beu Cash added to your wallet!</span>
+					<span class="bonus-text">Coupon Cash added to your wallet!</span>
 				</div>
 
 				<p class="terms">Use it towards your first booking. <br />*T&C Apply</p>
