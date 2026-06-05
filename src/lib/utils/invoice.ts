@@ -180,8 +180,8 @@ export async function generateAndShareInvoice(params: {
 	doc.setFont(bodyFont, 'normal');
 	doc.setFontSize(7);
 	doc.setTextColor(150, 150, 150);
-	doc.text('Shop 2/3, Master Niwas, Quarry Rd, Bhandup West', px(640), py(188), { align: 'right' });
-	doc.text('Mumbai, Maharashtra \u2014 400078', px(640), py(200), { align: 'right' });
+	doc.text('Mangatram Petrol Pump, Next to Marigold Bldg', px(640), py(188), { align: 'right' });
+	doc.text('Quarry Rd, Bhandup West, Mumbai \u2014 400078', px(640), py(200), { align: 'right' });
 	doc.text('Ph: 8928390360, 9702243497', px(640), py(212), { align: 'right' });
 
 	// ═══════════════════════════════════════════
