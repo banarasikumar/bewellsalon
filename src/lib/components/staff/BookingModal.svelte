@@ -14,6 +14,7 @@
 	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
 	import { showToast } from '$lib/stores/toast';
+	import { generateAndShareInvoice } from '$lib/utils/invoice';
 	import Loader from '$lib/components/ui/Loader.svelte';
 	import { auth } from '$lib/firebase';
 	import type { Booking, AppUser } from '$lib/stores/adminData';
@@ -1329,7 +1330,6 @@
 												isGeneratingInvoice = true;
 												await tick();
 												await new Promise(r => setTimeout(r, 50));
-												const { generateAndShareInvoice } = await import('$lib/utils/invoice');
 												await generateAndShareInvoice({
 													booking: existingBooking,
 													services: existingBooking.servicesList || [
