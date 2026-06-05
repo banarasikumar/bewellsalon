@@ -64,24 +64,19 @@ jobs:
           # Use Android Build Tools from GitHub Runner
           export APKSIGNER=$ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner
 
-          if [ -z "${{ secrets.APP_KEYSTORE_B64 }}" ]; then
-            echo "🚀 Generating a brand new Production Keystore since one wasn't provided in Secrets..."
-            keytool -genkey -v -keystore blancbeu.keystore -alias blancbeu -keyalg RSA -keysize 2048 -validity 10000 -storepass "blancbeu123" -keypass "blancbeu123" -dname "CN=Blancbeu, OU=App, O=Blancbeu, C=IN"
-            export KS="blancbeu.keystore"
-          else
-            echo "✅ Using permanent secure Keystore found in GitHub Secrets!"
-            echo "${{ secrets.APP_KEYSTORE_B64 }}" | base64 --decode > blancbeu.keystore
-            export KS="blancbeu.keystore"
-          fi
+          # Use the permanent keystore committed in the repo
+          export KS="bewell.keystore"
+          export KS_ALIAS="bewell"
+          export KS_PASS="blancbeu123"
 
           # Output the SHA-1 and SHA-256 for Firebase & Deep-Link Configuration
-          keytool -list -v -keystore $KS -alias blancbeu -storepass "blancbeu123" | grep -E "SHA1:|SHA256:" > sha_fingerprints.txt
+          keytool -list -v -keystore $KS -alias $KS_ALIAS -storepass "$KS_PASS" | grep -E "SHA1:|SHA256:" > sha_fingerprints.txt
 
           # Sign the Staff APK
-          $APKSIGNER sign --ks $KS --ks-pass pass:blancbeu123 --key-pass pass:blancbeu123 --out apps/staff-app/android/app/build/outputs/apk/release/BeWell-Staff.apk apps/staff-app/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          $APKSIGNER sign --ks $KS --ks-key-alias $KS_ALIAS --ks-pass pass:$KS_PASS --key-pass pass:$KS_PASS --out apps/staff-app/android/app/build/outputs/apk/release/BeWell-Staff.apk apps/staff-app/android/app/build/outputs/apk/release/app-release-unsigned.apk
 
           # Sign the Admin APK
-          $APKSIGNER sign --ks $KS --ks-pass pass:blancbeu123 --key-pass pass:blancbeu123 --out apps/admin-app/android/app/build/outputs/apk/release/BeWell-Admin.apk apps/admin-app/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          $APKSIGNER sign --ks $KS --ks-key-alias $KS_ALIAS --ks-pass pass:$KS_PASS --key-pass pass:$KS_PASS --out apps/admin-app/android/app/build/outputs/apk/release/BeWell-Admin.apk apps/admin-app/android/app/build/outputs/apk/release/app-release-unsigned.apk
 
       - name: 📤 Upload Staff APK Artifact
         uses: actions/upload-artifact@v4
@@ -98,9 +93,9 @@ jobs:
       - name: 📤 Upload Keystore Details
         uses: actions/upload-artifact@v4
         with:
-          name: Blancbeu-Keystore-Details
+          name: BeWell-Keystore-Details
           path: |
-            blancbeu.keystore
+            bewell.keystore
             sha_fingerprints.txt
 
       - name: 🚀 Create GitHub Release

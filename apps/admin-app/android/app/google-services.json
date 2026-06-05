@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "82974472508-ij2ttm651mmjri70u3r233rj7re06tii.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.bewell.admin",
+            "certificate_hash": "800faea751aa7656164b6bf08f794a658f4eae26"
+          }
+        },
+        {
           "client_id": "82974472508-c5qoh4lefebmiu9hondgggo0t2m72isl.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -42,6 +50,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "82974472508-t5osq24pnd0q18avhtaimpthfdej5ubh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.bewell.staff",
+            "certificate_hash": "800faea751aa7656164b6bf08f794a658f4eae26"
+          }
+        },
         {
           "client_id": "82974472508-c5qoh4lefebmiu9hondgggo0t2m72isl.apps.googleusercontent.com",
           "client_type": 3
