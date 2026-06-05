@@ -52,7 +52,8 @@
 		QrCode,
 		Banknote,
 		Gem,
-		Ticket
+		Ticket,
+		Download
 	} from 'lucide-svelte';
 	import { browser } from '$app/environment';
 
@@ -76,7 +77,7 @@
 	}
 
 	async function generatePaymentQR(amount: number) {
-		const upiString = `upi://pay?pa=mab0450550a0279816@yesbank&pn=Bewell Family Salon&am=${amount}&cu=INR`;
+		const upiString = `upi://pay?pa=mab0450550a0279816@yesbank&am=${amount}&cu=INR`;
 		try {
 			const QRCode = (await import('qrcode')).default;
 			qrCodeUrl = await QRCode.toDataURL(upiString, {
@@ -1301,9 +1302,16 @@
 							<div class="qr-payment-container" transition:slide>
 								<div class="qr-box">
 									{#if qrCodeUrl}
-										<img src={qrCodeUrl} alt="Payment QR Code" class="payment-qr" />
+										<div class="qr-wrapper">
+											<div class="qr-payee-info">
+												<span class="payee-name">Bewell Family Salon</span>
+												<span class="payee-amount">{fmt(paymentType === 'token' ? 50 : finalTotal)}</span>
+											</div>
+											<img src={qrCodeUrl} alt="Payment QR Code" class="payment-qr" />
+										</div>
 										<a href={qrCodeUrl} download="bewellsalon-payment-qr.png" class="qr-download-btn">
-											Download QR
+											<Download size={18} />
+											Download QR Code
 										</a>
 									{:else}
 										<div class="qr-placeholder">Generating...</div>
@@ -3813,9 +3821,39 @@
 		border-radius: 12px;
 		padding: 8px;
 		background: white;
-		margin-bottom: 12px;
 		max-width: 100%;
 		height: auto;
+		display: block;
+		margin: 0 auto;
+	}
+
+	.qr-wrapper {
+		background: white;
+		padding: 16px;
+		border-radius: 16px;
+		margin-bottom: 20px;
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+		text-align: center;
+	}
+
+	.qr-payee-info {
+		margin-bottom: 12px;
+		color: #111;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.payee-name {
+		font-weight: 700;
+		font-size: 1.1rem;
+	}
+
+	.payee-amount {
+		font-family: var(--font-heading);
+		font-size: 1.5rem;
+		font-weight: 700;
+		color: #25d366;
 	}
 
 	.qr-placeholder {
@@ -3827,22 +3865,27 @@
 		align-items: center;
 		justify-content: center;
 		color: var(--color-text-secondary);
-		margin-bottom: 12px;
+		margin-bottom: 20px;
 	}
 
 	.qr-download-btn {
-		background: rgba(255, 255, 255, 0.1);
-		color: var(--color-text-primary);
-		padding: 8px 16px;
+		background: var(--gradient-gold);
+		color: black;
+		padding: 12px 24px;
 		border-radius: var(--radius-full);
-		font-size: 0.9rem;
-		font-weight: 500;
+		font-size: 1rem;
+		font-weight: 700;
 		text-decoration: none;
-		transition: all 0.2s;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		transition: transform 0.2s, box-shadow 0.2s;
+		box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
 	}
 
 	.qr-download-btn:hover {
-		background: rgba(255, 255, 255, 0.2);
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
 	}
 
 	.upi-box {
