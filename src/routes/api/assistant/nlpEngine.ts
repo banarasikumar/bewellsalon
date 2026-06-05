@@ -186,9 +186,10 @@ const intents: Intent[] = [
 	},
 	{
 		id: 'booking',
-		keywords: ['book', 'appointment', 'schedule', 'reservation'],
+		keywords: ['book', 'appointment', 'schedule', 'reservation', 'haircut', 'hair', 'cut', 'service', 'facial', 'massage', 'makeup', 'color', 'colour', 'spa'],
 		response: () => ({
-			text: "I can help with that! You can easily book an appointment by tapping the 'Book' tab at the bottom of your screen. What service were you thinking of?"
+			text: "I'd be happy to help you set up an appointment! Please tap the button below to choose your service, date, and time.",
+			action: { label: 'Book Now', path: '/booking' }
 		})
 	},
 	{
@@ -266,6 +267,22 @@ export function processQuery(message: string): {
 	action?: { label: string; path: string };
 	mapEmbed?: string;
 } {
+	const textLower = message.toLowerCase();
+	
+	const bookPhrases = ["you do that", "do it", "book it"];
+	const exactWords = ["yes", "ok", "okay", "sure", "yeah"];
+	const words = textLower.replace(/[^a-z0-9\s]/g, '').split(/\s+/);
+	
+	const hasBookPhrase = bookPhrases.some(phrase => textLower.includes(phrase));
+	const hasExactWord = words.length <= 2 && words.some(w => exactWords.includes(w));
+
+	if (hasBookPhrase || hasExactWord) {
+		return {
+			text: "I'm currently in offline mode so I can't book it automatically for you, but you can easily do it yourself by tapping the button below!",
+			action: { label: 'Book Now', path: '/booking' }
+		};
+	}
+
 	const tokens = tokenizeAndNormalize(message);
 
 	if (tokens.length === 0) {
