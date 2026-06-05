@@ -33,6 +33,35 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:82974472508:android:4e9b2b42fe150f9b36c639",
+        "android_client_info": {
+          "package_name": "in.bewell.staff"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "82974472508-c5qoh4lefebmiu9hondgggo0t2m72isl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-aV49LqWW-dE9i4xh2GtjKpDUs4dbqjU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "82974472508-c5qoh4lefebmiu9hondgggo0t2m72isl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
