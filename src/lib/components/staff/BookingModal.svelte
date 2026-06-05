@@ -1345,9 +1345,9 @@
 													paymentStatus:
 														existingBooking.payment?.status === 'paid' ? 'paid' : 'unpaid'
 												});
-											} catch (e) {
+											} catch (e: any) {
 												console.error('Invoice generation failed:', e);
-												showToast('Failed to generate invoice', 'error');
+												showToast(`Failed to generate invoice: ${e?.message || 'Unknown error'}`, 'error');
 											} finally {
 												isGeneratingInvoice = false;
 											}

@@ -41,8 +41,8 @@ export async function generateAndShareInvoice(params: {
 			import('jspdf'),
 			import('jspdf-autotable')
 		]);
-		cachedJsPDF = jsPDFModule.default;
-		cachedAutoTable = autoTableModule.default;
+		cachedJsPDF = jsPDFModule.default || jsPDFModule;
+		cachedAutoTable = autoTableModule.default || autoTableModule;
 	}
 
 	const jsPDF = cachedJsPDF;
@@ -275,7 +275,7 @@ export async function generateAndShareInvoice(params: {
 	const tableRight = px(639);
 
 	// Compact currency formatter: ₹56,415 or ₹999.50 (Indian comma separators)
-	const fmt = (n: number) => `\u20B9${n.toLocaleString('en-IN')}`;
+	const fmt = (n: any) => `\u20B9${(Number(n) || 0).toLocaleString('en-IN')}`;
 
 	const tableBody = services.map((s) => [s.name, fmt(s.originalPrice || s.price), fmt(s.price)]);
 
