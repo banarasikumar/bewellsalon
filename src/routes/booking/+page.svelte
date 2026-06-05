@@ -1302,25 +1302,38 @@
 							<div class="qr-payment-container" transition:slide>
 								<div class="qr-box">
 									{#if qrCodeUrl}
-										<div class="qr-wrapper">
-											<div class="pay-amount-header">
-												<span class="pay-amount-label">Pay Amount</span>
-												<span class="payee-amount">{fmt(paymentType === 'token' ? 50 : finalTotal)}</span>
-											</div>
-											<p class="upi-hint-text">Pay with any UPI app</p>
-											
-											<img src={qrCodeUrl} alt="Payment QR Code" class="payment-qr" />
-											
-											<div class="upi-inline-box">
-												<span class="upi-label-inline">UPI ID:</span>
-												<span class="upi-inline-text">mab0450550a0279816@yesbank</span>
-												<button class="upi-copy-icon" on:click|preventDefault={copyUpiId}>
-													<FileText size={18} />
-												</button>
+										<div class="premium-qr-card">
+											<div class="premium-amount-section">
+												<span class="premium-amount-label">To Pay</span>
+												<span class="premium-amount-value">{fmt(paymentType === 'token' ? 50 : finalTotal)}</span>
 											</div>
 											
-											<div class="qr-payee-info">
-												<span class="payee-name">Anil Rammilan Yadav</span>
+											<p class="premium-hint">Scan & Pay with any UPI App</p>
+											
+											<div class="premium-qr-container">
+												<img src={qrCodeUrl} alt="Payment QR Code" class="premium-qr-img" />
+											</div>
+											
+											<div class="premium-divider"></div>
+
+											<div class="premium-payee-info">
+												<div class="premium-payee-avatar">
+													<span>A</span>
+												</div>
+												<div class="premium-payee-details">
+													<span class="premium-payee-name">Anil Rammilan Yadav <ShieldCheck size={14} class="verified-icon" /></span>
+													<span class="premium-payee-subtitle">Verified Merchant</span>
+												</div>
+											</div>
+
+											<div class="premium-upi-box">
+												<span class="premium-upi-label">UPI ID</span>
+												<div class="premium-upi-row">
+													<span class="premium-upi-text">mab0450550a0279816@yesbank</span>
+													<button class="premium-copy-btn" on:click|preventDefault={copyUpiId}>
+														<FileText size={16} />
+													</button>
+												</div>
 											</div>
 										</div>
 										<a href={qrCodeUrl} download="bewellsalon-payment-qr.png" class="qr-download-btn">
@@ -3831,99 +3844,173 @@
 		margin: 0 auto;
 	}
 
-	.qr-wrapper {
-		background: white;
-		padding: 16px;
-		border-radius: 16px;
-		margin-bottom: 20px;
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+	.premium-qr-card {
+		background: #ffffff;
+		border-radius: 24px;
+		padding: 24px;
+		margin-bottom: 24px;
+		box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
 		text-align: center;
+		position: relative;
+		overflow: hidden;
 	}
 
-	.pay-amount-header {
+	.premium-amount-section {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 4px;
-		margin-bottom: 8px;
-	}
-
-	.pay-amount-label {
-		font-size: 0.9rem;
-		color: #666;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		font-weight: 600;
-	}
-
-	.payee-amount {
-		font-family: var(--font-heading);
-		font-size: 1.8rem;
-		font-weight: 700;
-		color: #25d366;
-		margin-bottom: 0;
-	}
-
-	.qr-payee-info {
-		margin-top: 4px;
 		margin-bottom: 12px;
-		color: #111;
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
 	}
 
-	.upi-hint-text {
+	.premium-amount-label {
+		font-size: 0.85rem;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		color: #888;
+		font-weight: 700;
+		margin-bottom: 4px;
+	}
+
+	.premium-amount-value {
+		font-family: var(--font-heading);
+		font-size: 2.8rem;
+		font-weight: 800;
+		color: #111;
+		line-height: 1;
+	}
+
+	.premium-hint {
 		font-size: 0.95rem;
 		color: #666;
-		margin-bottom: 12px;
 		font-weight: 600;
+		margin-bottom: 20px;
 	}
 
-	.payee-name {
-		font-weight: 700;
-		font-size: 1.1rem;
+	.premium-qr-container {
+		background: #fff;
+		padding: 16px;
+		border-radius: 20px;
+		box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+		display: inline-block;
+		margin-bottom: 24px;
 	}
 
-	.upi-inline-box {
-		background: #f8f9fa;
-		border: 1px dashed #ccc;
-		border-radius: 8px;
-		padding: 10px 16px;
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		margin-top: 12px;
-		margin-bottom: 8px;
+	.premium-qr-img {
+		display: block;
+		width: 100%;
+		max-width: 220px;
+		height: auto;
+		border-radius: 12px;
 	}
 
-	.upi-label-inline {
-		font-weight: 600;
-		color: #555;
-		font-size: 1rem;
+	.premium-divider {
+		height: 1px;
+		background: rgba(0,0,0,0.06);
+		margin: 0 -24px 20px -24px;
 	}
 
-	.upi-inline-text {
-		font-family: monospace;
-		font-size: 1.1rem;
-		color: #111;
-		font-weight: 600;
-	}
-
-	.upi-copy-icon {
-		background: none;
-		border: none;
-		color: var(--color-accent-gold);
-		cursor: pointer;
-		padding: 4px;
+	.premium-payee-info {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: opacity 0.2s;
+		gap: 12px;
+		margin-bottom: 20px;
 	}
 
-	.upi-copy-icon:hover {
-		opacity: 0.8;
+	.premium-payee-avatar {
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		background: var(--gradient-gold);
+		color: black;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 800;
+		font-size: 1.2rem;
+	}
+
+	.premium-payee-details {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		text-align: left;
+	}
+
+	.premium-payee-name {
+		font-weight: 700;
+		font-size: 1.05rem;
+		color: #111;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	
+	:global(.verified-icon) {
+		color: #25d366;
+	}
+
+	.premium-payee-subtitle {
+		font-size: 0.8rem;
+		color: #888;
+		font-weight: 600;
+	}
+
+	.premium-upi-box {
+		background: #f8f9fa;
+		border-radius: 16px;
+		padding: 16px;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+
+	.premium-upi-label {
+		font-size: 0.85rem;
+		color: #666;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin-left: 4px;
+	}
+
+	.premium-upi-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		background: #fff;
+		padding: 12px 16px;
+		border-radius: 12px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+		border: 1px solid rgba(0,0,0,0.04);
+	}
+
+	.premium-upi-text {
+		font-family: monospace;
+		font-size: 1.05rem;
+		color: #111;
+		font-weight: 700;
+	}
+
+	.premium-copy-btn {
+		background: rgba(212, 175, 55, 0.1);
+		color: var(--color-accent-gold);
+		border: none;
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.premium-copy-btn:hover {
+		background: rgba(212, 175, 55, 0.2);
+		transform: scale(1.05);
 	}
 
 	.qr-placeholder {
