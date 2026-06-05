@@ -546,7 +546,7 @@ export async function generateAndShareInvoice(params: {
 	doc.setFont(headingFont, 'bold');
 	doc.setFontSize(14);
 	doc.setTextColor(140, 45, 80);
-	const line1Text = 'You came beautiful. You leave radiant.';
+	const line1Text = 'Art. Beauty. Bewell.';
 	const line1Width = doc.getTextWidth(line1Text);
 	const heartSize1 = 11;
 	const line1TotalW = line1Width + 3 + heartSize1;
