@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { tick } from 'svelte';
 	import { staffBookings } from '$lib/stores/staffData';
 	import { updateBookingStatus, updateBookingDetails } from '$lib/stores/adminData';
 	import { completeTimer } from '$lib/stores/serviceTimer';
@@ -402,6 +403,8 @@
 		if (!originalBooking) return;
 		try {
 			isGenerating = true;
+			await tick();
+			await new Promise(r => setTimeout(r, 50)); // Allow browser to paint overlay before heavy JS task
 
 			await generateAndShareInvoice({
 				booking: originalBooking,
@@ -483,15 +486,15 @@
 {#if !originalBooking}
 	<div class="loading-state">
 		<Loader size={120} message="Loading booking details..." />
-		<button class="s-btn s-btn-outline" onclick={() => goto('/staff/dashboard')}
-			>Back to Dashboard</button
+		<button class="s-btn s-btn-outline" onclick={() => goto('/staff/bookings')}
+			>Back to Bookings</button
 		>
 	</div>
 {:else}
 	<div class="summary-page s-stagger">
 		<!-- HEADER -->
 		<div class="summary-header">
-			<button class="back-btn" onclick={() => goto('/staff/dashboard')}>
+			<button class="back-btn" onclick={() => goto('/staff/bookings')}>
 				<svg
 					width="24"
 					height="24"
