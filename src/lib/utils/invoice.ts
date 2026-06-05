@@ -451,7 +451,7 @@ export async function generateAndShareInvoice(params: {
 	doc.setFontSize(9);
 	doc.setTextColor(100, 100, 100);
 	const payLines = doc.splitTextToSize(
-		'Payment accepted via Cash, UPI, Card, Net Banking, Cryptocurrency, E-Rupi & Pay Later.',
+		'Payment accepted via Cash & UPI.',
 		200
 	);
 	doc.text(payLines, leftCol, leftYOffset + 14);
@@ -516,50 +516,6 @@ export async function generateAndShareInvoice(params: {
 	//   FOOTER — Impressive call-to-action text
 	// ═══════════════════════════════════════════
 
-	// Helper: Render a heart as a canvas image for PDF (fonts don't have the glyph)
-	const renderHeartImage = (size: number, color: string): string => {
-		const c = document.createElement('canvas');
-		const s = size * 4; // high-DPI
-		c.width = s;
-		c.height = s;
-		const ctx = c.getContext('2d')!;
-		ctx.scale(4, 4);
-		ctx.fillStyle = color;
-		ctx.beginPath();
-		const w = size,
-			h = size;
-		const topY = h * 0.35;
-		ctx.moveTo(w / 2, h * 0.85);
-		ctx.bezierCurveTo(w * 0.1, h * 0.55, -w * 0.05, topY * 0.6, w * 0.25, topY * 0.35);
-		ctx.bezierCurveTo(w * 0.4, 0, w / 2, topY * 0.5, w / 2, topY);
-		ctx.moveTo(w / 2, h * 0.85);
-		ctx.bezierCurveTo(w * 0.9, h * 0.55, w * 1.05, topY * 0.6, w * 0.75, topY * 0.35);
-		ctx.bezierCurveTo(w * 0.6, 0, w / 2, topY * 0.5, w / 2, topY);
-		ctx.fill();
-		return c.toDataURL('image/png');
-	};
-
-	const heartImg = renderHeartImage(18, '#d63384');
-
-	// Line 1: "You came beautiful. You leave radiant." + heart (close to text)
-	doc.setFont(headingFont, 'bold');
-	doc.setFontSize(14);
-	doc.setTextColor(140, 45, 80);
-	const line1Text = 'You came beautiful. You leave radiant.';
-	const line1Width = doc.getTextWidth(line1Text);
-	const heartSize1 = 11;
-	const line1TotalW = line1Width + 3 + heartSize1;
-	const line1X = (pageWidth - line1TotalW) / 2;
-	const line1Y = pageHeight - 48;
-	doc.text(line1Text, line1X, line1Y);
-	doc.addImage(
-		heartImg,
-		'PNG',
-		line1X + line1Width + 3,
-		line1Y - heartSize1 + 2,
-		heartSize1,
-		heartSize1
-	);
 
 	// Line 2: "We can't wait to pamper you again  •  Book your next visit at" + [bewellfamilysalon.in pill]
 	doc.setFont(bodyFont, 'normal');
