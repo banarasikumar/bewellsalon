@@ -66,8 +66,37 @@
 	let userPhone = '';
 	let userNotes = '';
 	let paymentType: 'free' | 'token' | 'full' | '' = ''; // Payment option
-	let selectedPaymentMethod = ''; // 'upi', 'card', 'crypto', 'netbanking', 'erupee'
-	let showUPIApps = false; // To toggle UPI apps list
+	let paymentConfirmed = false; // Checkbox state
+	let qrCodeUrl = '';
+
+	$: if (paymentType === 'token' || paymentType === 'full') {
+		paymentConfirmed = false;
+		const amount = paymentType === 'token' ? 50 : finalTotal;
+		generatePaymentQR(amount);
+	}
+
+	async function generatePaymentQR(amount: number) {
+		const upiString = `upi://pay?pa=mab0450550a0279816@yesbank&pn=Bewell Family Salon&am=${amount}&cu=INR`;
+		try {
+			const QRCode = (await import('qrcode')).default;
+			qrCodeUrl = await QRCode.toDataURL(upiString, {
+				width: 250,
+				margin: 1,
+				color: { dark: '#000000', light: '#ffffff' }
+			});
+		} catch (err) {
+			console.error('Failed to generate QR code', err);
+		}
+	}
+
+	async function copyUpiId() {
+		try {
+			await navigator.clipboard.writeText('mab0450550a0279816@yesbank');
+			showToastMessage('UPI ID Copied!');
+		} catch (err) {
+			console.error('Failed to copy', err);
+		}
+	}
 
 	// UI State
 	let isSubmitting = false;
@@ -587,89 +616,17 @@
 		isSubmitting = true;
 
 		try {
-			let razorpayPaymentId = null;
-			let razorpayOrderId = null;
 			let finalPaymentStatus = 'unpaid';
 
-			// RAZORPAY ONLINE FLOW
-			if (
-				$appSettings.defaultPaymentGateway === 'razorpay' &&
-				(paymentType === 'token' || paymentType === 'full')
-			) {
-				const checkoutAmount = paymentType === 'token' ? 50 : finalTotal;
-
-				// 1. Create order on server
-				const orderRes = await fetch('/api/razorpay/create-order', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ amount: checkoutAmount, receipt: `rcpt_${Date.now()}` })
-				});
-
-				if (!orderRes.ok) {
-					throw new Error('Failed to create Razorpay order');
+			if (paymentType === 'token' || paymentType === 'full') {
+				if (!paymentConfirmed) {
+					throw new Error('Please confirm your payment to proceed.');
 				}
-				const orderData = await orderRes.json();
-
-				// 2. Open Razorpay Checkout Modal
-				await new Promise((resolve, reject) => {
-					const options = {
-						key: env.PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
-						amount: orderData.amount,
-						currency: orderData.currency,
-						name: 'Bewell Salon',
-						description: 'Booking Payment',
-						order_id: orderData.orderId,
-						prefill: {
-							name: userName,
-							email: userEmail,
-							contact: userPhone
-						},
-						theme: {
-							color: '#D4AF37'
-						},
-						handler: async function (response: any) {
-							try {
-								// Verify signature
-								const verifyRes = await fetch('/api/razorpay/verify-payment', {
-									method: 'POST',
-									headers: { 'Content-Type': 'application/json' },
-									body: JSON.stringify({
-										razorpay_order_id: response.razorpay_order_id,
-										razorpay_payment_id: response.razorpay_payment_id,
-										razorpay_signature: response.razorpay_signature
-									})
-								});
-
-								if (!verifyRes.ok) {
-									reject(new Error('Payment verification failed'));
-									return;
-								}
-
-								razorpayPaymentId = response.razorpay_payment_id;
-								razorpayOrderId = response.razorpay_order_id;
-								finalPaymentStatus = 'paid';
-								resolve(true);
-							} catch (err) {
-								reject(new Error('Payment verification encountered a network error.'));
-							}
-						},
-						modal: {
-							ondismiss: function () {
-								reject(new Error('Payment cancelled by user'));
-							}
-						}
-					};
-					try {
-						const rzp = new (window as any).Razorpay(options);
-						rzp.open();
-					} catch (err) {
-						reject(new Error('Payment gateway failed to load. Please check your connection.'));
-					}
-				});
-			} else {
-				// Simulate network delay for nice interaction for offline flow
-				await new Promise((r) => setTimeout(r, 1500));
+				finalPaymentStatus = 'paid';
 			}
+
+			// Simulate network delay
+			await new Promise((r) => setTimeout(r, 1500));
 
 			const bookingData = {
 				services: $cart.map((i) => ({ name: i.name, price: i.price, id: i.id })),
@@ -690,16 +647,11 @@
 				},
 				payment: {
 					type: paymentType,
-					method:
-						paymentType === 'free'
-							? 'pay_at_salon'
-							: $appSettings.defaultPaymentGateway === 'razorpay'
-								? 'razorpay'
-								: selectedPaymentMethod,
+					method: paymentType === 'free' ? 'pay_at_salon' : 'qr',
 					amount: paymentType === 'token' ? 50 : paymentType === 'full' ? finalTotal : 0,
 					status: finalPaymentStatus,
-					razorpay_payment_id: razorpayPaymentId,
-					razorpay_order_id: razorpayOrderId,
+					razorpay_payment_id: null,
+					razorpay_order_id: null,
 					beuCashApplied: actualBeuCashApplied
 				},
 				userId: auth.currentUser?.uid || null, // Save User ID for fetching
@@ -862,7 +814,6 @@
 </script>
 
 <svelte:head>
-	<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </svelte:head>
 
 <div class="booking-page min-h-screen">
@@ -1345,74 +1296,37 @@
 							</button>
 						</div>
 
-						<!-- INLINE SUB METHODS -->
+						<!-- INLINE SUB METHODS (QR CODE FLOW) -->
 						{#if paymentType === 'token' || paymentType === 'full'}
-							{#if $appSettings.defaultPaymentGateway !== 'razorpay'}
-								<div class="payment-sub-methods" transition:slide>
-									<div class="section-label-sm">
-										<h4>Select Payment Method</h4>
-									</div>
-									<div class="detailed-payment-grid">
-										<button
-											class="method-card {selectedPaymentMethod === 'upi' ? 'active' : ''}"
-											on:click={() => handlePaymentMethodSelect('upi')}
-										>
-											<Smartphone size={20} />
-											<span>UPI</span>
-										</button>
-										<button
-											class="method-card {selectedPaymentMethod === 'qr' ? 'active' : ''}"
-											on:click={() => handlePaymentMethodSelect('qr')}
-										>
-											<QrCode size={20} />
-											<span>QR</span>
-										</button>
-										<button
-											class="method-card {bouncingMethod === 'card' ? 'shake-anim' : ''}"
-											on:click={() => handlePaymentMethodSelect('card')}
-										>
-											<CreditCard size={20} />
-											<span>Card</span>
-										</button>
-										<button
-											class="method-card {bouncingMethod === 'erupee' ? 'shake-anim' : ''}"
-											on:click={() => handlePaymentMethodSelect('erupee')}
-										>
-											<Banknote size={20} />
-											<span>e-Rupee</span>
-										</button>
-										<button
-											class="method-card {bouncingMethod === 'crypto' ? 'shake-anim' : ''}"
-											on:click={() => handlePaymentMethodSelect('crypto')}
-										>
-											<Bitcoin size={20} />
-											<span>Crypto</span>
-										</button>
-										<button
-											class="method-card {bouncingMethod === 'paylater' ? 'shake-anim' : ''}"
-											on:click={() => handlePaymentMethodSelect('paylater')}
-										>
-											<Clock size={20} />
-											<span>Pay Later</span>
-										</button>
-									</div>
-
-									{#if showUPIApps && selectedPaymentMethod === 'upi'}
-										<div class="upi-apps-row" transition:slide>
-											<div class="upi-app-icon">GPay</div>
-											<div class="upi-app-icon">PhonePe</div>
-											<div class="upi-app-icon">Paytm</div>
-											<div class="upi-app-icon">BHIM</div>
-										</div>
+							<div class="qr-payment-container" transition:slide>
+								<div class="qr-box">
+									{#if qrCodeUrl}
+										<img src={qrCodeUrl} alt="Payment QR Code" class="payment-qr" />
+										<a href={qrCodeUrl} download="bewellsalon-payment-qr.png" class="qr-download-btn">
+											Download QR
+										</a>
+									{:else}
+										<div class="qr-placeholder">Generating...</div>
 									{/if}
 								</div>
-							{:else}
-								<p
-									style="color: var(--color-text-secondary); font-weight: 500; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; margin: 8px 0 0; opacity: 0.75;"
-								>
-									<ShieldCheck size={15} /> Secure Online Checkout
-								</p>
-							{/if}
+
+								<div class="upi-box">
+									<p class="upi-label">Or pay using UPI ID:</p>
+									<button class="upi-copy-btn" on:click|preventDefault={copyUpiId}>
+										<span>mab0450550a0279816@yesbank</span>
+										<FileText size={16} />
+									</button>
+								</div>
+
+								<div class="payment-confirmation-box">
+									<label class="checkbox-label">
+										<input type="checkbox" bind:checked={paymentConfirmed} />
+										<div class="checkbox-custom"></div>
+										<span class="checkbox-text">I confirm I have made the payment</span>
+									</label>
+									<p class="warning-text">(Only choose if you have successfully made the payment)</p>
+								</div>
+							</div>
 						{/if}
 
 						{#if paymentType === 'token'}
@@ -1442,9 +1356,7 @@
 						class="btn-primary-shiny w-full text-lg py-4"
 						disabled={isSubmitting ||
 							paymentType === '' ||
-							(paymentType !== 'free' &&
-								$appSettings.defaultPaymentGateway !== 'razorpay' &&
-								!selectedPaymentMethod)}
+							((paymentType === 'token' || paymentType === 'full') && !paymentConfirmed)}
 						on:click={submitBooking}
 					>
 						{#if isSubmitting}
@@ -3879,5 +3791,138 @@
 	:global([data-theme='glitch']) .coupon-card::before,
 	:global([data-theme='glitch']) .coupon-card::after {
 		background: #fdfdfd;
+	}
+
+	.qr-payment-container {
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: var(--radius-lg);
+		padding: 24px;
+		margin-top: 16px;
+		text-align: center;
+	}
+
+	.qr-box {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin-bottom: 20px;
+	}
+
+	.payment-qr {
+		border-radius: 12px;
+		padding: 8px;
+		background: white;
+		margin-bottom: 12px;
+		max-width: 100%;
+		height: auto;
+	}
+
+	.qr-placeholder {
+		width: 200px;
+		height: 200px;
+		border: 2px dashed rgba(255, 255, 255, 0.2);
+		border-radius: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--color-text-secondary);
+		margin-bottom: 12px;
+	}
+
+	.qr-download-btn {
+		background: rgba(255, 255, 255, 0.1);
+		color: var(--color-text-primary);
+		padding: 8px 16px;
+		border-radius: var(--radius-full);
+		font-size: 0.9rem;
+		font-weight: 500;
+		text-decoration: none;
+		transition: all 0.2s;
+	}
+
+	.qr-download-btn:hover {
+		background: rgba(255, 255, 255, 0.2);
+	}
+
+	.upi-box {
+		margin-bottom: 24px;
+	}
+
+	.upi-label {
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+		margin-bottom: 8px;
+	}
+
+	.upi-copy-btn {
+		background: rgba(212, 175, 55, 0.1);
+		color: var(--color-accent-gold);
+		border: 1px dashed var(--color-accent-gold);
+		padding: 10px 16px;
+		border-radius: var(--radius-md);
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-family: monospace;
+		font-size: 1.1rem;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.upi-copy-btn:hover {
+		background: rgba(212, 175, 55, 0.2);
+	}
+
+	.payment-confirmation-box {
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		padding-top: 20px;
+	}
+
+	.checkbox-label {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		cursor: pointer;
+		margin-bottom: 8px;
+	}
+
+	.checkbox-label input {
+		display: none;
+	}
+
+	.checkbox-custom {
+		width: 24px;
+		height: 24px;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-radius: 6px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s;
+	}
+
+	.checkbox-label input:checked + .checkbox-custom {
+		background: var(--color-accent-gold);
+		border-color: var(--color-accent-gold);
+	}
+
+	.checkbox-label input:checked + .checkbox-custom::after {
+		content: '✓';
+		color: black;
+		font-weight: bold;
+		font-size: 16px;
+	}
+
+	.checkbox-text {
+		font-weight: 600;
+		font-size: 1rem;
+	}
+
+	.warning-text {
+		color: #ff4d4d;
+		font-size: 0.8rem;
+		opacity: 0.8;
 	}
 </style>
