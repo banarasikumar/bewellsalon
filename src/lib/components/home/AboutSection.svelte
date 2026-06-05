@@ -5,7 +5,7 @@
 	<div class="section-header">
 		<h2 class="section-title">
 			<span class="title-decoration">✨</span>
-			About Blancbeu
+			About Bewell
 			<span class="title-decoration">✨</span>
 		</h2>
 		<p class="section-subtitle">Where Beauty Meets Excellence</p>
@@ -13,8 +13,8 @@
 
 	<!-- Premium Badge -->
 	<div class="premium-badge">
-		<span class="badge-icon">👑</span>
-		<span class="badge-text">Ranchi's Newest & Most Premium Beauty Destination</span>
+		<span class="badge-icon">⭐</span>
+		<span class="badge-text">Bhandup's Top-Rated Salon & Tattoo Studio (4.8 Stars)</span>
 	</div>
 
 	<div class="cards-grid">
@@ -23,10 +23,10 @@
 			<div class="card-icon">🏆</div>
 			<h3>Our Story</h3>
 			<p>
-				<span class="highlight-gold">Blancbeu Family Beauty Salon</span> —
-				<span class="highlight-shimmer">Ranchi's newest premium destination</span> for beauty &
-				wellness. We've set a <span class="highlight-white">new standard of excellence</span> with world-class
-				care, luxury products, and unmatched service.
+				<span class="highlight-gold">Bewell Family Salon & Tattoos</span> is
+				<span class="highlight-shimmer">Bhandup West's most welcoming neighborhood spot</span>.
+				Backed by 231+ reviews, we combine a <span class="highlight-white">relaxed atmosphere</span>
+				with high hygiene standards, professional expertise, and incredible value for money.
 			</p>
 		</div>
 
@@ -35,17 +35,16 @@
 			<div class="card-icon">💎</div>
 			<h3>Our Promise</h3>
 			<p>
-				You deserve to feel <span class="highlight-shimmer">special & extraordinary</span>. We
-				transform how you feel with <span class="highlight-white">luxurious treatments</span>
-				in a relaxing sanctuary. <span class="highlight-gold">You're family here</span> — your glow is
-				our pride.
+				We promise exceptional service with <span class="highlight-shimmer">minimal wait times</span>.
+				Whether you're here for a haircut, spa day, or a new tattoo, our attentive staff ensures you're
+				<span class="highlight-white">never disappointed</span>. Enjoy our <span class="highlight-gold">pocket-friendly luxury</span> and leave feeling your best.
 			</p>
 		</div>
 	</div>
 
 	<div class="highlights-pills">
 		<div class="pill premium">
-			<span>🥇</span> Top Rated in Ranchi
+			<span>🥇</span> Top Rated in Bhandup West
 		</div>
 		<div class="pill">
 			<span>👩‍🎨</span> Expert Stylists
@@ -61,9 +60,8 @@
 	<div class="address-card">
 		<div class="address-icon">📍</div>
 		<address>
-			<strong>Blancbeu Family Beauty Salon</strong><br />
-			4th Floor, Victory Mall, Rangrej Gali, Saraswati Market,<br />
-			Upper Bazar, Ranchi, Jharkhand 834001, India
+			<strong>Bewell Family Salon</strong><br />
+			Shop 2/3, Master Niwas, Quarry Rd,<br />near Mangatram petrol pump, Ganesh Nagar, Bhandup West, Mumbai, Maharashtra 400078
 		</address>
 	</div>
 </section>
