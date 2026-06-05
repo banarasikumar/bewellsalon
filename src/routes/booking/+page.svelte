@@ -1303,12 +1303,18 @@
 								<div class="qr-box">
 									{#if qrCodeUrl}
 										<div class="qr-wrapper">
+											<p class="upi-hint-text">Pay with any UPI app</p>
 											<img src={qrCodeUrl} alt="Payment QR Code" class="payment-qr" />
 											<div class="qr-payee-info">
 												<span class="payee-name">Anil Rammilan Yadav</span>
 												<span class="payee-amount">{fmt(paymentType === 'token' ? 50 : finalTotal)}</span>
 											</div>
-											<p class="upi-hint-text">Pay with any UPI app</p>
+											<div class="upi-inline-box">
+												<span class="upi-inline-text">mab0450550a0279816@yesbank</span>
+												<button class="upi-copy-icon" on:click|preventDefault={copyUpiId}>
+													<FileText size={16} />
+												</button>
+											</div>
 										</div>
 										<a href={qrCodeUrl} download="bewellsalon-payment-qr.png" class="qr-download-btn">
 											<Download size={18} />
@@ -1317,14 +1323,6 @@
 									{:else}
 										<div class="qr-placeholder">Generating...</div>
 									{/if}
-								</div>
-
-								<div class="upi-box">
-									<p class="upi-label">Or pay using UPI ID:</p>
-									<button class="upi-copy-btn" on:click|preventDefault={copyUpiId}>
-										<span>mab0450550a0279816@yesbank</span>
-										<FileText size={16} />
-									</button>
 								</div>
 
 								<div class="payment-confirmation-box">
@@ -3837,7 +3835,7 @@
 
 	.qr-payee-info {
 		margin-top: 12px;
-		margin-bottom: 0;
+		margin-bottom: 12px;
 		color: #111;
 		display: flex;
 		flex-direction: column;
@@ -3845,10 +3843,10 @@
 	}
 
 	.upi-hint-text {
-		font-size: 0.85rem;
+		font-size: 0.95rem;
 		color: #666;
-		margin-top: 8px;
-		font-weight: 500;
+		margin-bottom: 12px;
+		font-weight: 600;
 	}
 
 	.payee-name {
@@ -3861,6 +3859,39 @@
 		font-size: 1.5rem;
 		font-weight: 700;
 		color: #25d366;
+	}
+
+	.upi-inline-box {
+		background: #f8f9fa;
+		border: 1px dashed #ccc;
+		border-radius: 8px;
+		padding: 8px 12px;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		margin-top: 8px;
+	}
+
+	.upi-inline-text {
+		font-family: monospace;
+		font-size: 0.95rem;
+		color: #444;
+	}
+
+	.upi-copy-icon {
+		background: none;
+		border: none;
+		color: var(--color-accent-gold);
+		cursor: pointer;
+		padding: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: opacity 0.2s;
+	}
+
+	.upi-copy-icon:hover {
+		opacity: 0.8;
 	}
 
 	.qr-placeholder {
@@ -3895,34 +3926,6 @@
 		box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
 	}
 
-	.upi-box {
-		margin-bottom: 24px;
-	}
-
-	.upi-label {
-		color: var(--color-text-secondary);
-		font-size: 0.9rem;
-		margin-bottom: 8px;
-	}
-
-	.upi-copy-btn {
-		background: rgba(212, 175, 55, 0.1);
-		color: var(--color-accent-gold);
-		border: 1px dashed var(--color-accent-gold);
-		padding: 10px 16px;
-		border-radius: var(--radius-md);
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		font-family: monospace;
-		font-size: 1.1rem;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.upi-copy-btn:hover {
-		background: rgba(212, 175, 55, 0.2);
-	}
 
 	.payment-confirmation-box {
 		border-top: 1px solid rgba(255, 255, 255, 0.1);
