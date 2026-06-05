@@ -425,17 +425,16 @@ export async function generateAndShareInvoice(params: {
 		doc.setTextColor(64, 64, 64);
 		doc.text('Bewell Family Salon', qrX + qrSize / 2, qrY + qrSize + 10, { align: 'center' });
 
-		// "Rina Kumari" below salon name
-		doc.setFont(bodyFont, 'bold');
-		doc.setFontSize(9);
-		doc.setTextColor(64, 64, 64);
-		doc.text('Rina Kumari', qrX + qrSize / 2, qrY + qrSize + 22, { align: 'center' });
+		// "Anil Rammilan Yadav" below salon name
+		doc.setFont(headingFont, 'normal');
+		doc.setFontSize(8.5);
+		doc.setTextColor(80, 80, 80);
+		doc.text('Anil Rammilan Yadav', qrX + qrSize / 2, qrY + qrSize + 22, { align: 'center' });
 
 		// UPI ID below name
-		doc.setFont(bodyFont, 'bold');
-		doc.setFontSize(8);
-		doc.setTextColor(80, 80, 80);
-		doc.text('UPI ID: Q714475106@ybl', qrX + qrSize / 2, qrY + qrSize + 33, { align: 'center' });
+		doc.setFont(bodyFont, 'normal');
+		doc.setFontSize(7.5);
+		doc.text('UPI ID: mab0450550a0279816@yesbank', qrX + qrSize / 2, qrY + qrSize + 33, { align: 'center' });
 
 		leftYOffset = qrY + qrSize + 70;
 	} catch (err) {
