@@ -41,20 +41,6 @@ jobs:
           mkdir -p apps/staff-app/android/app/src/main/assets
           mkdir -p apps/admin-app/android/app/src/main/assets
 
-      - name: 🔐 Inject Firebase Services (Staff App)
-        # GitHub action will create the google-services.json file using the base64 encoded string stored in GitHub Secrets.
-        # You MUST configure a GitHub Secret named FIREBASE_STAFF_SERVICES_B64 containing the Base64 of the google-services.json file.
-        run: |
-          mkdir -p apps/staff-app/android/app
-          echo "${{ secrets.FIREBASE_STAFF_SERVICES_B64 }}" | base64 --decode > apps/staff-app/android/app/google-services.json
-        continue-on-error: true # Continues even if secret is missing (build will succeed, but push will fail on device)
-
-      - name: 🔐 Inject Firebase Services (Admin App)
-        # You MUST configure a GitHub Secret named FIREBASE_ADMIN_SERVICES_B64 containing the Base64 of the google-services.json file.
-        run: |
-          mkdir -p apps/admin-app/android/app
-          echo "${{ secrets.FIREBASE_ADMIN_SERVICES_B64 }}" | base64 --decode > apps/admin-app/android/app/google-services.json
-        continue-on-error: true
 
       - name: 🔄 Sync Capacitor Shells
         run: |
