@@ -14,6 +14,7 @@
 	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
 	import { showToast } from '$lib/stores/toast';
+	import Loader from '$lib/components/ui/Loader.svelte';
 	import { auth } from '$lib/firebase';
 	import type { Booking, AppUser } from '$lib/stores/adminData';
 	import { goto } from '$app/navigation';
@@ -54,6 +55,7 @@
 
 	let selectedServices = $state<OrderItem[]>([]);
 	let isSubmitting = $state(false);
+	let isGeneratingInvoice = $state(false);
 
 	// Dropdown states
 	let isCatalogOpen = $state(false);
@@ -1321,39 +1323,54 @@
 									</button>
 									<button
 										class="s-btn s-btn-lg action-btn invoice-btn"
+										disabled={isGeneratingInvoice}
 										onclick={async () => {
-											const { generateAndShareInvoice } = await import('$lib/utils/invoice');
-											await generateAndShareInvoice({
-												booking: existingBooking,
-												services: existingBooking.servicesList || [
-													{
-														name: existingBooking.serviceName || 'Service',
-														price: existingBooking.totalAmount || 0
-													}
-												],
-												totalAmount: existingBooking.totalAmount || existingBooking.price || 0,
-												discountAmount: existingBooking.discountAmount || 0,
-												extraCharge: existingBooking.extraCharge || 0,
-												couponCode: existingBooking.couponCode || null,
-												paymentStatus:
-													existingBooking.payment?.status === 'paid' ? 'paid' : 'unpaid'
-											});
+											try {
+												isGeneratingInvoice = true;
+												await tick();
+												await new Promise(r => setTimeout(r, 50));
+												const { generateAndShareInvoice } = await import('$lib/utils/invoice');
+												await generateAndShareInvoice({
+													booking: existingBooking,
+													services: existingBooking.servicesList || [
+														{
+															name: existingBooking.serviceName || 'Service',
+															price: existingBooking.totalAmount || 0
+														}
+													],
+													totalAmount: existingBooking.totalAmount || existingBooking.price || 0,
+													discountAmount: existingBooking.discountAmount || 0,
+													extraCharge: existingBooking.extraCharge || 0,
+													couponCode: existingBooking.couponCode || null,
+													paymentStatus:
+														existingBooking.payment?.status === 'paid' ? 'paid' : 'unpaid'
+												});
+											} catch (e) {
+												console.error('Invoice generation failed:', e);
+												showToast('Failed to generate invoice', 'error');
+											} finally {
+												isGeneratingInvoice = false;
+											}
 										}}
 									>
-										<svg
-											width="18"
-											height="18"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-										>
-											<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-											<polyline points="14 2 14 8 20 8" />
-											<line x1="16" y1="13" x2="8" y2="13" />
-											<line x1="16" y1="17" x2="8" y2="17" />
-										</svg>
-										Send Invoice
+										{#if isGeneratingInvoice}
+											<span class="spinner"></span> Generating...
+										{:else}
+											<svg
+												width="18"
+												height="18"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+											>
+												<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+												<polyline points="14 2 14 8 20 8" />
+												<line x1="16" y1="13" x2="8" y2="13" />
+												<line x1="16" y1="17" x2="8" y2="17" />
+											</svg>
+											Send Invoice
+										{/if}
 									</button>
 								</div>
 							</div>
@@ -1522,6 +1539,15 @@
 							</div>
 						{/if}
 					</div>
+				</div>
+			</div>
+		{/if}
+		
+		{#if isGeneratingInvoice}
+			<div class="generating-overlay">
+				<div class="generating-card">
+					<Loader size={120} message="Generating Invoice..." />
+					<p class="overlay-subtext">This will open a share sheet in a moment</p>
 				</div>
 			</div>
 		{/if}
@@ -3226,5 +3252,66 @@
 
 	.mt-2 {
 		margin-top: 8px;
+	}
+
+	/* Generating Overlay */
+	.generating-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.45);
+		backdrop-filter: blur(4px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 9999;
+		animation: fadeIn 0.2s ease;
+	}
+
+	.generating-card {
+		background: white;
+		border-radius: 20px;
+		padding: 32px 40px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+		animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	}
+
+	.overlay-subtext {
+		margin-top: 16px;
+		color: #666;
+		font-size: 14px;
+		text-align: center;
+	}
+
+	.spinner {
+		display: inline-block;
+		width: 16px;
+		height: 16px;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-radius: 50%;
+		border-top-color: white;
+		animation: s-spin 1s ease-in-out infinite;
+		margin-right: 8px;
+	}
+
+	@keyframes scaleUp {
+		from {
+			opacity: 0;
+			transform: scale(0.9);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+	@keyframes s-spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>
