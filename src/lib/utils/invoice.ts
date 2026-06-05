@@ -175,7 +175,7 @@ export async function generateAndShareInvoice(params: {
 	doc.setFont(bodyFont, 'italic');
 	doc.setFontSize(8.5);
 	doc.setTextColor(180, 70, 110);
-	doc.text('Redefining Elegance', px(640), py(174), { align: 'right' });
+	doc.text('Style, Care & Confidence', px(640), py(174), { align: 'right' });
 
 	doc.setFont(bodyFont, 'normal');
 	doc.setFontSize(7);
