@@ -11,7 +11,11 @@ const config: CapacitorConfig = {
 	server: {
 		url: process.env.CAPACITOR_SERVER_URL || 'https://www.bewellfamilysalon.in/staff',
 		cleartext: true,
-		errorPath: 'offline.html'
+		errorPath: 'offline.html',
+		allowNavigation: [
+			'bewellfamilysalon.in',
+			'*.bewellfamilysalon.in'
+		]
 	},
 
 	android: {
