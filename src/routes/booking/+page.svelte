@@ -1303,17 +1303,24 @@
 								<div class="qr-box">
 									{#if qrCodeUrl}
 										<div class="qr-wrapper">
-											<p class="upi-hint-text">Pay with any UPI app</p>
-											<img src={qrCodeUrl} alt="Payment QR Code" class="payment-qr" />
-											<div class="qr-payee-info">
-												<span class="payee-name">Anil Rammilan Yadav</span>
+											<div class="pay-amount-header">
+												<span class="pay-amount-label">Pay Amount</span>
 												<span class="payee-amount">{fmt(paymentType === 'token' ? 50 : finalTotal)}</span>
 											</div>
+											<p class="upi-hint-text">Pay with any UPI app</p>
+											
+											<img src={qrCodeUrl} alt="Payment QR Code" class="payment-qr" />
+											
 											<div class="upi-inline-box">
+												<span class="upi-label-inline">UPI ID:</span>
 												<span class="upi-inline-text">mab0450550a0279816@yesbank</span>
 												<button class="upi-copy-icon" on:click|preventDefault={copyUpiId}>
-													<FileText size={16} />
+													<FileText size={18} />
 												</button>
+											</div>
+											
+											<div class="qr-payee-info">
+												<span class="payee-name">Anil Rammilan Yadav</span>
 											</div>
 										</div>
 										<a href={qrCodeUrl} download="bewellsalon-payment-qr.png" class="qr-download-btn">
@@ -3833,8 +3840,32 @@
 		text-align: center;
 	}
 
+	.pay-amount-header {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		margin-bottom: 8px;
+	}
+
+	.pay-amount-label {
+		font-size: 0.9rem;
+		color: #666;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		font-weight: 600;
+	}
+
+	.payee-amount {
+		font-family: var(--font-heading);
+		font-size: 1.8rem;
+		font-weight: 700;
+		color: #25d366;
+		margin-bottom: 0;
+	}
+
 	.qr-payee-info {
-		margin-top: 12px;
+		margin-top: 4px;
 		margin-bottom: 12px;
 		color: #111;
 		display: flex;
@@ -3854,28 +3885,29 @@
 		font-size: 1.1rem;
 	}
 
-	.payee-amount {
-		font-family: var(--font-heading);
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #25d366;
-	}
-
 	.upi-inline-box {
 		background: #f8f9fa;
 		border: 1px dashed #ccc;
 		border-radius: 8px;
-		padding: 8px 12px;
+		padding: 10px 16px;
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
-		margin-top: 8px;
+		margin-top: 12px;
+		margin-bottom: 8px;
+	}
+
+	.upi-label-inline {
+		font-weight: 600;
+		color: #555;
+		font-size: 1rem;
 	}
 
 	.upi-inline-text {
 		font-family: monospace;
-		font-size: 0.95rem;
-		color: #444;
+		font-size: 1.1rem;
+		color: #111;
+		font-weight: 600;
 	}
 
 	.upi-copy-icon {
