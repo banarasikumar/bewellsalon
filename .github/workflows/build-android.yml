@@ -2,6 +2,9 @@ name: Build Native Android Apps
 
 # Trigger the workflow manually via the GitHub Actions tab.
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
