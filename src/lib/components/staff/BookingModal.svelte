@@ -1327,6 +1327,29 @@
 										disabled={isGeneratingInvoice}
 										onclick={async () => {
 											try {
+												if (!existingBooking.userPhone) {
+													const newPhone = prompt('Client phone number is missing. Please enter a 10-digit phone number:');
+													if (!newPhone || newPhone.replace(/\D/g, '').length < 10) {
+														showToast('A valid phone number is required to send the invoice', 'error');
+														return;
+													}
+													const cleanedPhone = newPhone.replace(/\D/g, '').slice(-10);
+													existingBooking.userPhone = cleanedPhone;
+													
+													// Update booking in Firestore
+													await updateBookingDetails(existingBooking.id, { userPhone: cleanedPhone });
+													
+													// Update user profile in Firestore if it's a registered user
+													if (existingBooking.userId) {
+														const { doc, updateDoc } = await import('firebase/firestore');
+														const { db } = await import('$lib/firebase');
+														await updateDoc(doc(db, 'users', existingBooking.userId), {
+															phone: cleanedPhone,
+															phoneNumber: cleanedPhone
+														}).catch(e => console.warn('Failed to update user profile phone:', e));
+													}
+												}
+
 												isGeneratingInvoice = true;
 												await tick();
 												await new Promise(r => setTimeout(r, 50));
