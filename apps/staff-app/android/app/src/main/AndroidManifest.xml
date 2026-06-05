@@ -24,7 +24,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="staff.bewellfamilysalon.in" />
-                <data android:scheme="https" android:host="blancbeu-sveltekit.vercel.app" android:pathPrefix="/staff" />
+                <data android:scheme="https" android:host="www.bewellfamilysalon.in" android:pathPrefix="/staff" />
             </intent-filter>
         </activity>
 

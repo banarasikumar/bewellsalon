@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
 	// The Live Wrapper Configuration
 	webDir: 'www',
 	server: {
-		url: process.env.CAPACITOR_SERVER_URL || 'https://blancbeu-sveltekit.vercel.app/staff',
+		url: process.env.CAPACITOR_SERVER_URL || 'https://www.bewellfamilysalon.in/staff',
 		cleartext: true,
 		errorPath: 'offline.html'
 	},
