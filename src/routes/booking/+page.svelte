@@ -1327,13 +1327,7 @@
 											</div>
 
 											<div class="premium-payee-info">
-												<div class="premium-payee-avatar">
-													<span>A</span>
-												</div>
-												<div class="premium-payee-details">
-													<span class="premium-payee-name">Anil Rammilan Yadav <ShieldCheck size={14} class="verified-icon" /></span>
-													<span class="premium-payee-subtitle">Verified Merchant</span>
-												</div>
+												<span class="premium-payee-name">Anil Rammilan Yadav</span>
 											</div>
 										</div>
 										<a href={qrCodeUrl} download="bewellsalon-payment-qr.png" class="qr-download-btn">
@@ -3892,7 +3886,7 @@
 		border-radius: 20px;
 		box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
 		display: inline-block;
-		margin-bottom: 24px;
+		margin-bottom: 12px;
 	}
 
 	.premium-qr-img {
@@ -3917,43 +3911,12 @@
 		margin-bottom: 0;
 	}
 
-	.premium-payee-avatar {
-		width: 44px;
-		height: 44px;
-		border-radius: 50%;
-		background: var(--gradient-gold);
-		color: black;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-weight: 800;
-		font-size: 1.2rem;
-	}
-
-	.premium-payee-details {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		text-align: left;
-	}
-
 	.premium-payee-name {
 		font-weight: 700;
-		font-size: 1.05rem;
+		font-size: 1.15rem;
 		color: #111;
-		display: flex;
-		align-items: center;
-		gap: 4px;
-	}
-	
-	:global(.verified-icon) {
-		color: #25d366;
-	}
-
-	.premium-payee-subtitle {
-		font-size: 0.8rem;
-		color: #888;
-		font-weight: 600;
+		text-align: center;
+		display: block;
 	}
 
 	.premium-upi-box {
