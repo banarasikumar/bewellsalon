@@ -35,7 +35,7 @@ export default defineConfig({
 		]
 	},
 	optimizeDeps: {
-		include: ['jspdf-autotable']
+		include: ['jspdf-autotable', 'jspdf', 'qrcode']
 	},
 	ssr: {
 		noExternal: ['jspdf-autotable'],
