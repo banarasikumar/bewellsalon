@@ -1,7 +1,4 @@
 import type { Booking } from '$lib/stores/adminData';
-import jsPDFModule from 'jspdf';
-import autoTableModule from 'jspdf-autotable';
-import QRCode from 'qrcode';
 
 // ═══════════════════════════════════════════
 //   MODULE-LEVEL CACHE — Persist across calls
@@ -15,6 +12,9 @@ let cachedFonts: {
 	montserratBold: string | null;
 } | null = null;
 let cachedSvgBgDataUrl: string | null = null;
+let cachedJsPDF: any = null;
+let cachedAutoTable: any = null;
+let cachedQRCode: any = null;
 
 export async function generateAndShareInvoice(params: {
 	booking: Booking;
@@ -35,9 +35,18 @@ export async function generateAndShareInvoice(params: {
 		paymentStatus = 'unpaid'
 	} = params;
 
-	// 1. Load jsPDF + autoTable statically
-	const jsPDF = jsPDFModule.default || jsPDFModule;
-	const autoTable = autoTableModule.default || autoTableModule || (jsPDF as any).API?.autoTable;
+	// 1. Load jsPDF + autoTable (cached after first load)
+	if (!cachedJsPDF || !cachedAutoTable) {
+		const [jsPDFModule, autoTableModule] = await Promise.all([
+			import('jspdf'),
+			import('jspdf-autotable')
+		]);
+		cachedJsPDF = jsPDFModule.default || jsPDFModule;
+		cachedAutoTable = autoTableModule.default || autoTableModule || (cachedJsPDF as any).API?.autoTable;
+	}
+
+	const jsPDF = cachedJsPDF;
+	const autoTable = cachedAutoTable;
 	const doc = new jsPDF({ format: 'a4', unit: 'pt' });
 
 	const pageWidth = doc.internal.pageSize.getWidth(); // ~595pt
@@ -319,6 +328,8 @@ export async function generateAndShareInvoice(params: {
 	// — LEFT: UPI QR Code (top) —
 	let leftYOffset = finalY;
 	try {
+		if (!cachedQRCode) cachedQRCode = (await import('qrcode')).default;
+		const QRCode = cachedQRCode;
 		const upiUri = `upi://pay?pa=Q714475106@ybl&pn=Bewell Family Salon&mc=0000&mode=02&purpose=00&am=${totalAmount}&cu=INR&tn=${invoiceNum}`;
 		const qrDataUrl = await QRCode.toDataURL(upiUri, {
 			width: 200,
