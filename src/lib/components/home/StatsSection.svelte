@@ -6,10 +6,10 @@
 
 	const stats = [
 		{
-			value: 7,
-			label: 'Months of Excellence',
+			value: 6,
+			label: 'Years of Professional Care',
 			suffix: '+',
-			desc: 'Serving the community with premium beauty treatments'
+			desc: 'Delivering top-rated salon and tattoo services in Bhandup'
 		},
 		{
 			value: 1000,
@@ -40,7 +40,7 @@
 	<div class="section-header">
 		<h2 class="section-title">
 			<span class="title-decoration">✨</span>
-			Why Trust Blancbeu
+			Why Trust Bewell
 			<span class="title-decoration">✨</span>
 		</h2>
 		<p class="section-subtitle">Trusted by thousands for premium beauty care</p>
