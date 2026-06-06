@@ -5,7 +5,8 @@ import {
 	getRedirectResult,
 	GoogleAuthProvider,
 	signOut,
-	signInWithCustomToken
+	signInWithCustomToken,
+	signInWithCredential
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { showToast } from '$lib/stores/toast';
