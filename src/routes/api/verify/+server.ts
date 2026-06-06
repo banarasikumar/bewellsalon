@@ -4,11 +4,15 @@ import crypto from 'crypto';
 import admin from 'firebase-admin';
 
 // Secret token to secure the endpoint from unauthorized access (optional but recommended)
-const BOT_SECRET = process.env.BOT_SECRET || 'Bewell-bot-secret';
+const BOT_SECRET = process.env.BOT_SECRET || 'bwl_sec_a8b9f4e2d1c34987ba42f56e9c01d7b3';
 
 function isAuthorized(request: Request) {
-	// Basic auth check logic could go here
-	return true;
+	const authHeader = request.headers.get('Authorization');
+	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+		return false;
+	}
+	const token = authHeader.split(' ')[1];
+	return token === BOT_SECRET;
 }
 
 export const POST: RequestHandler = async ({ request }) => {

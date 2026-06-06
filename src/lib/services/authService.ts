@@ -17,7 +17,7 @@ import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { Browser } from '@capacitor/browser';
 import { saveToken } from '$lib/capacitor/pushService';
 
-const WHATSAPP_NUMBER = '918355955893';
+const WHATSAPP_NUMBER = '8578084865';
 const WHATSAPP_MESSAGE = '*Hi Bewell, please help me log in.*';
 const BOT_SECRET_KEY = 'X9vP2kL5jM8zQ4wN7cR3bT1f';
 
