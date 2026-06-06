@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
 	// The Live Wrapper Configuration
 	webDir: 'www',
 	server: {
-		url: process.env.CAPACITOR_SERVER_URL || 'https://staff.bewellfamilysalon.in/staff',
+		url: process.env.CAPACITOR_SERVER_URL || 'https://staff.bewellfamilysalon.in',
 		cleartext: true,
 		errorPath: 'offline.html',
 		allowNavigation: [
