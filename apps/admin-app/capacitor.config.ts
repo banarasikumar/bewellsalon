@@ -9,12 +9,14 @@ const config: CapacitorConfig = {
 	// The Live Wrapper Configuration
 	webDir: 'www',
 	server: {
-		url: process.env.CAPACITOR_SERVER_URL || 'https://www.bewellfamilysalon.in/admin',
+		url: process.env.CAPACITOR_SERVER_URL || 'https://admin.bewellfamilysalon.in/admin',
 		cleartext: true,
 		errorPath: 'offline.html',
 		allowNavigation: [
 			'bewellfamilysalon.in',
-			'*.bewellfamilysalon.in'
+			'*.bewellfamilysalon.in',
+			'accounts.google.com',
+			'*.firebaseapp.com'
 		]
 	},
 
