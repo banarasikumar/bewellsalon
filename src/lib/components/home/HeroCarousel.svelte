@@ -18,14 +18,14 @@
 			title: 'Art. Beauty. Bewell.',
 			subtitle: 'Step into a world of beauty and self-care.'
 		},
-		{
+		/* {
 			id: 2,
 			src: img2,
 			alt: 'Transformation You Can Trust',
 			eyebrow: 'YOUR STYLE, ELEVATED',
 			title: 'Transformation You Can Trust',
 			subtitle: 'Let your hair shine with confidence and style!'
-		},
+		}, */
 		{
 			id: 3,
 			src: img3,
