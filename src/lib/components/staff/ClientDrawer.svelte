@@ -3,6 +3,28 @@
 	import StatusBadge from '$lib/components/staff/StatusBadge.svelte';
 	import type { Booking } from '$lib/stores/adminData';
 
+	// Mask phone: show first 3 and last 2 digits, stars in between
+	function maskPhone(phone: string): string {
+		if (!phone) return '';
+		const digits = phone.replace(/\D/g, '');
+		if (digits.length <= 5) return '*'.repeat(digits.length);
+		return digits.slice(0, 3) + '*'.repeat(digits.length - 5) + digits.slice(-2);
+	}
+
+	// Mask email: show first 2 chars + stars + @domain
+	function maskEmail(email: string): string {
+		if (!email) return '';
+		const [local, domain] = email.split('@');
+		if (!domain || local.length <= 2) return '***@' + (domain || '***');
+		return local.slice(0, 2) + '*'.repeat(local.length - 2) + '@' + domain;
+	}
+
+	function triggerCall(phone: string) {
+		const a = document.createElement('a');
+		a.href = 'tel:' + phone;
+		a.click();
+	}
+
 	let {
 		isOpen = $bindable(false),
 		userId = '',
@@ -77,10 +99,10 @@
 				</div>
 				<h2 class="client-name">{userName || 'Guest'}</h2>
 				{#if userPhone}
-					<a href="tel:{userPhone}" class="client-contact">📞 {userPhone}</a>
+					<button class="client-contact" onclick={() => triggerCall(userPhone)}>📞 {maskPhone(userPhone)}</button>
 				{/if}
 				{#if userEmail}
-					<span class="client-email">{userEmail}</span>
+					<span class="client-email">{maskEmail(userEmail)}</span>
 				{/if}
 				<button class="drawer-close" onclick={close}>✕</button>
 			</div>
@@ -214,7 +236,10 @@
 	.client-contact {
 		font-size: var(--s-text-sm);
 		color: var(--s-accent);
-		text-decoration: none;
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
 		display: block;
 		font-weight: 500;
 	}

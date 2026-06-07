@@ -10,6 +10,14 @@
 	import SwipeButton from '$lib/components/staff/SwipeButton.svelte';
 	import Loader from '$lib/components/ui/Loader.svelte';
 
+	// Mask phone: show first 3 and last 2 digits, stars in between
+	function maskPhone(phone: string): string {
+		if (!phone) return '';
+		const digits = phone.replace(/\D/g, '');
+		if (digits.length <= 5) return '*'.repeat(digits.length);
+		return digits.slice(0, 3) + '*'.repeat(digits.length - 5) + digits.slice(-2);
+	}
+
 	// The booking ID from the URL
 	let bookingId = $derived(page.params.id);
 
@@ -428,7 +436,7 @@
 	async function generateQrForAmount(amount: number) {
 		const QRCode = (await import('qrcode')).default;
 		const invoiceNum = `INV-${String(bookingId).slice(0, 8).toUpperCase()}`;
-		const upiUri = `upi://pay?pa=Q714475106@ybl&pn=Bewell Family Salon&mc=0000&mode=02&purpose=00&am=${amount}&cu=INR&tn=${invoiceNum}`;
+		const upiUri = `upi://pay?pa=mab0450550a0279816@yesbank&pn=Bewell Family Salon&mc=0000&mode=02&purpose=00&am=${amount}&cu=INR&tn=${invoiceNum}`;
 
 		qrCodeDataUrl = await QRCode.toDataURL(upiUri, {
 			width: 300,
@@ -561,11 +569,15 @@
 					<h2>{originalBooking.userName || 'Guest Client'}</h2>
 					{#if originalBooking.userPhone}
 						<div class="phone-wrapper">
-							<p>📞 {originalBooking.userPhone}</p>
-							<a
-								href="tel:{originalBooking.userPhone}"
+							<p>📞 {maskPhone(originalBooking.userPhone)}</p>
+							<button
 								class="call-action-btn"
 								aria-label="Call Client"
+								onclick={() => {
+									const a = document.createElement('a');
+									a.href = 'tel:' + originalBooking.userPhone;
+									a.click();
+								}}
 							>
 								<svg
 									width="14"
@@ -582,7 +594,7 @@
 									></path>
 								</svg>
 								Call
-							</a>
+							</button>
 						</div>
 					{/if}
 				</div>
@@ -904,9 +916,9 @@
 						<div class="qr-fs-upi-container">
 							<div class="qr-fs-upi">
 								<span class="qr-fs-upi-label">UPI ID:</span>
-								<span class="qr-fs-upi-id">Q714475106@ybl</span>
+								<span class="qr-fs-upi-id">mab0450550a0279816@yesbank</span>
 							</div>
-							<div class="qr-fs-receiver-name">Rina Kumari</div>
+							<div class="qr-fs-receiver-name">Anil Rammilan Yadav</div>
 						</div>
 
 						<div class="qr-fs-hint">

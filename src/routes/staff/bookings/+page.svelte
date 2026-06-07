@@ -12,6 +12,14 @@
 	import BookingModal from '$lib/components/staff/BookingModal.svelte';
 	import CircularProgress from '$lib/components/staff/CircularProgress.svelte';
 	import ClientDrawer from '$lib/components/staff/ClientDrawer.svelte';
+
+	// Mask phone: show first 3 and last 2 digits, stars in between
+	function maskPhone(phone: string): string {
+		if (!phone) return '';
+		const digits = phone.replace(/\D/g, '');
+		if (digits.length <= 5) return '*'.repeat(digits.length);
+		return digits.slice(0, 3) + '*'.repeat(digits.length - 5) + digits.slice(-2);
+	}
 	import StatusBadge from '$lib/components/staff/StatusBadge.svelte';
 	import EmptyState from '$lib/components/staff/EmptyState.svelte';
 	import { page } from '$app/state';
@@ -418,7 +426,7 @@
 															d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
 														/></svg
 													>
-													{booking.userPhone}
+													{maskPhone(booking.userPhone)}
 												{:else}
 													<span class="no-phone">No phone number</span>
 												{/if}
@@ -546,7 +554,7 @@
 															d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
 														/></svg
 													>
-													{booking.userPhone}
+													{maskPhone(booking.userPhone)}
 												{:else}
 													<span class="no-phone">No phone number</span>
 												{/if}
@@ -690,7 +698,7 @@
 													d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
 												/></svg
 											>
-											{booking.userPhone}
+											{maskPhone(booking.userPhone)}
 										{:else}
 											<span class="no-phone">No phone number</span>
 										{/if}

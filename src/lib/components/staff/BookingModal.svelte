@@ -1,4 +1,11 @@
 <script lang="ts">
+	// Mask phone: show first 3 and last 2 digits, stars in between
+	function maskPhone(phone: string): string {
+		if (!phone) return '';
+		const digits = phone.replace(/\D/g, '');
+		if (digits.length <= 5) return '*'.repeat(digits.length);
+		return digits.slice(0, 3) + '*'.repeat(digits.length - 5) + digits.slice(-2);
+	}
 	import {
 		staffServices,
 		customServices,
@@ -674,11 +681,15 @@
 									<h3>{existingBooking.userName || 'Guest'}</h3>
 									{#if existingBooking.userPhone}
 										<div class="phone-wrapper">
-											<p>{existingBooking.userPhone}</p>
-											<a
-												href="tel:{existingBooking.userPhone}"
+											<p>{maskPhone(existingBooking.userPhone)}</p>
+											<button
 												class="call-action-btn"
 												aria-label="Call Client"
+												onclick={() => {
+													const a = document.createElement('a');
+													a.href = 'tel:' + existingBooking.userPhone;
+													a.click();
+												}}
 											>
 												<svg
 													width="14"
@@ -695,7 +706,7 @@
 													></path>
 												</svg>
 												Call
-											</a>
+											</button>
 										</div>
 									{:else}
 										<p>No phone provided</p>

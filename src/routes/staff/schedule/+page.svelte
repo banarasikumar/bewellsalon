@@ -5,6 +5,14 @@
 	import BookingModal from '$lib/components/staff/BookingModal.svelte';
 	import { onMount } from 'svelte';
 
+	// Mask phone: show first 3 and last 2 digits, stars in between
+	function maskPhone(phone: string): string {
+		if (!phone) return '';
+		const digits = phone.replace(/\D/g, '');
+		if (digits.length <= 5) return '*'.repeat(digits.length);
+		return digits.slice(0, 3) + '*'.repeat(digits.length - 5) + digits.slice(-2);
+	}
+
 	let viewMode = $state<'day' | 'week' | 'month'>('day');
 	let selectedDate = $state(new Date());
 	let isModalOpen = $state(false);
@@ -297,7 +305,7 @@
 														>
 													</div>
 													<div class="ac-row3">
-														{#if bk.userPhone}<span class="ac-meta">📞 {bk.userPhone}</span>{/if}
+														{#if bk.userPhone}<span class="ac-meta">📞 {maskPhone(bk.userPhone)}</span>{/if}
 														<span class="ac-meta">⏱ {fmtDur(dur)}</span>
 														<span class="ac-meta ac-price"
 															>₹{bk.totalAmount || bk.price || '–'}</span

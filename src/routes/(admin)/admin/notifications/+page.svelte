@@ -6,89 +6,69 @@
 		type AdminNotification,
 		type AdminNotificationType
 	} from '$lib/stores/adminNotificationsList';
-	import {
-		Bell,
-		Trash2,
-		Check,
-		CheckCheck,
-		ArrowLeft,
-		Calendar,
-		User,
-		Package
-	} from 'lucide-svelte';
 
-	let filter: 'all' | 'unread' = $state('all');
-	let selectedType: AdminNotificationType | 'all' = $state('all');
+	let activeFilter = $state<'all' | AdminNotificationType>('all');
 
-	const filteredNotifications = $derived(() => {
-		let notifications = $adminNotifications;
-		if (filter === 'unread') {
-			notifications = notifications.filter((n) => !n.read);
+	const filters: { key: string; label: string; icon: string }[] = [
+		{ key: 'all', label: 'All', icon: '🔔' },
+		{ key: 'new_booking', label: 'Bookings', icon: '📅' },
+		{ key: 'completed', label: 'Completed', icon: '✅' },
+		{ key: 'cancelled', label: 'Cancelled', icon: '❌' },
+		{ key: 'payment_received', label: 'Payments', icon: '💰' },
+		{ key: 'new_user', label: 'Users', icon: '👤' }
+	];
+
+	let filteredNotifications = $derived(() => {
+		let list = $adminNotifications;
+		if (activeFilter !== 'all') {
+			list = list.filter((n) => n.type === activeFilter);
 		}
-		if (selectedType !== 'all') {
-			notifications = notifications.filter((n) => n.type === selectedType);
-		}
-		return notifications;
+		return list;
 	});
 
 	function formatTimeAgo(timestamp: number): string {
-		const seconds = Math.floor((Date.now() - timestamp) / 1000);
-		if (seconds < 60) return 'Just now';
+		const now = Date.now();
+		const diff = now - timestamp;
+		const seconds = Math.floor(diff / 1000);
 		const minutes = Math.floor(seconds / 60);
-		if (minutes < 60) return `${minutes}m ago`;
 		const hours = Math.floor(minutes / 60);
-		if (hours < 24) return `${hours}h ago`;
 		const days = Math.floor(hours / 24);
-		return `${days}d ago`;
+
+		if (seconds < 60) return 'Just now';
+		if (minutes < 60) return `${minutes}m ago`;
+		if (hours < 24) return `${hours}h ago`;
+		if (days < 7) return `${days}d ago`;
+		return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+	}
+
+	function getNotificationIcon(type: AdminNotificationType): string {
+		switch (type) {
+			case 'new_booking': return '📅';
+			case 'walk_in_order': return '🚶';
+			case 'status_change': return '🔄';
+			case 'completed': return '✅';
+			case 'cancelled': return '❌';
+			case 'new_user': return '👤';
+			case 'payment_received': return '💰';
+			default: return '🔔';
+		}
 	}
 
 	function getNotificationColor(type: AdminNotificationType): string {
 		switch (type) {
-			case 'new_booking':
-				return '#6366f1';
-			case 'walk_in_order':
-				return '#f59e0b';
-			case 'status_change':
-				return '#3b82f6';
-			case 'completed':
-				return '#22c55e';
-			case 'cancelled':
-				return '#ef4444';
-			case 'new_user':
-				return '#8b5cf6';
-			case 'payment_received':
-				return '#10b981';
-			default:
-				return '#6b7280';
-		}
-	}
-
-	function getNotificationIcon(type: AdminNotificationType) {
-		switch (type) {
-			case 'new_booking':
-				return '📅';
-			case 'walk_in_order':
-				return '🚶';
-			case 'status_change':
-				return '🔄';
-			case 'completed':
-				return '✅';
-			case 'cancelled':
-				return '❌';
-			case 'new_user':
-				return '👤';
-			case 'payment_received':
-				return '💰';
-			default:
-				return '📢';
+			case 'new_booking': return '#6366f1';
+			case 'walk_in_order': return '#f59e0b';
+			case 'status_change': return '#3b82f6';
+			case 'completed': return '#22c55e';
+			case 'cancelled': return '#ef4444';
+			case 'new_user': return '#8b5cf6';
+			case 'payment_received': return '#10b981';
+			default: return '#6b7280';
 		}
 	}
 
 	function handleNotificationClick(notification: AdminNotification) {
-		// Mark as read
 		adminNotifications.markAsRead(notification.id);
-
-		// Navigate based on type
 		if (notification.bookingId) {
 			goto(`/admin/bookings?bookingId=${notification.bookingId}`);
 		} else if (notification.userId && notification.type === 'new_user') {
@@ -96,12 +76,7 @@
 		}
 	}
 
-	function deleteNotification(id: string, event: Event) {
-		event.stopPropagation();
-		adminNotifications.delete(id);
-	}
-
-	function markAllAsRead() {
+	function markAllRead() {
 		adminNotifications.markAllAsRead();
 	}
 
@@ -111,78 +86,56 @@
 		}
 	}
 
-	const typeLabels: Record<AdminNotificationType | 'all', string> = {
-		all: 'All Types',
-		new_booking: 'New Bookings',
-		walk_in_order: 'Walk-in Orders',
-		status_change: 'Status Changes',
-		completed: 'Completed',
-		cancelled: 'Cancelled',
-		new_user: 'New Users',
-		payment_received: 'Payments',
-		system: 'System'
-	};
+	function deleteNotification(id: string, e: Event) {
+		e.stopPropagation();
+		adminNotifications.delete(id);
+	}
 </script>
 
 <div class="notifications-page">
-	<!-- Header -->
+	<!-- Filter & Actions Bar -->
 	<div class="notifications-header">
-		<button class="back-btn" onclick={() => goto('/admin')}>
-			<ArrowLeft size={20} />
-		</button>
-		<h1>Notifications</h1>
-		{#if $adminUnreadCount > 0}
-			<span class="unread-badge">{$adminUnreadCount} unread</span>
-		{/if}
+		<div class="filter-action-row">
+			<div class="filter-pills">
+				{#each filters as f}
+					<button
+						class="filter-pill"
+						class:active={activeFilter === f.key}
+						onclick={() => (activeFilter = f.key as any)}
+					>
+						<span class="filter-icon">{f.icon}</span>
+						{f.label}
+						{#if f.key !== 'all' && $adminNotifications.filter((n) => n.type === f.key && !n.read).length > 0}
+							<span class="filter-badge">
+								{$adminNotifications.filter((n) => n.type === f.key && !n.read).length}
+							</span>
+						{/if}
+					</button>
+				{/each}
+			</div>
+
+			<div class="header-actions">
+				{#if $adminUnreadCount > 0}
+					<button class="action-btn" onclick={markAllRead} title="Mark all as read">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+					</button>
+				{/if}
+				{#if $adminNotifications.length > 0}
+					<button class="action-btn delete" onclick={clearAll} title="Clear all">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+					</button>
+				{/if}
+			</div>
+		</div>
 	</div>
 
-	<!-- Filters -->
-	<div class="filters">
-		<div class="filter-group">
-			<button class="filter-btn" class:active={filter === 'all'} onclick={() => (filter = 'all')}>
-				All
-			</button>
-			<button
-				class="filter-btn"
-				class:active={filter === 'unread'}
-				onclick={() => (filter = 'unread')}
-			>
-				Unread
-			</button>
-		</div>
-
-		<select class="type-select" bind:value={selectedType}>
-			{#each Object.entries(typeLabels) as [value, label]}
-				<option {value}>{label}</option>
-			{/each}
-		</select>
-	</div>
-
-	<!-- Action Buttons -->
-	{#if $adminNotifications.length > 0}
-		<div class="actions">
-			<button class="action-btn" onclick={markAllAsRead}>
-				<CheckCheck size={16} />
-				Mark all read
-			</button>
-			<button class="action-btn danger" onclick={clearAll}>
-				<Trash2 size={16} />
-				Clear all
-			</button>
-		</div>
-	{/if}
-
-	<!-- Notification List -->
-	<div class="notification-list">
+	<!-- Notifications List -->
+	<div class="notifications-list">
 		{#if filteredNotifications().length === 0}
 			<div class="empty-state">
-				<div class="empty-icon">
-					<Bell size={48} />
-				</div>
-				<p>No notifications</p>
-				{#if filter === 'unread'}
-					<button class="view-all-btn" onclick={() => (filter = 'all')}>View all</button>
-				{/if}
+				<div class="empty-icon">🔔</div>
+				<h3>No notifications</h3>
+				<p>You're all caught up! Updates will appear here.</p>
 			</div>
 		{:else}
 			{#each filteredNotifications() as notification (notification.id)}
@@ -201,41 +154,43 @@
 					></div>
 
 					<div
-						class="notification-icon"
-						style="background: {getNotificationColor(
-							notification.type
-						)}20; color: {getNotificationColor(notification.type)}"
+						class="nc-avatar"
+						style="background: {getNotificationColor(notification.type)}20; color: {getNotificationColor(notification.type)}"
 					>
-						{getNotificationIcon(notification.type)}
+						{#if notification.userName}
+							{notification.userName.charAt(0).toUpperCase()}
+						{:else}
+							{getNotificationIcon(notification.type)}
+						{/if}
 					</div>
 
 					<div class="notification-content">
-						<div class="notification-header">
-							<h4 class="notification-title">{notification.title}</h4>
-							<span class="notification-time">{formatTimeAgo(notification.createdAt)}</span>
+						<div class="nc-top-row">
+							<h4 class="nc-title">{notification.title}</h4>
+							<span class="nc-time">{formatTimeAgo(notification.createdAt)}</span>
 						</div>
-						<p class="notification-message">{notification.message}</p>
 
-						{#if notification.userName || notification.data}
-							<div class="notification-details">
-								{#if notification.userName}
-									<span class="detail-item">
-										<User size={12} />
-										{notification.userName}
-									</span>
-								{/if}
-								{#if notification.data?.amount}
-									<span class="detail-item amount">
-										💰 ₹{notification.data.amount}
-									</span>
-								{/if}
-								{#if notification.data?.status}
-									<span class="detail-item status" data-status={notification.data.status}>
-										{notification.data.status}
-									</span>
-								{/if}
-							</div>
-						{/if}
+						<p class="nc-summary">{notification.message}</p>
+
+						<!-- Structured Badges -->
+						<div class="nc-badges">
+							{#if notification.userName}
+								<span class="nc-badge user-badge">
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+									{notification.userName}
+								</span>
+							{/if}
+							{#if notification.data?.amount}
+								<span class="nc-badge amount-badge">
+									₹{notification.data.amount}
+								</span>
+							{/if}
+							{#if notification.data?.status}
+								<span class="nc-badge status-badge" data-status={notification.data.status}>
+									{notification.data.status}
+								</span>
+							{/if}
+						</div>
 					</div>
 
 					<button
@@ -243,21 +198,8 @@
 						onclick={(e) => deleteNotification(notification.id, e)}
 						title="Delete notification"
 					>
-						<Trash2 size={16} />
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 					</button>
-
-					{#if !notification.read}
-						<button
-							class="mark-read-btn"
-							onclick={(e) => {
-								e.stopPropagation();
-								adminNotifications.markAsRead(notification.id);
-							}}
-							title="Mark as read"
-						>
-							<Check size={16} />
-						</button>
-					{/if}
 				</div>
 			{/each}
 		{/if}
@@ -266,310 +208,395 @@
 
 <style>
 	.notifications-page {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		min-height: 100%;
 		padding: 16px;
 		max-width: 800px;
 		margin: 0 auto;
 	}
 
+	/* ━━━ Header ━━━ */
 	.notifications-header {
+		position: sticky;
+		top: 0;
+		background: var(--admin-bg, #ffffff);
+		padding: 8px 0 12px;
+		z-index: 10;
+		border-bottom: 1px solid var(--admin-border, #e5e7eb);
+		margin: -16px -16px 0 -16px;
+		padding-left: 16px;
+		padding-right: 16px;
+	}
+
+	.filter-action-row {
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
 		gap: 12px;
-		margin-bottom: 20px;
 	}
 
-	.notifications-header h1 {
-		font-size: 24px;
-		font-weight: 700;
-		margin: 0;
+	/* ━━━ Filter Pills ━━━ */
+	.filter-pills {
+		display: flex;
+		gap: 8px;
+		overflow-x: auto;
 		flex: 1;
+		padding-bottom: 4px;
+		-ms-overflow-style: none;
+		scrollbar-width: none;
 	}
 
-	.back-btn {
-		width: 40px;
-		height: 40px;
-		border-radius: 10px;
-		border: none;
+	.filter-pills::-webkit-scrollbar {
+		display: none;
+	}
+
+	.filter-pill {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 7px 14px;
 		background: var(--admin-bg-secondary, #f3f4f6);
+		border: 1px solid var(--admin-border, #e5e7eb);
+		border-radius: 100px;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--admin-text-secondary, #6b7280);
 		cursor: pointer;
+		transition: all 0.2s ease;
+		white-space: nowrap;
+		flex-shrink: 0;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+	}
+
+	.filter-pill:hover {
+		border-color: var(--admin-accent, #6366f1);
+		color: var(--admin-accent, #6366f1);
+	}
+
+	.filter-pill.active {
+		background: var(--admin-accent, #6366f1);
+		border-color: var(--admin-accent, #6366f1);
+		color: white;
+		box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+	}
+
+	.filter-icon {
+		font-size: 0.9rem;
+	}
+
+	.filter-badge {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: background 0.2s;
-	}
-
-	.back-btn:hover {
-		background: var(--admin-border, #e5e5e5);
-	}
-
-	.unread-badge {
-		background: var(--admin-accent, #6366f1);
-		color: white;
-		padding: 4px 12px;
-		border-radius: 20px;
-		font-size: 12px;
-		font-weight: 600;
-	}
-
-	.filters {
-		display: flex;
-		gap: 12px;
-		margin-bottom: 16px;
-		flex-wrap: wrap;
-	}
-
-	.filter-group {
-		display: flex;
-		gap: 8px;
-		background: var(--admin-bg-secondary, #f3f4f6);
-		padding: 4px;
-		border-radius: 10px;
-	}
-
-	.filter-btn {
-		padding: 8px 16px;
-		border-radius: 8px;
-		border: none;
-		background: transparent;
-		cursor: pointer;
-		font-size: 14px;
-		font-weight: 500;
-		transition: all 0.2s;
-	}
-
-	.filter-btn.active {
+		min-width: 18px;
+		height: 18px;
+		padding: 0 5px;
 		background: white;
 		color: var(--admin-accent, #6366f1);
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		border-radius: 100px;
+		font-size: 0.65rem;
+		font-weight: 800;
 	}
 
-	.type-select {
-		padding: 8px 12px;
-		border-radius: 10px;
-		border: 1px solid var(--admin-border, #e5e5e5);
-		background: white;
-		font-size: 14px;
-		cursor: pointer;
+	.filter-pill.active .filter-badge {
+		background: rgba(255, 255, 255, 0.25);
+		color: white;
 	}
 
-	.actions {
+	/* ━━━ Header Actions ━━━ */
+	.header-actions {
 		display: flex;
-		gap: 12px;
-		margin-bottom: 16px;
-		justify-content: flex-end;
+		gap: 8px;
+		flex-shrink: 0;
 	}
 
 	.action-btn {
 		display: flex;
 		align-items: center;
-		gap: 6px;
-		padding: 8px 16px;
-		border-radius: 8px;
-		border: 1px solid var(--admin-border, #e5e5e5);
-		background: white;
+		justify-content: center;
+		width: 34px;
+		height: 34px;
+		border-radius: 50%;
+		border: 1px solid var(--admin-border, #e5e7eb);
+		background: var(--admin-bg-secondary, #f9fafb);
+		color: var(--admin-text-secondary, #6b7280);
 		cursor: pointer;
-		font-size: 13px;
-		font-weight: 500;
-		transition: all 0.2s;
+		transition: all 0.2s ease;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 
 	.action-btn:hover {
-		background: var(--admin-bg-secondary, #f3f4f6);
+		background: var(--admin-accent-light, #eef2ff);
+		color: var(--admin-accent, #6366f1);
+		border-color: var(--admin-accent, #6366f1);
+		transform: translateY(-1px);
 	}
 
-	.action-btn.danger {
-		color: var(--admin-error, #ef4444);
-		border-color: var(--admin-error-light, #fee2e2);
+	.action-btn.delete:hover {
+		background: #fee2e2;
+		color: #ef4444;
+		border-color: #ef4444;
 	}
 
-	.action-btn.danger:hover {
-		background: var(--admin-error-light, #fee2e2);
+	.action-btn:active {
+		transform: scale(0.92);
 	}
 
-	.notification-list {
+	/* ━━━ Notification List ━━━ */
+	.notifications-list {
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 10px;
+		padding-bottom: 24px;
 	}
 
-	.empty-state {
-		text-align: center;
-		padding: 60px 20px;
-		color: var(--admin-text-secondary, #6b7280);
-	}
-
-	.empty-icon {
-		margin-bottom: 16px;
-		opacity: 0.5;
-	}
-
-	.empty-state p {
-		font-size: 16px;
-		margin: 0 0 16px 0;
-	}
-
-	.view-all-btn {
-		padding: 10px 20px;
-		border-radius: 8px;
-		border: none;
-		background: var(--admin-accent, #6366f1);
-		color: white;
-		cursor: pointer;
-		font-size: 14px;
-		font-weight: 500;
-	}
-
+	/* ━━━ Notification Card ━━━ */
 	.notification-card {
 		display: flex;
 		align-items: flex-start;
 		gap: 12px;
-		padding: 16px;
+		padding: 14px;
 		background: white;
-		border-radius: 12px;
-		border: 1px solid var(--admin-border, #e5e5e5);
+		border-radius: 16px;
+		border: 1px solid var(--admin-border, #e5e7eb);
 		cursor: pointer;
 		transition: all 0.2s ease;
 		position: relative;
+		overflow: hidden;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
 	}
 
 	.notification-card:hover {
 		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+		border-color: var(--admin-border-strong, #d1d5db);
+	}
+
+	.notification-card:active {
+		transform: scale(0.98);
 	}
 
 	.notification-card.unread {
-		background: var(--admin-accent-light, #eef2ff);
-		border-color: var(--admin-accent, #6366f1);
+		border-color: var(--notification-color, var(--admin-accent, #6366f1));
+		box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
 	}
 
+	.notification-card.unread::after {
+		content: '';
+		position: absolute;
+		top: 14px;
+		right: 14px;
+		width: 8px;
+		height: 8px;
+		background: #ef4444;
+		border-radius: 50%;
+		box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+	}
+
+	/* ━━━ Indicator ━━━ */
 	.notification-indicator {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
 		width: 4px;
-		border-radius: 2px;
-		align-self: stretch;
-		flex-shrink: 0;
 	}
 
-	.notification-icon {
+	/* ━━━ Avatar ━━━ */
+	.nc-avatar {
+		flex-shrink: 0;
 		width: 40px;
 		height: 40px;
-		border-radius: 10px;
+		border-radius: 50%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 18px;
-		flex-shrink: 0;
+		font-weight: 800;
+		font-size: 1.1rem;
+		margin-left: 6px;
 	}
 
+	/* ━━━ Content ━━━ */
 	.notification-content {
 		flex: 1;
 		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding-right: 12px;
 	}
 
-	.notification-header {
+	.nc-top-row {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		gap: 8px;
-		margin-bottom: 4px;
+		margin-bottom: 2px;
 	}
 
-	.notification-title {
-		font-size: 15px;
-		font-weight: 600;
-		color: var(--admin-text, #1f2937);
+	.nc-title {
 		margin: 0;
-	}
-
-	.notification-time {
-		font-size: 12px;
-		color: var(--admin-text-secondary, #6b7280);
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--admin-text, #111827);
+		flex: 1;
+		min-width: 0;
 		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.nc-time {
+		font-size: 0.7rem;
+		color: var(--admin-text-secondary, #9ca3af);
+		font-weight: 600;
 		flex-shrink: 0;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
 	}
 
-	.notification-message {
-		font-size: 14px;
+	.nc-summary {
+		margin: 0 0 6px 0;
+		font-size: 0.82rem;
 		color: var(--admin-text-secondary, #6b7280);
-		margin: 0;
-		line-height: 1.5;
+		line-height: 1.4;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 
-	.notification-details {
+	/* ━━━ Badges ━━━ */
+	.nc-badges {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 8px;
-		margin-top: 8px;
-		padding-top: 8px;
-		border-top: 1px dashed var(--admin-border, #e5e5e5);
+		gap: 6px;
+		margin-top: 2px;
 	}
 
-	.detail-item {
-		display: flex;
+	.nc-badge {
+		display: inline-flex;
 		align-items: center;
 		gap: 4px;
-		font-size: 12px;
-		color: var(--admin-text-secondary, #6b7280);
-		background: var(--admin-bg-secondary, #f3f4f6);
-		padding: 4px 8px;
+		font-size: 0.7rem;
+		font-weight: 600;
+		padding: 3px 8px;
 		border-radius: 6px;
+		background: var(--admin-bg-secondary, #f3f4f6);
+		color: var(--admin-text-secondary, #6b7280);
 	}
 
-	.detail-item.amount {
+	.nc-badge.user-badge {
+		background: rgba(124, 58, 237, 0.08);
+		color: #7c3aed;
+	}
+
+	.nc-badge.amount-badge {
 		background: #dcfce7;
 		color: #166534;
-		font-weight: 600;
+		font-weight: 700;
 	}
 
-	.detail-item.status {
+	.nc-badge.status-badge {
 		text-transform: uppercase;
-		font-weight: 600;
-		font-size: 10px;
-		letter-spacing: 0.05em;
+		letter-spacing: 0.04em;
+		font-size: 0.65rem;
+		font-weight: 700;
 	}
 
-	.detail-item.status[data-status='pending'] {
+	.nc-badge.status-badge[data-status='pending'] {
 		background: #fef3c7;
 		color: #92400e;
 	}
-
-	.detail-item.status[data-status='confirmed'] {
+	.nc-badge.status-badge[data-status='confirmed'] {
 		background: #dbeafe;
 		color: #1e40af;
 	}
-
-	.detail-item.status[data-status='completed'] {
+	.nc-badge.status-badge[data-status='completed'] {
 		background: #dcfce7;
 		color: #166534;
 	}
-
-	.detail-item.status[data-status='cancelled'] {
+	.nc-badge.status-badge[data-status='cancelled'] {
 		background: #fee2e2;
 		color: #991b1b;
 	}
+	.nc-badge.status-badge[data-status='in-progress'] {
+		background: #ede9fe;
+		color: #5b21b6;
+	}
 
-	.delete-btn,
-	.mark-read-btn {
-		width: 32px;
-		height: 32px;
+	/* ━━━ Delete Button ━━━ */
+	.delete-btn {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		width: 28px;
+		height: 28px;
 		border-radius: 8px;
 		border: none;
-		background: transparent;
+		background: var(--admin-bg-secondary, #f9fafb);
+		color: var(--admin-text-tertiary, #9ca3af);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--admin-text-secondary, #6b7280);
-		transition: all 0.2s;
-		flex-shrink: 0;
+		opacity: 0;
+		transform: scale(0.9);
+		transition: all 0.2s ease;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+	}
+
+	/* Mobile: always visible */
+	@media (max-width: 768px) {
+		.delete-btn {
+			opacity: 1;
+			transform: scale(1);
+			background: var(--admin-bg-secondary, #f3f4f6);
+			top: auto;
+			bottom: 12px;
+		}
+	}
+
+	.notification-card:hover .delete-btn {
+		opacity: 1;
+		transform: scale(1);
 	}
 
 	.delete-btn:hover {
-		background: var(--admin-error-light, #fee2e2);
-		color: var(--admin-error, #ef4444);
+		background: #fee2e2;
+		color: #ef4444;
 	}
 
-	.mark-read-btn:hover {
-		background: var(--admin-accent-light, #eef2ff);
-		color: var(--admin-accent, #6366f1);
+	/* ━━━ Empty State ━━━ */
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 80px 20px;
+		text-align: center;
+	}
+
+	.empty-icon {
+		font-size: 3.5rem;
+		margin-bottom: 16px;
+		opacity: 0.3;
+		filter: grayscale(1);
+	}
+
+	.empty-state h3 {
+		font-size: 1.2rem;
+		font-weight: 700;
+		color: var(--admin-text, #111827);
+		margin: 0 0 6px;
+	}
+
+	.empty-state p {
+		font-size: 0.9rem;
+		color: var(--admin-text-secondary, #6b7280);
+		margin: 0;
+		max-width: 240px;
 	}
 </style>
