@@ -4,10 +4,12 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 export interface AppSettings {
 	defaultPaymentGateway: 'default' | 'razorpay';
+	totalChairs: number;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-	defaultPaymentGateway: 'default'
+	defaultPaymentGateway: 'default',
+	totalChairs: 3
 };
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);

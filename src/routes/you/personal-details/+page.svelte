@@ -48,9 +48,10 @@
 		birthDate: ''
 	});
 
-	onMount(async () => {
+	onMount(() => {
 		// Automatically enter edit mode if requested via URL
-		if ($page.url.searchParams.get('edit') === 'true') {
+		const isEditMode = $page.url.searchParams.get('edit') === 'true';
+		if (isEditMode) {
 			isEditing = true;
 		}
 

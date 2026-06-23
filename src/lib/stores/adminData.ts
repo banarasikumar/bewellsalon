@@ -77,6 +77,9 @@ export const pendingCount = derived(
 	($b) => $b.filter((b) => (b.status || 'pending').toLowerCase() === 'pending').length
 );
 export const userCount = derived(allUsers, ($u) => $u.length);
+export const adminStaffUsers = derived(allUsers, ($users) => {
+	return $users.filter(u => u.role === 'admin' || u.role === 'staff');
+});
 export const serviceCount = derived(allServices, ($s) => $s.length);
 
 // --- Listeners ---

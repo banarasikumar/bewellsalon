@@ -12,7 +12,7 @@ import {
 	getDocs,
 	limit
 } from 'firebase/firestore';
-import { db } from '$lib/firebase';
+import { db, auth } from '$lib/firebase';
 import type { Booking, Service, AppUser } from './adminData'; // Reuse types
 import { get } from 'svelte/store';
 import { soundEnabled } from './staffNotifications';
@@ -51,8 +51,8 @@ export const upcomingBookings = derived(staffBookings, ($b) => {
 			// Future bookings: always include
 			if (bookingDate > todayStr) return true;
 
-			// Past dates: exclude
-			return false;
+			// Past dates: if it's still active (pending/confirmed/in-progress), it's an unfinished booking that needs attention
+			return true;
 		})
 		.sort((a, b) => {
 			// Sort by date, then by time
@@ -101,10 +101,16 @@ function startBookingsListener() {
 	bookingsUnsub = onSnapshot(
 		qBookings,
 		(snapshot) => {
-			const bookings = snapshot.docs.map((d) => ({
+			const currentUid = auth.currentUser?.uid;
+			const allBookings = snapshot.docs.map((d) => ({
 				id: d.id,
 				...d.data()
 			})) as Booking[];
+
+			// Filter: Show only unassigned bookings or bookings assigned to the logged-in staff member
+			const bookings = allBookings.filter((b) => {
+				return !b.staffId || b.staffId === 'unassigned' || b.staffId === currentUid;
+			});
 
 			// Detect new bookings (not in previous set)
 			const currentIds = new Set(bookings.map((b) => b.id));

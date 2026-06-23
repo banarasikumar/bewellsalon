@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { staffBookings } from '$lib/stores/staffData';
-	import { updateBookingStatus, type Booking } from '$lib/stores/adminData';
+	import { staffBookings, upcomingBookings } from '$lib/stores/staffData';
+	import { updateBookingStatus, updateBookingDetails, type Booking } from '$lib/stores/adminData';
+	import { staffUser } from '$lib/stores/staffAuth';
 	import { showToast } from '$lib/stores/toast';
 	import {
 		now,
@@ -46,16 +47,11 @@
 
 	let filteredBookings = $derived(() => {
 		let bookings = [...$staffBookings];
-		const today = new Date().toISOString().split('T')[0];
 
 		switch (activeFilter) {
 			case 'upcoming':
-				// All of today's bookings (any status) + future active bookings
-				bookings = bookings.filter((b) => {
-					if (b.date === today) return true; // All today's bookings regardless of status
-					if (b.date > today && b.status !== 'completed' && b.status !== 'cancelled') return true; // Future active
-					return false;
-				});
+				// $upcomingBookings already contains today's active bookings, future active bookings, and past unfinished bookings
+				bookings = [...$upcomingBookings];
 				break;
 			case 'pending':
 				bookings = bookings.filter((b) => b.status === 'pending');
@@ -218,7 +214,7 @@
 	let todayDoneBookings = $derived(() => {
 		const today = new Date().toISOString().split('T')[0];
 		if (activeFilter === 'upcoming') {
-			return filteredBookings().filter(
+			return $staffBookings.filter(
 				(b) => b.date === today && (b.status === 'completed' || b.status === 'cancelled')
 			);
 		}
@@ -579,6 +575,21 @@
 										</div>
 									</div>
 
+									<!-- Staff Assignment -->
+									<div class="bc-staff-row">
+										{#if booking.staffName && booking.staffId && booking.staffId !== 'unassigned'}
+											<span class="staff-badge assigned">
+												<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+												{booking.staffName}
+											</span>
+										{:else}
+											<span class="staff-badge unassigned">
+												<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+												Unassigned — Available
+											</span>
+										{/if}
+									</div>
+
 									<div class="bc-meta">
 										<span class="bc-meta-item">📅 {formatDate(booking.date)}</span>
 										<span class="bc-meta-item">🕐 {formatTime12h(booking.time)}</span>
@@ -638,12 +649,20 @@
 											>
 										{:else if booking.status === 'confirmed'}
 											<button
-												class="bk-btn bk-btn-start"
+												class="bk-btn bk-btn-start {!booking.staffId || booking.staffId === 'unassigned' ? 'bk-btn-claim' : ''}"
 												onclick={async (e) => {
 													e.stopPropagation();
+													if (!booking.staffId || booking.staffId === 'unassigned') {
+														if ($staffUser) {
+															await updateBookingDetails(booking.id, {
+																staffId: $staffUser.uid,
+																staffName: $staffUser.displayName || 'Staff'
+															});
+														}
+													}
 													startServiceTimer(booking);
 													showToast('Timer started!', 'success');
-												}}>▶ Start</button
+												}}>{!booking.staffId || booking.staffId === 'unassigned' ? '🙋 Claim & Start' : '▶ Start'}</button
 											>
 										{/if}
 									</div>
@@ -721,6 +740,21 @@
 										{/if}
 									{/if}
 								</div>
+							</div>
+
+							<!-- Staff Assignment (done-today) -->
+							<div class="bc-staff-row">
+								{#if booking.staffName && booking.staffId && booking.staffId !== 'unassigned'}
+									<span class="staff-badge assigned">
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+										{booking.staffName}
+									</span>
+								{:else}
+									<span class="staff-badge unassigned">
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+										Unassigned
+									</span>
+								{/if}
 							</div>
 
 							<div class="bc-meta">
@@ -1627,5 +1661,61 @@
 		background: #fef2f2;
 		color: #dc2626;
 		border: 1px solid #fecaca;
+	}
+
+	/* ── Staff Assignment Row ── */
+	.bc-staff-row {
+		margin-top: var(--s-space-sm);
+		display: flex;
+		align-items: center;
+	}
+
+	.staff-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 12px;
+		border-radius: var(--s-radius-full);
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+	}
+
+	.staff-badge.assigned {
+		background: rgba(59, 130, 246, 0.08);
+		color: #2563eb;
+		border: 1px solid rgba(59, 130, 246, 0.18);
+	}
+	:global(.staff-app.dark) .staff-badge.assigned {
+		background: rgba(96, 165, 250, 0.12);
+		color: #93bbfd;
+		border-color: rgba(96, 165, 250, 0.2);
+	}
+
+	.staff-badge.unassigned {
+		background: rgba(245, 158, 11, 0.1);
+		color: #b45309;
+		border: 1px dashed rgba(245, 158, 11, 0.4);
+		animation: unassigned-pulse 2.5s ease-in-out infinite;
+	}
+	:global(.staff-app.dark) .staff-badge.unassigned {
+		background: rgba(251, 191, 36, 0.1);
+		color: #fbbf24;
+		border-color: rgba(251, 191, 36, 0.35);
+	}
+
+	@keyframes unassigned-pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.7; }
+	}
+
+	.bk-btn-claim {
+		background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+		box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3) !important;
+	}
+	@media (hover: hover) {
+		.bk-btn-claim:hover {
+			box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4) !important;
+		}
 	}
 </style>

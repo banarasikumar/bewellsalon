@@ -325,6 +325,40 @@
 
 	<div class="admin-settings-subcard" style="margin-top: 16px; animation: none;">
 		<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+			<Database size={20} color="var(--admin-indigo)" />
+			<h4 style="font-size: 15px; color: var(--admin-text-primary); margin: 0; font-weight: 700;">
+				Salon Capacity
+			</h4>
+		</div>
+
+		<div class="admin-settings-subitem" style="border-bottom: none; padding-bottom: 0;">
+			<div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+				<label style="display: flex; align-items: center; justify-content: space-between;">
+					<span style="font-size: 15px; font-weight: 500;">Total Salon Chairs</span>
+					<input
+						type="number"
+						min="1"
+						max="50"
+						value={$appSettings.totalChairs || 3}
+						onchange={(e) => {
+							const val = parseInt(e.currentTarget.value, 10);
+							if (!isNaN(val) && val > 0) {
+								updateAppSetting('totalChairs', val);
+								showToast('Total chairs updated', 'success');
+							}
+						}}
+						style="width: 60px; padding: 4px 8px; border: 1px solid var(--admin-border); border-radius: 6px; text-align: center; font-size: 15px;"
+					/>
+				</label>
+				<p style="font-size: 12px; color: var(--admin-text-secondary); margin: 0;">
+					This determines the maximum number of concurrent bookings allowed per time slot.
+				</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="admin-settings-subcard" style="margin-top: 16px; animation: none;">
+		<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
 			<CreditCard size={20} color="var(--admin-accent)" />
 			<h4 style="font-size: 15px; color: var(--admin-text-primary); margin: 0; font-weight: 700;">
 				Payment Gateway

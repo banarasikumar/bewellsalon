@@ -8,6 +8,8 @@
 		formatRelativeTime,
 		calculateCountdown,
 		updateBookingStatus,
+		updateBookingDetails,
+		adminStaffUsers,
 		type Booking
 	} from '$lib/stores/adminData';
 	import {
@@ -640,6 +642,35 @@
 							>No services</span
 						>
 					{/if}
+				</div>
+
+				<!-- Staff Assignment -->
+				<div class="admin-detail-item full-width">
+					<span class="admin-detail-label">Staff Assignment</span>
+					<div style="margin-top: 4px;">
+						<select
+							class="admin-staff-select"
+							value={booking.staffId || 'unassigned'}
+							onchange={async (e) => {
+								const select = e.currentTarget as HTMLSelectElement;
+								const staffId = select.value;
+								const staffName = select.options[select.selectedIndex].text;
+								try {
+									await updateBookingDetails(booking.id, { staffId, staffName });
+									showToast('Staff assignment updated', 'success');
+								} catch (error) {
+									showToast('Failed to update assignment', 'error');
+									select.value = booking.staffId || 'unassigned';
+								}
+							}}
+							style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--admin-border); background: var(--admin-bg-primary); color: var(--admin-text-primary); font-size: 13px;"
+						>
+							<option value="unassigned">Unassigned (Any Staff)</option>
+							{#each $adminStaffUsers as staff}
+								<option value={staff.id}>{staff.displayName || staff.name || 'Staff'}</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 
 				<!-- Contact -->

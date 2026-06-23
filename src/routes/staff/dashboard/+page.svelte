@@ -510,6 +510,21 @@
 								/>
 							</div>
 
+						<!-- Staff Assignment -->
+						<div class="upnext-staff-row">
+							{#if booking.staffName && booking.staffId && booking.staffId !== 'unassigned'}
+								<span class="staff-badge assigned">
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+									{booking.staffName}
+								</span>
+							{:else}
+								<span class="staff-badge unassigned">
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+									Unassigned — Available
+								</span>
+							{/if}
+						</div>
+
 							<div class="upnext-meta">
 								<div class="meta-item">
 									<span class="meta-icon">🕐</span>
@@ -572,13 +587,13 @@
 									</button>
 								{:else if booking.status === 'confirmed'}
 									<button
-										class="action-btn-premium"
+										class="action-btn-premium {!booking.staffId || booking.staffId === 'unassigned' ? 'action-btn-claim' : ''}"
 										onclick={(e) => {
 											e.stopPropagation();
 											openBooking(booking);
 										}}
 									>
-										▶ Start Service
+										{!booking.staffId || booking.staffId === 'unassigned' ? '🙋 Claim & Start' : '▶ Start Service'}
 									</button>
 								{/if}
 							</div>
@@ -1591,5 +1606,56 @@
 		font-size: var(--s-text-xs);
 		color: var(--s-text-tertiary);
 		font-weight: 600;
+	}
+
+	/* ── Staff Assignment ── */
+	.upnext-staff-row {
+		margin-top: var(--s-space-sm);
+		display: flex;
+		align-items: center;
+	}
+
+	.staff-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 12px;
+		border-radius: var(--s-radius-full);
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+	}
+
+	.staff-badge.assigned {
+		background: rgba(59, 130, 246, 0.08);
+		color: #2563eb;
+		border: 1px solid rgba(59, 130, 246, 0.18);
+	}
+	:global(.staff-app.dark) .staff-badge.assigned {
+		background: rgba(96, 165, 250, 0.12);
+		color: #93bbfd;
+		border-color: rgba(96, 165, 250, 0.2);
+	}
+
+	.staff-badge.unassigned {
+		background: rgba(245, 158, 11, 0.1);
+		color: #b45309;
+		border: 1px dashed rgba(245, 158, 11, 0.4);
+		animation: unassigned-pulse 2.5s ease-in-out infinite;
+	}
+	:global(.staff-app.dark) .staff-badge.unassigned {
+		background: rgba(251, 191, 36, 0.1);
+		color: #fbbf24;
+		border-color: rgba(251, 191, 36, 0.35);
+	}
+
+	@keyframes unassigned-pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.7; }
+	}
+
+	.action-btn-claim {
+		background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+		box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3) !important;
 	}
 </style>

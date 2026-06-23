@@ -11,6 +11,7 @@
 		serverTimestamp,
 		doc,
 		getDoc,
+		getDocs,
 		query,
 		where,
 		onSnapshot
@@ -60,6 +61,11 @@
 	// --- LOGIC ---
 
 	// State
+	let availableStaff: any[] = [];
+	let selectedStaffId: string = 'unassigned';
+	let selectedStaffName: string = 'Any available staff';
+	let isLoadingStaff = true;
+
 	let selectedDate = '';
 	let selectedTime = '';
 	let userName = '';
@@ -178,6 +184,7 @@
 		currentViewDate = new Date();
 		renderCalendar(currentViewDate);
 		generateQuickDates();
+		fetchStaff();
 
 		// Auth Requirement Check
 		const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -210,6 +217,21 @@
 			if (timeSlotsUnsubscribe) timeSlotsUnsubscribe();
 		};
 	});
+
+	async function fetchStaff() {
+		try {
+			const res = await fetch('/api/staff');
+			if (!res.ok) {
+				throw new Error('Failed to fetch staff via API');
+			}
+			const data = await res.json();
+			availableStaff = data.staff || [];
+		} catch (error) {
+			console.error('Failed to fetch staff:', error);
+		} finally {
+			isLoadingStaff = false;
+		}
+	}
 
 	// --- DATE LOGIC ---
 
@@ -583,6 +605,8 @@
 				userEmail: userEmail,
 				userPhone: userPhone,
 				notes: userNotes,
+				staffId: selectedStaffId,
+				staffName: selectedStaffName,
 				customer: {
 					name: userName,
 					phone: userPhone,
@@ -873,10 +897,51 @@
 
 				<!-- MAIN FLOW: SELECTION -->
 				<div class="form-flow">
-					<!-- 1. DATE -->
+					<!-- 0. STAFF SELECTION -->
 					<section class="glass-section" in:slide={{ duration: 500, axis: 'y' }}>
 						<div class="section-label">
 							<div class="step-num">01</div>
+							<h3>Select Professional</h3>
+						</div>
+
+						{#if isLoadingStaff}
+							<div class="empty-state-box">
+								<p>Loading professionals...</p>
+							</div>
+						{:else}
+							<div class="staff-selection-grid">
+								<button
+									class="staff-chip {selectedStaffId === 'unassigned' ? 'active' : ''}"
+									on:click={() => {
+										selectedStaffId = 'unassigned';
+										selectedStaffName = 'Any available staff';
+									}}
+								>
+									<span class="staff-avatar" style="background: var(--surface-3);">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+									</span>
+									<span class="staff-name">Any Staff</span>
+								</button>
+								{#each availableStaff as staff}
+									<button
+										class="staff-chip {selectedStaffId === staff.id ? 'active' : ''}"
+										on:click={() => {
+											selectedStaffId = staff.id;
+											selectedStaffName = staff.name;
+										}}
+									>
+										<span class="staff-avatar" style="background: var(--surface-3);">{staff.name.charAt(0).toUpperCase()}</span>
+										<span class="staff-name">{staff.name}</span>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</section>
+
+					<!-- 1. DATE -->
+					<section class="glass-section" in:slide={{ duration: 500, axis: 'y' }}>
+						<div class="section-label">
+							<div class="step-num">02</div>
 							<h3>Select Date</h3>
 						</div>
 
@@ -912,7 +977,7 @@
 					<!-- 2. TIME -->
 					<section class="glass-section" in:slide={{ duration: 500, delay: 100, axis: 'y' }}>
 						<div class="section-label">
-							<div class="step-num">02</div>
+							<div class="step-num">03</div>
 							<h3>Select Time</h3>
 						</div>
 
@@ -1487,8 +1552,9 @@
 					<div class="time-slot-grid">
 						{#each timeSlots as t}
 							{@const count = slotBookingsCount[t] || 0}
-							{@const isFull = count >= 3}
-							{@const isFilling = count === 2}
+							{@const maxChairs = $appSettings.totalChairs || 3}
+							{@const isFull = count >= maxChairs}
+							{@const isFilling = count === maxChairs - 1 && maxChairs > 1}
 
 							<button
 								class="time-slot {selectedTime === t ? 'selected' : ''} {isFull
@@ -1536,6 +1602,59 @@
 		z-index: 2;
 		box-sizing: border-box;
 	}
+
+	/* STAFF SELECTION */
+	.staff-selection-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+		gap: 12px;
+		margin-top: 16px;
+	}
+
+	.staff-chip {
+		background: var(--surface-2);
+		border: 1px solid var(--border-color);
+		border-radius: 12px;
+		padding: 12px 8px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.staff-chip.active {
+		background: rgba(212, 175, 55, 0.1);
+		border-color: var(--color-gold);
+		box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+	}
+
+	.staff-avatar {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: bold;
+		color: var(--color-gold);
+		background: var(--surface-3);
+	}
+
+	.staff-chip.active .staff-avatar {
+		background: var(--color-gold);
+		color: #000;
+	}
+
+	.staff-name {
+		font-size: 12px;
+		font-weight: 500;
+		color: var(--text-primary);
+		text-align: center;
+		line-height: 1.2;
+	}
+
 
 	/* BACKGROUND */
 	.ambient-bg {
@@ -3108,6 +3227,67 @@
 		letter-spacing: 1px;
 		color: var(--color-accent-gold);
 		margin-bottom: 16px;
+	}
+
+	/* Select Staff Grid */
+	.staff-selection-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+		gap: 12px;
+		margin-top: 16px;
+	}
+
+	.staff-chip {
+		background: var(--surface-2);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-xl);
+		padding: 16px 12px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		color: var(--color-text-secondary);
+	}
+
+	.staff-chip:hover {
+		background: var(--surface-hover);
+		transform: translateY(-2px);
+		border-color: rgba(212, 175, 55, 0.3);
+	}
+
+	.staff-chip.active {
+		background: var(--gradient-gold);
+		border-color: var(--color-accent-gold);
+		color: black;
+		box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+		transform: translateY(-2px);
+	}
+
+	.staff-avatar {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.2rem;
+		font-weight: 700;
+		color: var(--color-text-primary);
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+
+	.staff-chip.active .staff-avatar {
+		background: rgba(0,0,0,0.1) !important;
+		color: black;
+	}
+
+	.staff-name {
+		font-weight: 600;
+		font-size: 0.9rem;
+		text-align: center;
+		line-height: 1.2;
 	}
 
 	/* Totals Section (Outside Card) */

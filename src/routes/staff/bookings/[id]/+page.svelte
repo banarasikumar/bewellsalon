@@ -249,7 +249,7 @@
 		editOnlineAmount = isNaN(val) ? null : val;
 		lastEditedSplit = 'online';
 		// Only auto-fill cash if cash was not the last edited field
-		if (lastEditedSplit !== 'cash' && editOnlineAmount !== null) {
+		if (editOnlineAmount !== null) {
 			editCashAmount = Math.max(0, totalAmount - editOnlineAmount);
 		}
 	}
@@ -259,7 +259,7 @@
 		editCashAmount = isNaN(val) ? null : val;
 		lastEditedSplit = 'cash';
 		// Only auto-fill online if online was not the last edited field
-		if (lastEditedSplit !== 'online' && editCashAmount !== null) {
+		if (editCashAmount !== null) {
 			editOnlineAmount = Math.max(0, totalAmount - editCashAmount);
 		}
 	}
@@ -1134,7 +1134,7 @@
 											class="em-input"
 											value={editAdjustedBill ?? ''}
 											oninput={onAdjustedBillInput}
-											placeholder={totalAmount}
+											placeholder="{totalAmount}"
 										/>
 									</div>
 								</div>
@@ -1255,7 +1255,7 @@
 							value={editAdjustedBill ?? ''}
 							oninput={onAdjustedBillInput}
 							onblur={syncPaymentSplitToDB}
-							placeholder={totalAmount}
+							placeholder="{totalAmount}"
 						/>
 					</div>
 				</div>
