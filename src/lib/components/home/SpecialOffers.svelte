@@ -1,43 +1,10 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
 	import { onMount } from 'svelte';
+	import { appSettings } from '$lib/stores/appSettings';
 
-	// Data for offers
-	const offers = [
-		{
-			id: 1,
-			badge: 'HOT DEAL',
-			badgeClass: 'hot',
-			icon: '✂️',
-			title: 'Haircuts Starting @ ₹299',
-			description: 'Get premium haircut styles starting at just ₹299! Limited time offer.',
-			oldPrice: '₹400-600',
-			newPrice: '₹299',
-			discount: null
-		},
-		{
-			id: 2,
-			badge: 'FESTIVE SPECIAL',
-			badgeClass: 'festive',
-			icon: '🪔',
-			title: 'Festive Beauty Package',
-			description: '15% off* prices are inclusive of the offer',
-			oldPrice: null,
-			newPrice: '15% OFF*',
-			discount: null
-		},
-		{
-			id: 3,
-			badge: 'STUDENT OFFER',
-			badgeClass: 'student',
-			icon: '🎓',
-			title: 'College Student Discount',
-			description: 'Get 15% off on all services with valid student ID',
-			oldPrice: null,
-			newPrice: '15% OFF',
-			discount: null
-		}
-	];
+	// Reactive offers from the database
+	const offers = $derived($appSettings.specialOffers || []);
 
 	let visible = false;
 
@@ -57,7 +24,7 @@
 	});
 </script>
 
-<section class="offers-section container section-padding">
+<section id="special-offers" class="offers-section container section-padding">
 	<div class="section-header">
 		<h2 class="section-title">
 			<span class="title-decoration">✨</span>
@@ -71,10 +38,16 @@
 		{#if visible}
 			{#each offers as offer, i}
 				<div class="offer-card glow-card" in:fly={{ y: 50, duration: 800, delay: i * 200 }}>
-					<div class="offer-badge {offer.badgeClass}">{offer.badge}</div>
-					<div class="offer-icon">{offer.icon}</div>
+					<div class="offer-badge {i === 0 ? 'hot' : i === 1 ? 'festive' : 'student'}">{offer.badge}</div>
+					<div class="offer-icon">
+						{#if offer.icon && offer.icon.startsWith('http')}
+							<img src={offer.icon} alt={offer.title} class="offer-img-icon" />
+						{:else}
+							{offer.icon || '✨'}
+						{/if}
+					</div>
 					<h3>{offer.title}</h3>
-					<p>{offer.description}</p>
+					<p>{offer.desc}</p>
 					<div class="offer-price">
 						{#if offer.oldPrice}
 							<span class="old-price">{offer.oldPrice}</span>
@@ -90,6 +63,10 @@
 </section>
 
 <style>
+	.offers-section {
+		scroll-margin-top: 60px;
+	}
+
 	.section-padding {
 		padding-top: 60px;
 		padding-bottom: 60px;
@@ -181,6 +158,13 @@
 		font-size: 2.5rem;
 		margin-bottom: 15px;
 		display: inline-block;
+	}
+
+	.offer-img-icon {
+		width: 48px;
+		height: 48px;
+		object-fit: contain;
+		margin-bottom: 15px;
 	}
 
 	.offer-card h3 {

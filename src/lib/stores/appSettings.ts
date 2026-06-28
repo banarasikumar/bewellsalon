@@ -5,11 +5,51 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 export interface AppSettings {
 	defaultPaymentGateway: 'default' | 'razorpay';
 	totalChairs: number;
+	promoTickerText: string;
+	specialOffers: Array<{
+		id: number;
+		badge: string;
+		icon: string;
+		title: string;
+		desc: string;
+		oldPrice: string;
+		newPrice: string;
+	}>;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
 	defaultPaymentGateway: 'default',
-	totalChairs: 3
+	totalChairs: 3,
+	promoTickerText: '✨ FESTIVE SPECIAL: Get 15% OFF on all Premium Beauty Packages this week! Tap to book now. ✨',
+	specialOffers: [
+		{
+			id: 1,
+			badge: 'HOT DEAL',
+			icon: '✂️',
+			title: 'Haircuts Starting @ ₹299',
+			desc: 'Get premium haircut styles starting at just ₹299! Limited time offer.',
+			oldPrice: '₹400-600',
+			newPrice: '₹299'
+		},
+		{
+			id: 2,
+			badge: 'FESTIVE SPECIAL',
+			icon: '🪔',
+			title: 'Festive Beauty Package',
+			desc: '15% off* prices are inclusive of the offer',
+			oldPrice: '',
+			newPrice: '15% OFF*'
+		},
+		{
+			id: 3,
+			badge: 'STUDENT OFFER',
+			icon: '🎓',
+			title: 'College Student Discount',
+			desc: 'Get 15% off on all services with valid student ID',
+			oldPrice: '',
+			newPrice: '15% OFF'
+		}
+	]
 };
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);

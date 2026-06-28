@@ -33,7 +33,8 @@
 		Sparkles,
 		Wrench,
 		Download,
-		Upload
+		Upload,
+		Tag
 	} from 'lucide-svelte';
 	import { flip } from 'svelte/animate';
 	import { onMount, onDestroy } from 'svelte';
@@ -261,6 +262,12 @@
 			handler: () => goto('/admin/services')
 		},
 		{ label: 'Roles', icon: Shield, bg: 'var(--admin-green)', handler: () => goto('/admin/staff') },
+		{
+			label: 'Offers',
+			icon: Tag,
+			bg: 'var(--admin-orange, #f59e0b)',
+			handler: () => goto('/admin/offers')
+		},
 		{
 			label: 'Tools',
 			icon: Wrench,
