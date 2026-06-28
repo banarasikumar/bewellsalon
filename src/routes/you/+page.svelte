@@ -19,6 +19,7 @@
 	// Svelte 5 Runes
 	let user = $state<User | null>(null);
 	let latestBooking = $state<any>(null);
+	let lastCompletedBooking = $state<any>(null);
 	let loading = $state(true);
 	let loadingProfile = $state(true);
 	let isLoggingOut = $state(false);
@@ -157,6 +158,16 @@
 				});
 
 				latestBooking = upcoming.length > 0 ? upcoming[0] : null;
+
+				// 4. Find most recent completed booking
+				const completedBookings = docs.filter((b: any) => b.status === 'completed');
+				completedBookings.sort((a: any, b: any) => {
+					// Use createdAt if available, else date
+					const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(`${a.date}T${a.time?.replace(' ', '') || '00:00'}`).getTime();
+					const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(`${b.date}T${b.time?.replace(' ', '') || '00:00'}`).getTime();
+					return timeB - timeA; // Descending
+				});
+				lastCompletedBooking = completedBookings.length > 0 ? completedBookings[0] : null;
 			}
 		} catch (error) {
 			console.error('Error fetching latest booking:', error);
@@ -403,6 +414,22 @@
 
 				<!-- QUICK ACTIONS -->
 				<QuickActions />
+
+				<!-- RECENT VISIT REVIEW -->
+				{#if lastCompletedBooking}
+					<h2 class="section-title" style="margin-top: 24px;">Your Recent Visit</h2>
+					<div class="review-widget">
+						<div class="review-widget-content">
+							<div class="review-text-col">
+								<h3>How was your experience?</h3>
+								<p>You recently completed <strong>{getServiceName(lastCompletedBooking.services?.[0])}</strong> on {formatServiceDate(lastCompletedBooking.date)}.</p>
+							</div>
+							<a href="https://www.google.com/maps/search/?api=1&query=Bewell+Family+Salon+Tattoos+Bhandup+West+Mumbai" target="_blank" class="review-btn-primary">
+								⭐ Leave a Review
+							</a>
+						</div>
+					</div>
+				{/if}
 
 				<!-- LOGOUT -->
 				<!-- LOGOUT -->
@@ -758,5 +785,55 @@
 	.confirm-btn {
 		background: #ff3b30;
 		color: white;
+	}
+
+	/* REVIEW WIDGET */
+	.review-widget {
+		background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(212, 175, 55, 0.05) 100%);
+		border: 1px solid rgba(212, 175, 55, 0.2);
+		border-radius: 20px;
+		padding: 20px;
+		margin-bottom: 24px;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+		backdrop-filter: blur(10px);
+	}
+	.review-widget-content {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+	.review-text-col h3 {
+		font-family: var(--font-heading);
+		font-size: 1.1rem;
+		color: var(--color-text-primary);
+		margin: 0 0 6px 0;
+	}
+	.review-text-col p {
+		color: var(--color-text-secondary);
+		font-size: 0.85rem;
+		margin: 0;
+		line-height: 1.4;
+	}
+	.review-btn-primary {
+		background: #ffffff;
+		color: #3c4043;
+		text-decoration: none;
+		font-family: var(--font-body);
+		font-weight: 600;
+		font-size: 0.95rem;
+		padding: 14px 20px;
+		border-radius: 50px;
+		text-align: center;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		gap: 8px;
+		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+		transition: all 0.2s ease;
+		border: 1px solid #e8eaed;
+	}
+	.review-btn-primary:active {
+		transform: scale(0.98);
+		background: #f8f9fa;
 	}
 </style>

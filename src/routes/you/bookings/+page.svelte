@@ -495,6 +495,15 @@
 								<div class="location-content">
 									<span class="salon-name text-muted">Bewell Salon</span>
 								</div>
+								{#if booking.status === 'completed'}
+									<a
+										href="https://www.google.com/maps/search/?api=1&query=Bewell+Family+Salon+Tattoos+Bhandup+West+Mumbai"
+										target="_blank"
+										class="review-inline-btn"
+									>
+										⭐ Leave Review
+									</a>
+								{/if}
 							</div>
 						</div>
 					{/each}
@@ -596,6 +605,14 @@
 							{#if booking.status === 'confirmed'}
 								<a href="tel:+91 8928390360, +91 9702243497" class="footer-call-btn">
 									<Phone size={20} />
+								</a>
+							{:else if booking.status === 'completed'}
+								<a
+									href="https://www.google.com/maps/search/?api=1&query=Bewell+Family+Salon+Tattoos+Bhandup+West+Mumbai"
+									target="_blank"
+									class="review-inline-btn"
+								>
+									⭐ Review
 								</a>
 							{/if}
 						</div>
@@ -1149,5 +1166,27 @@
 	}
 	.history-grid .booking-services-section {
 		margin-bottom: 0px;
+	}
+
+	.review-inline-btn {
+		background: #ffffff;
+		color: #3c4043;
+		font-weight: 600;
+		font-size: 0.85rem;
+		padding: 8px 14px;
+		border-radius: 8px;
+		text-decoration: none;
+		border: 1px solid #e8eaed;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		transition: all 0.2s ease;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+	}
+	
+	.review-inline-btn:hover {
+		background: #f8f9fa;
+		transform: translateY(-2px);
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 	}
 </style>

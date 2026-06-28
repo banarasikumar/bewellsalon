@@ -42,6 +42,8 @@
 		const path = page.url.pathname;
 		if (path.includes('/admin/import-walkins')) return 'Import Walk-ins';
 		if (path.includes('/admin/recycle-bin')) return 'Recycle Bin';
+		// Booking detail page: /admin/bookings/<id>
+		if (path.match(/\/admin\/bookings\/.+/)) return 'Booking Details';
 		if (path.includes('/admin/bookings')) return 'Bookings';
 		if (path.includes('/admin/users/') && path.split('/admin/users/')[1]) return 'User Details';
 		if (path.includes('/admin/users')) return 'Users';
@@ -56,8 +58,13 @@
 		return 'Dashboard';
 	});
 
-	let showBackInHeader = $derived(page.url.pathname.includes('/performance'));
-	let headerBackUrl = $derived(showBackInHeader ? '/admin/stats' : '');
+	let isBookingDetailPage = $derived(!!page.url.pathname.match(/\/admin\/bookings\/.+/));
+	let showBackInHeader = $derived(page.url.pathname.includes('/performance') || isBookingDetailPage);
+	let headerBackUrl = $derived(
+		isBookingDetailPage ? '/admin/bookings' :
+		showBackInHeader ? '/admin/stats' : ''
+	);
+	let hideBottomNav = $derived(isBookingDetailPage);
 
 	let isLoginPage = $derived(page.url.pathname.includes('/admin/login'));
 
@@ -285,7 +292,9 @@
 					{@render children()}
 				</div>
 			</main>
-			<AdminNav />
+			{#if !hideBottomNav}
+				<AdminNav />
+			{/if}
 		</div>
 		<AdminToast />
 	{:else}

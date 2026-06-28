@@ -140,6 +140,41 @@
 		};
 	});
 
+	// --- Auto-cancel overdue pending bookings ---
+	let autoCancelledIds = new Set<string>();
+	$effect(() => {
+		const now = Date.now();
+		for (const b of $allBookings) {
+			const s = (b.status || 'pending').toLowerCase();
+			if (s !== 'pending') continue;
+			if (autoCancelledIds.has(b.id)) continue;
+			const ts = getBookingTimestamp(b);
+			if (ts > 0 && ts < now) {
+				autoCancelledIds.add(b.id);
+				updateBookingStatus(b.id, 'cancelled').then(() => {
+					console.log(`[Auto-Cancel] Pending booking ${b.id} auto-cancelled (appointment passed)`);
+				}).catch((err) => {
+					console.error(`[Auto-Cancel] Failed for ${b.id}:`, err);
+					autoCancelledIds.delete(b.id);
+				});
+			}
+		}
+	});
+
+	// --- Helper: compute display status for a booking ---
+	function getDisplayStatus(booking: Booking): { label: string; cssClass: string } {
+		const s = (booking.status || 'pending').toLowerCase();
+		if (s === 'confirmed') {
+			const ts = getBookingTimestamp(booking);
+			if (ts > 0 && ts < Date.now()) {
+				return { label: 'overdue', cssClass: 'overdue' };
+			}
+			return { label: 'confirmed', cssClass: 'confirmed' };
+		}
+		const cssClass = s === 'declined' ? 'cancelled' : s;
+		return { label: s, cssClass };
+	}
+
 	// --- Scroll to Top ---
 	let showScrollTop = $state(false);
 
@@ -161,7 +196,7 @@
 		{ label: 'Confirmed', value: 'confirmed', color: 'var(--admin-green)' },
 		{ label: 'Completed', value: 'completed', color: 'var(--admin-green)' },
 		{ label: 'Cancelled', value: 'cancelled', color: 'var(--admin-red)' },
-		{ label: 'Overdue', value: 'overdue', color: 'var(--admin-red)' }
+		{ label: 'Overdue', value: 'overdue', color: 'var(--admin-red)' }  // Confirmed bookings past appointment time
 	];
 
 	// --- Filtered & sorted bookings ---
@@ -176,7 +211,8 @@
 			// Status filter
 			if (statusFilter !== 'all') {
 				if (statusFilter === 'overdue') {
-					if (s !== 'pending') return false;
+					// Overdue = confirmed bookings whose appointment time has passed
+					if (s !== 'confirmed') return false;
 					const ts = getBookingTimestamp(b);
 					if (ts > now) return false;
 				} else if (statusFilter === 'unassigned') {
@@ -335,74 +371,6 @@
 		const code = (name || 'U').charCodeAt(0);
 		return avatarColors[code % avatarColors.length];
 	}
-
-	// --- Swipe ---
-	let swipeStartX = 0;
-	let swipeStartY = 0;
-	let swipingId = $state<string | null>(null);
-	let swipeOffsets = $state<Record<string, number>>({});
-
-	function onTouchStart(e: TouchEvent, bookingId: string) {
-		swipeStartX = e.touches[0].clientX;
-		swipeStartY = e.touches[0].clientY;
-		// Only start swipe if we are not already swiping another item or this item
-		if (swipingId && swipingId !== bookingId) {
-			// Close others
-			swipingId = null;
-			swipeOffsets = {};
-		}
-		swipingId = bookingId;
-	}
-
-	function onTouchMove(e: TouchEvent, bookingId: string) {
-		if (swipingId !== bookingId) return;
-
-		const currentX = e.touches[0].clientX;
-		const currentY = e.touches[0].clientY;
-		const diffX = currentX - swipeStartX;
-		const diffY = currentY - swipeStartY;
-
-		// If user is scrolling vertically more than horizontally, ignore swipe
-		if (Math.abs(diffY) > Math.abs(diffX)) {
-			return; // Allow native scroll
-		}
-
-		// Prevent native scroll if swiping horizontally
-		if (Math.abs(diffX) > 10) {
-			if (e.cancelable) e.preventDefault();
-		}
-
-		// Only allow swiping to the right (positive diffX) since actions are on the left
-		if (diffX > 0 && diffX < 200) {
-			swipeOffsets[bookingId] = diffX;
-			swipeOffsets = { ...swipeOffsets };
-		}
-	}
-
-	function onTouchEnd(e: TouchEvent, bookingId: string) {
-		if (swipingId !== bookingId) return;
-
-		const offset = swipeOffsets[bookingId] || 0;
-		if (offset > 80) {
-			// Changed threshold to 80px for easier activation
-			swipeOffsets[bookingId] = 160; // Keep open
-		} else {
-			swipeOffsets[bookingId] = 0; // Close
-			swipingId = null;
-		}
-		swipeOffsets = { ...swipeOffsets };
-		// Don't nullify swipingId immediately if kept open, so we know which one is open?
-		// Actually, if we keep open, we can reset swipingId or keep it.
-		// Let's reset swipingId so other touches can start.
-		swipingId = null;
-	}
-
-	function closeSwipe(bookingId: string) {
-		if (swipeOffsets[bookingId] && swipeOffsets[bookingId] > 0) {
-			swipeOffsets[bookingId] = 0;
-			swipeOffsets = { ...swipeOffsets };
-		}
-	}
 </script>
 
 <!-- Manage Toolbar -->
@@ -488,64 +456,32 @@
 
 <!-- Bookings Snippet -->
 {#snippet bookingCard(booking: Booking)}
-	{@const status = (booking.status || 'pending').toLowerCase()}
-	{@const statusClass = status === 'declined' ? 'cancelled' : status}
+	{@const displayStatus = getDisplayStatus(booking)}
+	{@const status = displayStatus.label}
+	{@const statusClass = displayStatus.cssClass}
 	{@const dateStr = formatFirestoreDate(booking.date)}
 	{@const bookedOn = formatRelativeTime(booking.createdAt)}
 	{@const countdown = calculateCountdown(booking.date, booking.time)}
 	{@const services = getServices(booking)}
 	{@const isProcessing = processingIds[booking.id] === 'processing'}
 	{@const isVanishing = processingIds[booking.id] === 'vanishing'}
-	{@const offset = swipeOffsets[booking.id] || 0}
 
 	<div class="admin-swipe-container" class:admin-card-vanishing={isVanishing}>
-		<!-- Swipe Actions -->
-		<!-- Swipe Actions (Only render if this card is being swiped or is open) -->
-		{#if (status === 'pending' || status === 'confirmed') && (swipingId === booking.id || offset !== 0)}
-			<div class="admin-swipe-actions">
-				<button
-					class="admin-swipe-btn complete"
-					onclick={(e) => {
-						e.stopPropagation();
-						handleStatusUpdate(booking.id, 'completed');
-					}}
-					ontouchend={(e) => {
-						e.stopPropagation();
-					}}
-				>
-					<Check size={18} />
-					Complete
-				</button>
-				<button
-					class="admin-swipe-btn cancel"
-					onclick={(e) => {
-						e.stopPropagation();
-						handleStatusUpdate(booking.id, 'cancelled');
-					}}
-					ontouchend={(e) => {
-						e.stopPropagation();
-					}}
-				>
-					<Ban size={18} />
-					Cancel
-				</button>
-			</div>
-		{/if}
-
 		<!-- Card -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
-			class="admin-swipe-content admin-booking-card {statusClass}"
+			class="admin-swipe-content admin-booking-card slim {statusClass}"
 			class:admin-card-selected={isManageMode && selectedIds.has(booking.id)}
-			role="region"
-			style="transform: translateX({offset}px); transition: {swipingId === booking.id
-				? 'none'
-				: 'transform 0.3s ease-out'};"
-			ontouchstart={(e) => !isManageMode && onTouchStart(e, booking.id)}
-			ontouchmove={(e) => !isManageMode && onTouchMove(e, booking.id)}
-			ontouchend={(e) => !isManageMode && onTouchEnd(e, booking.id)}
-			onclick={() => (isManageMode ? toggleSelect(booking.id) : closeSwipe(booking.id))}
+			role="button"
+			tabindex="0"
+			onclick={() => {
+				if (isManageMode) {
+					toggleSelect(booking.id);
+				} else {
+					goto('/admin/bookings/' + booking.id);
+				}
+			}}
 		>
 			{#if isProcessing}
 				<div class="admin-processing-overlay">
@@ -585,194 +521,41 @@
 							<AlertCircle size={10} /> Unassigned
 						</span>
 					{/if}
-					<span class="admin-status-badge {statusClass}">{status}</span>
+					<span class="admin-status-badge {statusClass}">{status.toUpperCase()}</span>
 				</div>
 			</div>
 
-			<!-- Details Grid -->
-			<div class="admin-details-grid">
-				<!-- Appointment -->
-				<div
-					class="admin-detail-item full-width"
-					style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.04)); border-color: rgba(99, 102, 241, 0.15);"
-				>
-					<span class="admin-detail-label">
-						<Calendar size={10} /> Appointment
-					</span>
-					<div
-						style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;"
-					>
-						<span class="admin-detail-value" style="font-size: 15px; font-weight: 700;">
-							{dateStr} • {booking.time || '--:--'}
-						</span>
-						{#if countdown}
-							<span
-								class="admin-countdown"
-								class:upcoming={!countdown.isOverdue}
-								class:overdue={countdown.isOverdue}
-							>
-								{countdown.label}
-							</span>
-						{/if}
-					</div>
-				</div>
-
-				<!-- Client -->
-				<div class="admin-detail-item full-width">
-					<span class="admin-detail-label">Client</span>
-					<div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+			<!-- Slim Details -->
+			<div class="admin-slim-details">
+				<div class="client-time-row">
+					<div class="client-info">
 						{#if booking.userPhoto}
-							<img src={booking.userPhoto} alt={booking.userName} class="admin-avatar-img" />
+							<img src={booking.userPhoto} alt={booking.userName} class="admin-avatar-img-small" />
 						{:else}
 							<div
-								class="admin-avatar-fallback"
+								class="admin-avatar-fallback-small"
 								style="background: {getAvatarColor(booking.userName || '')};"
 							>
 								{(booking.userName || 'G').charAt(0).toUpperCase()}
 							</div>
 						{/if}
-						<div style="min-width: 0;">
-							<div style="font-size: 14px; font-weight: 700; color: var(--admin-text-primary);">
-								{booking.userName || 'Guest'}
-							</div>
-							<div
-								style="font-size: 12px; color: var(--admin-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
-							>
-								{booking.userEmail || 'No Email'}
-							</div>
-						</div>
+						<span class="client-name">{booking.userName || 'Guest'}</span>
+					</div>
+					<div class="time-info">
+						<span class="time-text">{dateStr} • {booking.time || '--:--'}</span>
 					</div>
 				</div>
-
-				<!-- Services -->
-				<div class="admin-detail-item full-width">
-					<span class="admin-detail-label">Services</span>
+				<div class="service-row">
 					{#if services.length > 0}
-						<div class="admin-service-chips" style="margin-top: 4px;">
-							{#each services as service, i}
-								{@const c = chipColors[(service.length + i) % chipColors.length]}
-								<span class="admin-service-chip" style="background: {c.bg}; color: {c.text};">
-									{service}
-								</span>
-							{/each}
-						</div>
+						<span class="primary-service">{services[0]}</span>
+						{#if services.length > 1}
+							<span class="extra-services">+{services.length - 1} more</span>
+						{/if}
 					{:else}
-						<span style="color: var(--admin-text-secondary); font-style: italic; font-size: 13px;"
-							>No services</span
-						>
-					{/if}
-				</div>
-
-				<!-- Staff Assignment -->
-				<div class="admin-detail-item full-width">
-					<span class="admin-detail-label">Staff Assignment</span>
-					<div style="margin-top: 4px;">
-						<select
-							class="admin-staff-select"
-							value={booking.staffId || 'unassigned'}
-							onchange={async (e) => {
-								const select = e.currentTarget as HTMLSelectElement;
-								const staffId = select.value;
-								const staffName = select.options[select.selectedIndex].text;
-								try {
-									await updateBookingDetails(booking.id, { staffId, staffName });
-									showToast('Staff assignment updated', 'success');
-								} catch (error) {
-									showToast('Failed to update assignment', 'error');
-									select.value = booking.staffId || 'unassigned';
-								}
-							}}
-							style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--admin-border); background: var(--admin-bg-primary); color: var(--admin-text-primary); font-size: 13px;"
-						>
-							<option value="unassigned">Unassigned (Any Staff)</option>
-							{#each $adminStaffUsers as staff}
-								<option value={staff.id}>{staff.displayName || staff.name || 'Staff'}</option>
-							{/each}
-						</select>
-					</div>
-				</div>
-
-				<!-- Contact -->
-				<div class="admin-detail-item">
-					<span class="admin-detail-label">Contact</span>
-					<span class="admin-detail-value">{booking.userPhone || 'N/A'}</span>
-				</div>
-
-				<!-- Booked On -->
-				<div class="admin-detail-item">
-					<span class="admin-detail-label">Booked On</span>
-					<span class="admin-detail-value" style="font-size: 11px; font-weight: 500;"
-						>{bookedOn}</span
-					>
-				</div>
-
-				<!-- Special Request -->
-				<div class="admin-detail-item full-width">
-					<span class="admin-detail-label">Special Request</span>
-					{#if booking.notes}
-						<span class="admin-detail-value" style="font-weight: 500; white-space: normal;"
-							>{booking.notes}</span
-						>
-					{:else}
-						<span style="font-size: 13px; color: var(--admin-text-secondary); font-style: italic;"
-							>None</span
-						>
+						<span class="primary-service italic">No services</span>
 					{/if}
 				</div>
 			</div>
-
-			{#if status === 'pending'}
-				<div class="admin-card-actions">
-					<button
-						class="admin-action-btn confirm"
-						class:awaiting={confirmAction?.id === booking.id &&
-							confirmAction?.action === 'confirmed'}
-						disabled={isProcessing}
-						onclick={(e) => {
-							e.stopPropagation();
-							if (confirmAction?.id === booking.id && confirmAction?.action === 'confirmed') {
-								confirmAction = null;
-								handleStatusUpdate(booking.id, 'confirmed');
-							} else {
-								if (confirmTimer) clearTimeout(confirmTimer);
-								confirmAction = { id: booking.id, action: 'confirmed' };
-								confirmTimer = setTimeout(() => {
-									confirmAction = null;
-								}, 5000);
-							}
-						}}
-					>
-						<Check size={13} />
-						{confirmAction?.id === booking.id && confirmAction?.action === 'confirmed'
-							? 'Sure?'
-							: 'Confirm'}
-					</button>
-					<button
-						class="admin-action-btn cancel"
-						class:awaiting={confirmAction?.id === booking.id &&
-							confirmAction?.action === 'cancelled'}
-						disabled={isProcessing}
-						onclick={(e) => {
-							e.stopPropagation();
-							if (confirmAction?.id === booking.id && confirmAction?.action === 'cancelled') {
-								confirmAction = null;
-								handleStatusUpdate(booking.id, 'cancelled');
-							} else {
-								if (confirmTimer) clearTimeout(confirmTimer);
-								confirmAction = { id: booking.id, action: 'cancelled' };
-								confirmTimer = setTimeout(() => {
-									confirmAction = null;
-								}, 5000);
-							}
-						}}
-					>
-						<Ban size={13} />
-						{confirmAction?.id === booking.id && confirmAction?.action === 'cancelled'
-							? 'Sure?'
-							: 'Cancel'}
-					</button>
-				</div>
-			{/if}
 		</div>
 	</div>
 {/snippet}
@@ -866,3 +649,86 @@
 		<ArrowUp size={20} strokeWidth={2.5} />
 	</button>
 {/if}
+<style>
+	.admin-booking-card.slim {
+		padding: 12px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		cursor: pointer;
+		transition: transform 0.2s, box-shadow 0.2s;
+	}
+	.admin-booking-card.slim:active {
+		transform: scale(0.98);
+	}
+	.admin-booking-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding-bottom: 8px;
+		border-bottom: 1px dashed rgba(255,255,255,0.1);
+	}
+	.admin-slim-details {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.client-time-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.client-info {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.admin-avatar-img-small {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+	.admin-avatar-fallback-small {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 10px;
+		font-weight: bold;
+		color: white;
+	}
+	.client-name {
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--admin-text-primary);
+	}
+	.time-info .time-text {
+		font-size: 12px;
+		font-weight: 500;
+		color: var(--admin-text-secondary);
+	}
+	.service-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.primary-service {
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--admin-text-primary);
+	}
+	.primary-service.italic {
+		font-style: italic;
+		color: var(--admin-text-secondary);
+	}
+	.extra-services {
+		font-size: 11px;
+		background: rgba(255,255,255,0.1);
+		padding: 2px 6px;
+		border-radius: 4px;
+		color: var(--admin-text-secondary);
+	}
+</style>
