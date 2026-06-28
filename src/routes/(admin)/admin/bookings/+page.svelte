@@ -23,7 +23,9 @@
 		Square,
 		CheckSquare,
 		ArrowUp,
-		SlidersHorizontal
+		SlidersHorizontal,
+		User,
+		AlertCircle
 	} from 'lucide-svelte';
 	import {
 		softDeleteBookings,
@@ -154,6 +156,7 @@
 	// --- Filter Chips ---
 	const activeChips = [
 		{ label: 'All', value: 'all', color: 'var(--admin-accent)' },
+		{ label: 'Unassigned', value: 'unassigned', color: 'var(--admin-orange)' },
 		{ label: 'Pending', value: 'pending', color: 'var(--admin-orange)' },
 		{ label: 'Confirmed', value: 'confirmed', color: 'var(--admin-green)' },
 		{ label: 'Completed', value: 'completed', color: 'var(--admin-green)' },
@@ -176,6 +179,9 @@
 					if (s !== 'pending') return false;
 					const ts = getBookingTimestamp(b);
 					if (ts > now) return false;
+				} else if (statusFilter === 'unassigned') {
+					if (s === 'cancelled' || s === 'completed' || s === 'declined') return false;
+					if (b.staffId && b.staffId !== 'unassigned') return false;
 				} else {
 					if (s !== statusFilter) return false;
 				}
@@ -550,24 +556,37 @@
 
 			<!-- Header -->
 			<div class="admin-booking-header">
-				{#if isManageMode}
-					<button
-						class="admin-select-checkbox"
-						class:checked={selectedIds.has(booking.id)}
-						onclick={(e) => {
-							e.stopPropagation();
-							toggleSelect(booking.id);
-						}}
-					>
-						{#if selectedIds.has(booking.id)}
-							<CheckSquare size={20} />
-						{:else}
-							<Square size={20} />
-						{/if}
-					</button>
-				{/if}
-				<span class="admin-booking-id">#{booking.id.slice(0, 8).toUpperCase()}</span>
-				<span class="admin-status-badge {statusClass}">{status}</span>
+				<div style="display: flex; align-items: center; gap: 8px;">
+					{#if isManageMode}
+						<button
+							class="admin-select-checkbox"
+							class:checked={selectedIds.has(booking.id)}
+							onclick={(e) => {
+								e.stopPropagation();
+								toggleSelect(booking.id);
+							}}
+						>
+							{#if selectedIds.has(booking.id)}
+								<CheckSquare size={20} />
+							{:else}
+								<Square size={20} />
+							{/if}
+						</button>
+					{/if}
+					<span class="admin-booking-id">#{booking.id.slice(0, 8).toUpperCase()}</span>
+				</div>
+				<div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+					{#if booking.staffId && booking.staffId !== 'unassigned'}
+						<span class="admin-staff-badge assigned">
+							<User size={10} /> {booking.staffName || 'Staff'}
+						</span>
+					{:else}
+						<span class="admin-staff-badge unassigned">
+							<AlertCircle size={10} /> Unassigned
+						</span>
+					{/if}
+					<span class="admin-status-badge {statusClass}">{status}</span>
+				</div>
 			</div>
 
 			<!-- Details Grid -->

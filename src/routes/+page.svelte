@@ -4,6 +4,7 @@
 	import { appServices } from '$lib/stores/appData';
 	import PromoTicker from '$lib/components/home/PromoTicker.svelte';
 	import SpecialOffers from '$lib/components/home/SpecialOffers.svelte';
+	import PromoVideo from '$lib/components/home/PromoVideo.svelte';
 	import HomeGallery from '$lib/components/home/HomeGallery.svelte';
 	import TransformationGallery from '$lib/components/home/TransformationGallery.svelte';
 	import StaffSpotlight from '$lib/components/home/StaffSpotlight.svelte';
@@ -46,6 +47,7 @@
 	</section>
 
 	<SpecialOffers />
+	<PromoVideo />
 	<HomeGallery />
 	<TransformationGallery />
 

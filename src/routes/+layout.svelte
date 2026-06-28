@@ -19,6 +19,7 @@
 
 	import { theme, THEME_COLORS } from '$lib/stores/theme';
 	import { initAppServiceListener } from '$lib/stores/appData';
+	import { initAppSettingsListener } from '$lib/stores/appSettings';
 	import { tryOnPicker } from '$lib/stores/tryOnPicker';
 
 	// Dynamic Import for Simulator
@@ -72,6 +73,7 @@
 		if (!isAdminRoute && !isStaffRoute && !isShowcaseRoute) {
 			initAuth();
 			initAppServiceListener();
+			initAppSettingsListener();
 
 			// Foreground FCM handler for the customer app using unified pushService
 			import('$lib/capacitor/pushService').then(({ initPush }) => {

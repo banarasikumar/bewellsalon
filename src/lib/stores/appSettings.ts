@@ -15,6 +15,8 @@ export interface AppSettings {
 		oldPrice: string;
 		newPrice: string;
 	}>;
+	promoVideoUrl: string;
+	promoVideoEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -49,7 +51,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 			oldPrice: '',
 			newPrice: '15% OFF'
 		}
-	]
+	],
+	promoVideoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder default video
+	promoVideoEnabled: false
 };
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);

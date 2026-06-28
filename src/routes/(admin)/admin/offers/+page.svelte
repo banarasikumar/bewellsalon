@@ -4,9 +4,12 @@
 	import { Save, Tag, RefreshCw, AlertCircle, Image as ImageIcon, Sparkles, TrendingUp } from 'lucide-svelte';
 
 	let savingTicker = $state(false);
+	let savingVideo = $state(false);
 	let savingOffers = $state([false, false, false]);
 
 	let localTickerText = $state($appSettings.promoTickerText || '');
+	let localVideoUrl = $state($appSettings.promoVideoUrl || '');
+	let localVideoEnabled = $state($appSettings.promoVideoEnabled || false);
 	let localOffers = $state(
 		$appSettings.specialOffers
 			? JSON.parse(JSON.stringify($appSettings.specialOffers))
@@ -18,9 +21,13 @@
 	);
 
 	$effect(() => {
-		if (!savingTicker && !savingOffers.includes(true) && $appSettings.specialOffers) {
+		if (!savingTicker && !savingVideo && !savingOffers.includes(true) && $appSettings) {
 			localTickerText = $appSettings.promoTickerText || '';
-			localOffers = JSON.parse(JSON.stringify($appSettings.specialOffers));
+			localVideoUrl = $appSettings.promoVideoUrl || '';
+			localVideoEnabled = $appSettings.promoVideoEnabled || false;
+			if ($appSettings.specialOffers) {
+				localOffers = JSON.parse(JSON.stringify($appSettings.specialOffers));
+			}
 		}
 	});
 
@@ -34,6 +41,20 @@
 			showToast('Failed to update ticker.', 'error');
 		}
 		savingTicker = false;
+	}
+
+	async function saveVideoSettings() {
+		if (savingVideo) return;
+		savingVideo = true;
+		const success1 = await updateAppSetting('promoVideoUrl', localVideoUrl);
+		const success2 = await updateAppSetting('promoVideoEnabled', localVideoEnabled);
+		
+		if (success1 && success2) {
+			showToast('Video settings updated!', 'success');
+		} else {
+			showToast('Failed to update video settings.', 'error');
+		}
+		savingVideo = false;
 	}
 
 	async function saveOffer(index: number) {
@@ -55,7 +76,11 @@
 
 	function resetChanges() {
 		localTickerText = $appSettings.promoTickerText || '';
-		localOffers = JSON.parse(JSON.stringify($appSettings.specialOffers));
+		localVideoUrl = $appSettings.promoVideoUrl || '';
+		localVideoEnabled = $appSettings.promoVideoEnabled || false;
+		if ($appSettings.specialOffers) {
+			localOffers = JSON.parse(JSON.stringify($appSettings.specialOffers));
+		}
 		showToast('Reverted to live values.', 'info');
 	}
 </script>
@@ -108,6 +133,45 @@
 				bind:value={localTickerText}
 				placeholder="Enter the exciting promo text here..."
 			></textarea>
+		</div>
+	</div>
+
+	<!-- PROMO VIDEO SECTION -->
+	<div class="glass-section promo-section">
+		<div class="section-header">
+			<div class="header-left">
+				<Sparkles size="22" class="accent-icon purple" />
+				<div>
+					<h2>Promotional Video Ad</h2>
+					<p>Configure the YouTube video to autoplay on the customer homepage.</p>
+				</div>
+			</div>
+			<div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+				<label class="toggle-switch">
+					<input type="checkbox" bind:checked={localVideoEnabled} />
+					<span class="slider round"></span>
+				</label>
+				<span class="status-text">{localVideoEnabled ? 'Active' : 'Hidden'}</span>
+
+				<button class="btn btn-primary" onclick={saveVideoSettings} disabled={savingVideo}>
+					{#if savingVideo}
+						<div class="spinner"></div>
+					{:else}
+						<Save size="16" />
+						Save Video
+					{/if}
+				</button>
+			</div>
+		</div>
+		
+		<div class="input-container">
+			<label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--admin-text-secondary); font-size: 13px;">YouTube Video URL</label>
+			<input 
+				type="text"
+				class="premium-input" 
+				bind:value={localVideoUrl}
+				placeholder="https://www.youtube.com/watch?v=..."
+			/>
 		</div>
 	</div>
 
@@ -496,5 +560,55 @@
 		.section-header .btn {
 			width: 100%;
 		}
+	}
+
+	/* Toggle Switch */
+	.toggle-switch {
+		position: relative;
+		display: inline-block;
+		width: 44px;
+		height: 24px;
+	}
+	.toggle-switch input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+	.slider {
+		position: absolute;
+		cursor: pointer;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: var(--admin-border);
+		transition: .4s;
+	}
+	.slider:before {
+		position: absolute;
+		content: "";
+		height: 18px;
+		width: 18px;
+		left: 3px;
+		bottom: 3px;
+		background-color: white;
+		transition: .4s;
+	}
+	input:checked + .slider {
+		background-color: var(--admin-accent);
+	}
+	input:checked + .slider:before {
+		transform: translateX(20px);
+	}
+	.slider.round {
+		border-radius: 24px;
+	}
+	.slider.round:before {
+		border-radius: 50%;
+	}
+	.status-text {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--admin-text-secondary);
 	}
 </style>

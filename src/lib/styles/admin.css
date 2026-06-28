@@ -1045,6 +1045,42 @@
 	box-shadow: 0 2px 6px rgba(255, 69, 58, 0.3);
 }
 
+/* --- Staff Badge --- */
+.admin-staff-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px;
+	border-radius: var(--admin-radius-full);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.3px;
+	white-space: nowrap;
+}
+
+.admin-staff-badge.assigned {
+	background: rgba(0, 122, 255, 0.1);
+	color: #007aff;
+	border: 1px solid rgba(0, 122, 255, 0.2);
+}
+[data-theme='clean'] .admin-staff-badge.assigned {
+	background: rgba(0, 122, 255, 0.1);
+	color: #0056cc;
+}
+
+.admin-staff-badge.unassigned {
+	background: rgba(255, 159, 10, 0.15);
+	color: #ff9f0a;
+	border: 1px solid rgba(255, 159, 10, 0.3);
+	animation: adminPulseAmber 2s infinite;
+}
+
+@keyframes adminPulseAmber {
+	0% { box-shadow: 0 0 0 0 rgba(255, 159, 10, 0.4); }
+	70% { box-shadow: 0 0 0 6px rgba(255, 159, 10, 0); }
+	100% { box-shadow: 0 0 0 0 rgba(255, 159, 10, 0); }
+}
+
 /* --- Booking Details Grid --- */
 .admin-details-grid {
 	display: grid;

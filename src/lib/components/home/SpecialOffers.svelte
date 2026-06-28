@@ -6,7 +6,7 @@
 	// Reactive offers from the database
 	const offers = $derived($appSettings.specialOffers || []);
 
-	let visible = false;
+	let visible = $state(false);
 
 	onMount(() => {
 		const observer = new IntersectionObserver(
