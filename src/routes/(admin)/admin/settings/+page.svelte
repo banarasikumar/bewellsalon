@@ -404,6 +404,78 @@
 		</div>
 	</div>
 
+	<div class="admin-settings-subcard" style="margin-top: 16px; animation: none;">
+		<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+			<UserCircle size={20} color="var(--admin-gold, #D4AF37)" />
+			<h4 style="font-size: 15px; color: var(--admin-text-primary); margin: 0; font-weight: 700;">
+				Referral Program Rewards
+			</h4>
+		</div>
+
+		<div class="admin-settings-subitem" style="border-bottom: 1px solid rgba(0, 0, 0, 0.05); padding-bottom: 12px;">
+			<div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+				<label style="display: flex; align-items: center; justify-content: space-between;">
+					<span style="font-size: 15px; font-weight: 500;">Referrer Reward (Registration)</span>
+					<input
+						type="number"
+						min="0"
+						value={$appSettings.referralRewardOnReg || 0}
+						onchange={(e) => {
+							const val = parseInt(e.currentTarget.value, 10);
+							if (!isNaN(val) && val >= 0) {
+								updateAppSetting('referralRewardOnReg', val);
+								showToast('Referral reward updated', 'success');
+							}
+						}}
+						style="width: 80px; padding: 4px 8px; border: 1px solid var(--admin-border); border-radius: 6px; text-align: center; font-size: 15px;"
+					/>
+				</label>
+			</div>
+		</div>
+
+		<div class="admin-settings-subitem" style="border-bottom: 1px solid rgba(0, 0, 0, 0.05); padding-bottom: 12px;">
+			<div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+				<label style="display: flex; align-items: center; justify-content: space-between;">
+					<span style="font-size: 15px; font-weight: 500;">Referrer Reward (First Booking)</span>
+					<input
+						type="number"
+						min="0"
+						value={$appSettings.referralRewardOnBooking || 0}
+						onchange={(e) => {
+							const val = parseInt(e.currentTarget.value, 10);
+							if (!isNaN(val) && val >= 0) {
+								updateAppSetting('referralRewardOnBooking', val);
+								showToast('Referral booking reward updated', 'success');
+							}
+						}}
+						style="width: 80px; padding: 4px 8px; border: 1px solid var(--admin-border); border-radius: 6px; text-align: center; font-size: 15px;"
+					/>
+				</label>
+			</div>
+		</div>
+
+		<div class="admin-settings-subitem" style="border-bottom: none; padding-bottom: 0;">
+			<div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+				<label style="display: flex; align-items: center; justify-content: space-between;">
+					<span style="font-size: 15px; font-weight: 500;">New User Sign-up Bonus</span>
+					<input
+						type="number"
+						min="0"
+						value={$appSettings.refereeSignUpBonus || 0}
+						onchange={(e) => {
+							const val = parseInt(e.currentTarget.value, 10);
+							if (!isNaN(val) && val >= 0) {
+								updateAppSetting('refereeSignUpBonus', val);
+								showToast('Sign-up bonus updated', 'success');
+							}
+						}}
+						style="width: 80px; padding: 4px 8px; border: 1px solid var(--admin-border); border-radius: 6px; text-align: center; font-size: 15px;"
+					/>
+				</label>
+			</div>
+		</div>
+	</div>
+
 	<div
 		class="admin-settings-item"
 		role="button"

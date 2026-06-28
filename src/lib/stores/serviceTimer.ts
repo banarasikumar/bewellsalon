@@ -194,6 +194,39 @@ export async function completeTimer(booking: Booking) {
 
 	try {
 		await updateDoc(doc(db, 'bookings', booking.id), updates);
+
+		// --- REFERRAL REWARD LOGIC ---
+		// Check if this booking is for a referred user and it's their first booking
+		if (booking.userId) {
+			const { getDoc } = await import('firebase/firestore');
+			const userRef = doc(db, 'users', booking.userId);
+			const userSnap = await getDoc(userRef);
+
+			if (userSnap.exists()) {
+				const userData = userSnap.data();
+				// If user has a referredBy and has NOT been marked as hasBooked
+				if (userData.referredBy && !userData.hasBooked) {
+					console.log(`[Referral] First booking for referred user ${booking.userId}. Rewarding referrer ${userData.referredBy}`);
+					
+					// 1. Mark this user as having booked (so they don't trigger the reward again)
+					await updateDoc(userRef, { hasBooked: true });
+
+					// 2. Fetch the reward amount from app settings
+					const { appSettings } = await import('./appSettings');
+					const currentSettings = get(appSettings);
+					const rewardAmount = currentSettings.referralRewardOnBooking || 200;
+
+					// 3. Update the referrer's wallet
+					const { increment } = await import('firebase/firestore');
+					const referrerRef = doc(db, 'users', userData.referredBy);
+					await updateDoc(referrerRef, {
+						beuCash: increment(rewardAmount),
+						referralEarnings: increment(rewardAmount)
+					});
+				}
+			}
+		}
+
 	} catch (error) {
 		console.error('Error completing service:', error);
 	}

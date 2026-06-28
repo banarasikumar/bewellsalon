@@ -17,6 +17,9 @@ export interface AppSettings {
 	}>;
 	promoVideoUrl: string;
 	promoVideoEnabled: boolean;
+	referralRewardOnReg: number;
+	referralRewardOnBooking: number;
+	refereeSignUpBonus: number;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -53,7 +56,10 @@ const DEFAULT_SETTINGS: AppSettings = {
 		}
 	],
 	promoVideoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder default video
-	promoVideoEnabled: false
+	promoVideoEnabled: false,
+	referralRewardOnReg: 100,
+	referralRewardOnBooking: 200,
+	refereeSignUpBonus: 150
 };
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);

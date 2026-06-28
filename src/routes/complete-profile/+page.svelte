@@ -13,6 +13,10 @@
 	import WelcomeModal from '$lib/components/WelcomeModal.svelte';
 	import { DotLottieSvelte } from '@lottiefiles/dotlottie-svelte';
 
+	import { page } from '$app/stores';
+	import { generateReferralCode, validateReferralCode, processRegistrationReferral } from '$lib/services/referralService';
+	import { appSettings } from '$lib/stores/appSettings';
+
 	let loading = true;
 	let submitting = false;
 	let showWelcomeModal = false;
@@ -26,6 +30,8 @@
 	let dobInput = ''; // DD/MM/YYYY display format
 	let dobValue = ''; // YYYY-MM-DD for storage
 	let systemDateInput: HTMLInputElement;
+	let referralCodeInput = '';
+	let validatingReferral = false;
 
 	// Derived from store
 	let pendingData: any = null;
@@ -49,6 +55,14 @@
 	const unsubMandatory = isProfileMandatory.subscribe((v) => (mandatory = v));
 
 	onMount(() => {
+		// Try to get referral code from URL or localStorage (if saved before auth redirect)
+		const refParam = $page.url.searchParams.get('ref') || localStorage.getItem('pending_referral_code');
+		if (refParam) {
+			referralCodeInput = refParam;
+		}
+		// Clear it so it doesn't linger for future registrations on same device
+		localStorage.removeItem('pending_referral_code');
+
 		unsubscribe = onAuthStateChanged(auth, async (user) => {
 			loading = false;
 			currentUser = user;
@@ -275,7 +289,24 @@
 				currentProvider = 'whatsapp';
 			}
 
-			const profileData = {
+			// Validate referral code if provided
+			let validReferrerId = null;
+			if (referralCodeInput.trim()) {
+				validatingReferral = true;
+				validReferrerId = await validateReferralCode(referralCodeInput.trim());
+				if (!validReferrerId) {
+					showToast('Invalid referral code. Please check and try again.', 'error');
+					submitting = false;
+					validatingReferral = false;
+					return;
+				}
+				validatingReferral = false;
+			}
+
+			// Generate a referral code for this new user
+			const newReferralCode = await generateReferralCode(name.trim());
+
+			const profileData: any = {
 				name: name.trim(),
 				gender: gender,
 				dob: dobValue,
@@ -284,9 +315,17 @@
 				provider: currentProvider,
 				phone: userPhone,
 				profileCompleted: true,
+				referralCode: newReferralCode,
+				referralsCount: 0,
+				referralEarnings: 0,
+				hasBooked: false,
 				lastLogin: serverTimestamp(),
 				updatedAt: serverTimestamp()
 			};
+
+			if (validReferrerId) {
+				profileData.referredBy = validReferrerId;
+			}
 
 			if (existingDoc.exists()) {
 				await setDoc(userRef, profileData, { merge: true });
@@ -334,6 +373,22 @@
 				}
 			} catch (mergeErr) {
 				console.warn('[CompleteProfile] Walk-in merge failed (non-blocking):', mergeErr);
+			}
+
+			// Process Referral Rewards
+			if (validReferrerId) {
+				// Subscribe temporarily to appSettings to get the latest value if needed, 
+				// or just use a default fallback. Since it's reactive, $appSettings might not be fully loaded here.
+				// For safety, we can just grab from Firestore directly or use $appSettings if loaded.
+				const referrerReward = $appSettings?.referralRewardOnReg || 100;
+				const refereeReward = $appSettings?.refereeSignUpBonus || 150;
+				
+				try {
+					await processRegistrationReferral(currentUser.uid, validReferrerId, referrerReward, refereeReward);
+					showToast(`Referral applied! You received ₹${refereeReward} Coupon Cash! 🎉`, 'success');
+				} catch (err) {
+					console.error('Error processing referral rewards:', err);
+				}
 			}
 
 			showToast(`Welcome, ${name.trim()}! 🎉`, 'success');
@@ -475,6 +530,25 @@
 							<div class="input-glow"></div>
 						</div>
 						<p class="age-hint">You must be at least 13 years old</p>
+					</div>
+
+					<!-- Referral Code Input -->
+					<div class="input-group">
+						<div class="input-icon">
+							<Gift size={20} />
+						</div>
+						<input
+							type="text"
+							placeholder="Have a referral code? (Optional)"
+							bind:value={referralCodeInput}
+							class="glass-input"
+							maxlength="15"
+							style="text-transform: uppercase;"
+						/>
+						<div class="input-glow"></div>
+						{#if validatingReferral}
+							<p style="font-size: 12px; color: var(--color-accent-gold); padding-left: 8px; margin-top: 4px;">Validating code...</p>
+						{/if}
 					</div>
 
 					<!-- Submit Button -->

@@ -4,12 +4,14 @@
 	import { goto } from '$app/navigation';
 
 	import { auth, db } from '$lib/firebase';
-	import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+	import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 	import { onAuthStateChanged } from 'firebase/auth';
 	import type { User } from 'firebase/auth';
-	import { LogOut, Camera, Calendar, Clock, ChevronRight } from 'lucide-svelte';
+	import { LogOut, Camera, Calendar, Clock, ChevronRight, Share2, Copy, Users, Gift } from 'lucide-svelte';
 	import { logout } from '$lib/services/authService';
+	import { generateReferralCode } from '$lib/services/referralService';
 	import Loader from '$lib/components/ui/Loader.svelte';
+	import { showToast } from '$lib/stores/toast';
 
 	// UI Components
 	import UnifiedStatusCard from '$lib/components/you/UnifiedStatusCard.svelte';
@@ -27,6 +29,11 @@
 	let points = $state(0);
 	let totalSaved = $state(0);
 	let bookingsCount = $state(0);
+	
+	// Referral state
+	let referralCode = $state('');
+	let referralsCount = $state(0);
+	let referralEarnings = $state(0);
 
 	// Tier Calculation (1 Point = ₹10 Spent)
 	let currentTierName = $derived.by(() => {
@@ -184,6 +191,19 @@
 				beuCash = data.beuCash || 0;
 				points = data.points || 0;
 				totalSaved = data.totalSaved || 0;
+				
+				// Handle referral code (generate if missing)
+				if (data.referralCode) {
+					referralCode = data.referralCode;
+				} else {
+					// Generate on the fly for old users
+					const newCode = await generateReferralCode(user?.displayName || 'USER');
+					referralCode = newCode;
+					await updateDoc(docRef, { referralCode: newCode });
+				}
+				
+				referralsCount = data.referralsCount || 0;
+				referralEarnings = data.referralEarnings || 0;
 			}
 		} catch (error) {
 			console.error('Error fetching user profile:', error);
@@ -290,6 +310,26 @@
 		}
 		const h = Math.abs(hash) % 360;
 		return `hsl(${h}, 70%, 40%)`;
+	}
+
+	async function copyReferralCode() {
+		if (referralCode) {
+			try {
+				await navigator.clipboard.writeText(referralCode);
+				showToast('Referral code copied!', 'success');
+			} catch (err) {
+				console.error('Failed to copy', err);
+			}
+		}
+	}
+
+	function shareWhatsApp() {
+		if (referralCode) {
+			const baseUrl = window.location.origin;
+			const inviteUrl = `${baseUrl}/login?ref=${referralCode}`;
+			const text = `Hey! Use my referral code ${referralCode} when you sign up at Bewell Salon & get ₹150 instantly! Book your first appointment today: ${inviteUrl}`;
+			window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+		}
 	}
 </script>
 
@@ -414,6 +454,46 @@
 
 				<!-- QUICK ACTIONS -->
 				<QuickActions />
+
+				<!-- REFER & EARN WIDGET -->
+				<h2 class="section-title" style="margin-top: 24px;">Refer & Earn</h2>
+				<div class="referral-widget">
+					<div class="referral-header">
+						<div class="referral-text">
+							<h3>Invite Friends, Get Rewarded!</h3>
+							<p>Earn ₹200 for every friend who completes their first booking.</p>
+						</div>
+						<div class="referral-icon">
+							<Gift size={24} />
+						</div>
+					</div>
+					
+					<div class="referral-code-box">
+						<span class="code-label">Your Code</span>
+						<div class="code-display">
+							<span class="code">{referralCode || '------'}</span>
+							<button class="copy-btn" onclick={copyReferralCode} title="Copy Code">
+								<Copy size={16} />
+							</button>
+						</div>
+					</div>
+
+					<div class="referral-stats">
+						<div class="stat-item">
+							<span class="stat-value">{referralsCount}</span>
+							<span class="stat-label"><Users size={12}/> Friends</span>
+						</div>
+						<div class="stat-item">
+							<span class="stat-value text-gold">₹{referralEarnings}</span>
+							<span class="stat-label">Earned</span>
+						</div>
+					</div>
+
+					<button class="share-btn whatsapp" onclick={shareWhatsApp}>
+						<Share2 size={16} />
+						Share via WhatsApp
+					</button>
+				</div>
 
 				<!-- RECENT VISIT REVIEW -->
 				{#if lastCompletedBooking}
@@ -799,41 +879,167 @@
 	}
 	.review-widget-content {
 		display: flex;
-		flex-direction: column;
+		align-items: center;
+		justify-content: space-between;
 		gap: 16px;
 	}
 	.review-text-col h3 {
 		font-family: var(--font-heading);
 		font-size: 1.1rem;
+		margin: 0 0 4px 0;
 		color: var(--color-text-primary);
-		margin: 0 0 6px 0;
 	}
 	.review-text-col p {
-		color: var(--color-text-secondary);
-		font-size: 0.85rem;
 		margin: 0;
+		font-size: 0.85rem;
+		color: var(--color-text-secondary);
 		line-height: 1.4;
 	}
 	.review-btn-primary {
-		background: #ffffff;
-		color: #3c4043;
+		flex-shrink: 0;
+		background: var(--color-accent-gold);
+		color: #1a0a2e;
+		padding: 10px 16px;
+		border-radius: var(--radius-full);
+		font-weight: 700;
+		font-size: 0.9rem;
 		text-decoration: none;
-		font-family: var(--font-body);
-		font-weight: 600;
-		font-size: 0.95rem;
-		padding: 14px 20px;
-		border-radius: 50px;
 		text-align: center;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		gap: 8px;
-		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-		transition: all 0.2s ease;
-		border: 1px solid #e8eaed;
+		box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+		transition: transform 0.2s, box-shadow 0.2s;
 	}
 	.review-btn-primary:active {
+		transform: scale(0.95);
+	}
+
+	/* REFERRAL WIDGET */
+	.referral-widget {
+		background: linear-gradient(145deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%);
+		border: 1px solid rgba(168, 85, 247, 0.3);
+		border-radius: 20px;
+		padding: 20px;
+		margin-bottom: 24px;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+		backdrop-filter: blur(10px);
+	}
+	.referral-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: 16px;
+	}
+	.referral-text h3 {
+		font-family: var(--font-heading);
+		font-size: 1.1rem;
+		margin: 0 0 4px 0;
+		color: var(--color-text-primary);
+	}
+	.referral-text p {
+		margin: 0;
+		font-size: 0.85rem;
+		color: var(--color-text-secondary);
+		line-height: 1.3;
+	}
+	.referral-icon {
+		color: #f59e0b;
+		background: rgba(245, 158, 11, 0.1);
+		padding: 8px;
+		border-radius: 12px;
+	}
+	.referral-code-box {
+		background: rgba(0, 0, 0, 0.2);
+		border-radius: 12px;
+		padding: 12px 16px;
+		margin-bottom: 16px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		border: 1px dashed rgba(255, 255, 255, 0.2);
+	}
+	.code-label {
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+	.code-display {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	.code {
+		font-family: monospace;
+		font-size: 1.1rem;
+		font-weight: 700;
+		color: var(--color-text-primary);
+		letter-spacing: 2px;
+	}
+	.copy-btn {
+		background: rgba(255, 255, 255, 0.1);
+		border: none;
+		color: var(--color-text-primary);
+		padding: 6px;
+		border-radius: 8px;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background 0.2s;
+	}
+	.copy-btn:hover {
+		background: rgba(255, 255, 255, 0.2);
+	}
+	.referral-stats {
+		display: flex;
+		gap: 16px;
+		margin-bottom: 16px;
+	}
+	.stat-item {
+		flex: 1;
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 12px;
+		padding: 12px;
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	.stat-value {
+		font-size: 1.2rem;
+		font-weight: 700;
+		color: var(--color-text-primary);
+	}
+	.stat-value.text-gold {
+		color: var(--color-accent-gold);
+	}
+	.stat-label {
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 4px;
+	}
+	.share-btn {
+		width: 100%;
+		padding: 12px;
+		border-radius: 12px;
+		border: none;
+		font-weight: 600;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		cursor: pointer;
+		font-size: 0.95rem;
+		transition: transform 0.2s;
+	}
+	.share-btn:active {
 		transform: scale(0.98);
-		background: #f8f9fa;
+	}
+	.share-btn.whatsapp {
+		background: #25D366;
+		color: white;
+		box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
 	}
 </style>

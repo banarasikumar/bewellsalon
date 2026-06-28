@@ -334,6 +334,31 @@
 					</span>
 					<span class="admin-ud-field-value">₹{user.beuCash || user.walletBalance || 0}</span>
 				</div>
+				<!-- Referral Info -->
+				{#if user.referralCode}
+				<div class="admin-ud-field">
+					<span class="admin-ud-field-label">
+						<span style="font-size: 10px;">🎁</span> Referral Code
+					</span>
+					<span class="admin-ud-field-value">{user.referralCode}</span>
+				</div>
+				{/if}
+				{#if user.referralsCount !== undefined}
+				<div class="admin-ud-field">
+					<span class="admin-ud-field-label">
+						<span style="font-size: 10px;">👥</span> Referrals
+					</span>
+					<span class="admin-ud-field-value">{user.referralsCount} (₹{user.referralEarnings || 0} earned)</span>
+				</div>
+				{/if}
+				{#if user.referredBy}
+				<div class="admin-ud-field">
+					<span class="admin-ud-field-label">
+						<span style="font-size: 10px;">🔗</span> Referred By
+					</span>
+					<span class="admin-ud-field-value" style="font-size: 0.8rem; font-family: monospace;">{user.referredBy.slice(0, 8)}...</span>
+				</div>
+				{/if}
 			</div>
 
 			<!-- Quick Info Pills -->

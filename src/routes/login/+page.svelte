@@ -19,6 +19,12 @@
 	let isLoggingIn = false;
 
 	onMount(async () => {
+		// Save referral code if present so it survives auth redirects
+		const refParam = new URLSearchParams(window.location.search).get('ref');
+		if (refParam) {
+			localStorage.setItem('pending_referral_code', refParam);
+		}
+
 		// Set up auth state listener IMMEDIATELY
 		// This ensures the UI updates to "Guest View" or "Logged In" without waiting for redirect checks
 		unsubscribe = onAuthStateChanged(auth, (currentUser) => {
