@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { Home, CalendarCheck, Users, Megaphone } from 'lucide-svelte';
+	import { Home, CalendarCheck, Users, Megaphone, BarChart2 } from 'lucide-svelte';
 	import { isBottomNavVisible } from '$lib/stores/adminUI';
 
 	const navItems = [
 		{ path: '/admin', label: 'Home', icon: Home, exact: true },
 		{ path: '/admin/bookings', label: 'Bookings', icon: CalendarCheck },
+		{ path: '/admin/stats', label: 'Stats', icon: BarChart2 },
 		{ path: '/admin/users', label: 'Users', icon: Users },
 		{ path: '/admin/notify', label: 'Notify', icon: Megaphone }
 	];

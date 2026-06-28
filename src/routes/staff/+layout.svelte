@@ -53,9 +53,11 @@
 							? 'Settings'
 							: page.url.pathname.includes('profile')
 								? 'Profile'
-								: page.url.pathname.includes('custom-services')
-									? 'Service Menu'
-									: 'Bewell Stylist'
+								: page.url.pathname.includes('performance')
+									? 'My Performance'
+									: page.url.pathname.includes('custom-services')
+										? 'Service Menu'
+										: 'Bewell Stylist'
 	);
 
 	let isNavVisible = $derived(

@@ -23,6 +23,7 @@
 		Shield,
 		ShieldCheck,
 		ShieldX,
+		BarChart,
 		Trash2,
 		User,
 		UserPlus
@@ -638,6 +639,9 @@
 											>{/if}
 										<button class="role-link" onclick={() => copyUserId(user.id)}
 											><Copy size={13} /> Copy ID</button
+										>
+										<a class="role-link" href="/admin/staff/{user.id}/performance"
+											><BarChart size={13} /> Performance</a
 										>
 									</div>
 									<button

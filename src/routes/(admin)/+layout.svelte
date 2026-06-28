@@ -51,9 +51,13 @@
 		if (path.includes('/admin/notify')) return 'Notify';
 		if (path.includes('/admin/reports')) return 'Reports';
 		if (path.includes('/admin/tools')) return 'Tools';
+		if (path.includes('/admin/staff/') && path.includes('/performance')) return 'Performance';
 		if (path.includes('/admin/login')) return '';
 		return 'Dashboard';
 	});
+
+	let showBackInHeader = $derived(page.url.pathname.includes('/performance'));
+	let headerBackUrl = $derived(showBackInHeader ? '/admin/stats' : '');
 
 	let isLoginPage = $derived(page.url.pathname.includes('/admin/login'));
 
@@ -275,7 +279,7 @@
 		{@render children()}
 	{:else if $adminAuthState === 'authorized'}
 		<div class="admin-layout">
-			<AdminHeader title={pageTitle} />
+			<AdminHeader title={pageTitle} showBack={showBackInHeader} backUrl={headerBackUrl} />
 			<main class="admin-main">
 				<div class="admin-content">
 					{@render children()}

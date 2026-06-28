@@ -83,6 +83,19 @@ export const todayBookings = derived(staffBookings, ($b) => {
 	});
 });
 
+export const myCompletedBookings = derived(staffBookings, ($b) => {
+	const currentUid = auth.currentUser?.uid;
+	return $b.filter(
+		(b) =>
+			b.status === 'completed' &&
+			(b.completedBy === currentUid || b.staffId === currentUid)
+	).sort((a, b) => {
+		const dateA = a.completedAt || a.updatedAt || a.date || '';
+		const dateB = b.completedAt || b.updatedAt || b.date || '';
+		return dateB.localeCompare(dateA); // Descending (newest first)
+	});
+});
+
 // --- Listeners ---
 let bookingsUnsub: (() => void) | null = null;
 let servicesUnsub: (() => void) | null = null;

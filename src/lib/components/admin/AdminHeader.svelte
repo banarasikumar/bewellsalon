@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Bell, Menu, Moon, Sun, UploadCloud, MoreVertical } from 'lucide-svelte';
+	import { Bell, Menu, Moon, Sun, UploadCloud, MoreVertical, ArrowLeft } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { theme, toggleTheme } from '$lib/stores/theme';
 	import { isOnline } from '$lib/stores/networkStatus';
@@ -8,7 +8,15 @@
 	import { headerActions } from '$lib/stores/adminUI';
 	import { untrack } from 'svelte';
 
-	let { title = 'Dashboard' }: { title?: string } = $props();
+	let { 
+		title = 'Dashboard',
+		showBack = false,
+		backUrl = ''
+	}: { 
+		title?: string,
+		showBack?: boolean,
+		backUrl?: string
+	} = $props();
 
 	let activeUploadsCount = $derived(
 		$uploadStore.filter((u) => u.status === 'uploading' || u.status === 'pending').length
@@ -26,20 +34,36 @@
 			showMenu = false;
 		}
 	}
+	
+	function handleBack() {
+		if (backUrl) goto(backUrl);
+		else window.history.back();
+	}
 </script>
 
 <svelte:window onclick={handleOutsideClick} />
 
 <header class="admin-header">
 	<div style="display: flex; align-items: center; gap: 12px;">
-		<button
-			class="admin-header-btn"
-			style="padding-left: 0; padding-right: 4px;"
-			onclick={() => goto('/admin/settings')}
-			aria-label="Settings"
-		>
-			<Menu size={24} />
-		</button>
+		{#if showBack}
+			<button
+				class="admin-header-btn"
+				style="padding-left: 0; padding-right: 4px;"
+				onclick={handleBack}
+				aria-label="Back"
+			>
+				<ArrowLeft size={24} />
+			</button>
+		{:else}
+			<button
+				class="admin-header-btn"
+				style="padding-left: 0; padding-right: 4px;"
+				onclick={() => goto('/admin/settings')}
+				aria-label="Settings"
+			>
+				<Menu size={24} />
+			</button>
+		{/if}
 		<div class="admin-header-title">{title}</div>
 	</div>
 	<div style="display: flex; gap: 8px;">

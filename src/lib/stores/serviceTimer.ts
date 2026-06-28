@@ -41,6 +41,10 @@ export async function startServiceTimer(booking: Booking) {
 	await pauseAllOtherTimers(booking.id);
 
 	// 2. Start this timer
+	const { get } = await import('svelte/store');
+	const { staffUser } = await import('./staffAuth');
+	const currentStaff = get(staffUser);
+
 	const updates: Partial<Booking> = {
 		status: 'in-progress',
 		isTimerRunning: true,
@@ -49,6 +53,14 @@ export async function startServiceTimer(booking: Booking) {
 		timerElapsed: booking.timerElapsed || 0,
 		updatedAt: new Date().toISOString()
 	};
+
+	// Auto-claim if unassigned
+	if (!booking.staffId || booking.staffId === 'unassigned') {
+		if (currentStaff) {
+			updates.staffId = currentStaff.uid;
+			updates.staffName = currentStaff.displayName || 'Staff';
+		}
+	}
 
 	try {
 		await updateDoc(doc(db, 'bookings', booking.id), updates);
@@ -158,14 +170,27 @@ export async function completeTimer(booking: Booking) {
 		finalElapsed += (Date.now() - booking.timerStart) / 1000;
 	}
 
+	const { get } = await import('svelte/store');
+	const { staffUser } = await import('./staffAuth');
+	const currentStaff = get(staffUser);
+
 	const updates: Partial<Booking> = {
 		status: 'completed',
 		isTimerRunning: false,
 		timerStart: deleteField() as any,
 		activeDuration: Math.round(finalElapsed / 60), // Save in minutes for report
 		completedAt: new Date().toISOString(),
+		completedBy: currentStaff?.uid || booking.staffId || null,
 		updatedAt: new Date().toISOString()
 	};
+    
+    // Also ensure staffId/staffName is set to the person who completed it
+    if (!booking.staffId || booking.staffId === 'unassigned') {
+        if (currentStaff) {
+            updates.staffId = currentStaff.uid;
+            updates.staffName = currentStaff.displayName || 'Staff';
+        }
+    }
 
 	try {
 		await updateDoc(doc(db, 'bookings', booking.id), updates);

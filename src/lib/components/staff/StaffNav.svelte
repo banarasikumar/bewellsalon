@@ -9,7 +9,7 @@
 		{ path: '/staff/dashboard', label: 'Home', icon: 'home' },
 		{ path: '/staff/bookings', label: 'Bookings', icon: 'list', showBadge: true },
 		{ path: '/staff/schedule', label: 'Schedule', icon: 'calendar' },
-		{ path: '/staff/profile', label: 'Profile', icon: 'user' }
+		{ path: '/staff/performance', label: 'My Stats', icon: 'chart' }
 	];
 
 	function haptic(intensity: 'light' | 'medium' = 'light') {
@@ -89,7 +89,7 @@
 							<line x1="16" y1="17" x2="8" y2="17"></line>
 							<polyline points="10 9 9 9 8 9"></polyline>
 						</svg>
-					{:else if route.icon === 'user'}
+					{:else if route.icon === 'chart'}
 						<svg
 							viewBox="0 0 24 24"
 							width="22"
@@ -100,8 +100,9 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 						>
-							<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-							<circle cx="12" cy="7" r="4"></circle>
+							<line x1="18" y1="20" x2="18" y2="10"></line>
+							<line x1="12" y1="20" x2="12" y2="4"></line>
+							<line x1="6" y1="20" x2="6" y2="14"></line>
 						</svg>
 					{/if}
 

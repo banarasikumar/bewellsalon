@@ -280,10 +280,28 @@ export function destroyListeners() {
 
 // --- Status Update ---
 export async function updateBookingStatus(bookingId: string, newStatus: string): Promise<void> {
-	await updateDoc(doc(db, 'bookings', bookingId), {
+	const updates: any = {
 		status: newStatus,
 		updatedAt: new Date().toISOString()
-	});
+	};
+
+	if (newStatus === 'completed') {
+		updates.completedAt = new Date().toISOString();
+		try {
+			const { get } = await import('svelte/store');
+			const { staffUser } = await import('./staffAuth');
+			const currentStaff = get(staffUser);
+			if (currentStaff) {
+				updates.completedBy = currentStaff.uid;
+				updates.staffId = currentStaff.uid;
+				updates.staffName = currentStaff.displayName || 'Staff';
+			}
+		} catch (e) {
+			// Ignore if not in staff context
+		}
+	}
+
+	await updateDoc(doc(db, 'bookings', bookingId), updates);
 }
 
 export async function updateBookingDetails(
