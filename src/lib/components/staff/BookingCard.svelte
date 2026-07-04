@@ -313,61 +313,52 @@
 	.booking-card {
 		position: relative;
 		background: var(--s-surface);
-		border-radius: 16px;
-		padding: 16px;
+		border-radius: 20px;
+		padding: 20px;
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-		border: 1px solid var(--s-border);
+		gap: 16px;
+		box-shadow: var(--s-shadow-md);
+		border: 1px solid var(--s-border-strong);
 		transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 		cursor: pointer;
 		overflow: hidden;
 		animation: s-fadeInUp 0.4s var(--s-ease-spring) backwards;
+		margin-bottom: 16px;
 	}
 
 	.booking-card:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+		transform: translateY(-4px);
+		box-shadow: var(--s-shadow-lg);
 	}
 
 	.booking-card:active {
-		transform: translateY(0) scale(0.98);
+		transform: translateY(0) scale(0.97);
 	}
 
 	:global(.staff-app.dark) .booking-card {
-		background: var(--s-bg-secondary);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-		border-color: rgba(255, 255, 255, 0.05);
+		background: var(--s-surface);
+		box-shadow: var(--s-shadow-md);
+		border-color: rgba(255, 255, 255, 0.08);
 	}
 
-	/* Status Accents (Left border style instead of full border) */
-	.booking-card::before {
+	/* Active Service Mode Accent */
+	.active-service-mode {
+		border: 1px solid var(--s-accent-light);
+		box-shadow: var(--s-shadow-glow);
+	}
+	.active-service-mode::before {
 		content: '';
 		position: absolute;
 		left: 0;
 		top: 0;
 		bottom: 0;
 		width: 4px;
-		background: var(--s-border);
-		transition: background 0.3s ease;
-	}
-
-	.card-pending::before { background: var(--s-warning); }
-	.card-confirmed::before { background: var(--s-success); }
-	.card-completed::before { background: var(--s-info); }
-	.card-cancelled::before { background: var(--s-error); }
-	.active-service-mode {
-		border: 1px solid var(--s-accent-light);
-		box-shadow: 0 4px 20px rgba(232, 167, 48, 0.15);
-	}
-	.active-service-mode::before {
 		background: var(--s-grad-accent);
-		width: 4px;
 	}
 	:global(.staff-app.dark) .active-service-mode {
 		border-color: var(--s-accent-dark);
-		box-shadow: 0 4px 20px rgba(232, 167, 48, 0.08);
+		box-shadow: 0 4px 20px rgba(232, 167, 48, 0.1);
 	}
 
 	/* --- TOP INFO SECTION --- */
@@ -378,18 +369,18 @@
 	}
 
 	.bc-avatar {
-		width: 44px;
-		height: 44px;
+		width: 48px;
+		height: 48px;
 		border-radius: 50%;
-		background: var(--s-bg-tertiary);
+		background: var(--s-bg-primary);
 		color: var(--s-text-primary);
-		font-weight: 700;
-		font-size: 1.2rem;
+		font-weight: 800;
+		font-size: 1.3rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		border: none;
+		border: 1px solid var(--s-border);
 		cursor: pointer;
 		transition: transform 0.2s ease, background 0.2s ease;
 	}
@@ -416,23 +407,25 @@
 	}
 
 	.bc-name {
-		font-size: 1.05rem;
-		font-weight: 700;
+		font-family: var(--s-font-display);
+		font-size: 1.2rem;
+		font-weight: 800;
 		color: var(--s-text-primary);
 		margin: 0;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		letter-spacing: -0.01em;
 	}
 
 	.bc-services {
-		font-size: 0.9rem;
+		font-size: 0.95rem;
 		color: var(--s-text-secondary);
-		margin: 2px 0 0 0;
+		margin: 4px 0 0 0;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		font-weight: 500;
+		font-weight: 600;
 	}
 
 	.bc-phone {
@@ -475,11 +468,12 @@
 	.bc-meta-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-		gap: 8px;
-		background: var(--s-bg-secondary);
-		padding: 10px 12px;
+		gap: 12px;
+		background: var(--s-bg-primary);
+		padding: 12px 16px;
 		border-radius: 12px;
 		margin-top: 4px;
+		border: 1px solid var(--s-border);
 	}
 
 	.meta-block {
@@ -539,9 +533,10 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 8px 12px;
-		border-radius: 8px;
-		background: var(--s-bg-tertiary);
+		padding: 12px 16px;
+		border-radius: 12px;
+		background: var(--s-bg-primary);
+		border: 1px solid var(--s-border);
 	}
 
 	.payment-badge {

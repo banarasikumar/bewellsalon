@@ -41,7 +41,6 @@ jobs:
           mkdir -p apps/staff-app/android/app/src/main/assets
           mkdir -p apps/admin-app/android/app/src/main/assets
 
-
       - name: 🔄 Sync Capacitor Shells
         run: |
           npm run cap:sync:staff
