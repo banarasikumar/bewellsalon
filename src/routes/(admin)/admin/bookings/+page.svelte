@@ -25,7 +25,10 @@
 		ArrowUp,
 		SlidersHorizontal,
 		User,
-		AlertCircle
+		AlertCircle,
+		Phone,
+		UserMinus,
+		FileText
 	} from 'lucide-svelte';
 	import {
 		softDeleteBookings,
@@ -371,6 +374,35 @@
 		const code = (name || 'U').charCodeAt(0);
 		return avatarColors[code % avatarColors.length];
 	}
+
+	function maskPhone(phone: string): string {
+		if (!phone) return '';
+		const digits = phone.replace(/\D/g, '');
+		if (digits.length <= 5) return '*'.repeat(digits.length);
+		return digits.slice(0, 3) + '*'.repeat(digits.length - 5) + digits.slice(-2);
+	}
+
+	function formatTime12h(time: string) {
+		if (!time) return '';
+		const cleaned = time.replace(/\s*(AM|PM)\s*/i, '').trim();
+		const parts = cleaned.split(':');
+		const h = parseInt(parts[0], 10);
+		const m = parseInt(parts[1] || '0', 10);
+		if (isNaN(h)) return time;
+		const ampm = h >= 12 ? 'PM' : 'AM';
+		const h12 = h % 12 || 12;
+		return `${h12}:${(isNaN(m) ? 0 : m).toString().padStart(2, '0')} ${ampm}`;
+	}
+
+	function formatDuration(mins: number) {
+		if (!mins) return '30m';
+		if (mins >= 60) {
+			const h = Math.floor(mins / 60);
+			const m = mins % 60;
+			return m > 0 ? `${h}h ${m}m` : `${h}h`;
+		}
+		return `${mins}m`;
+	}
 </script>
 
 <!-- Manage Toolbar -->
@@ -465,13 +497,14 @@
 	{@const services = getServices(booking)}
 	{@const isProcessing = processingIds[booking.id] === 'processing'}
 	{@const isVanishing = processingIds[booking.id] === 'vanishing'}
+	{@const totalMins = booking.servicesList?.reduce((a: number, s: any) => a + (s.duration || 30), 0) || 30}
 
 	<div class="admin-swipe-container" class:admin-card-vanishing={isVanishing}>
 		<!-- Card -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
-			class="admin-swipe-content admin-booking-card slim {statusClass}"
+			class="premium-booking-card card-{statusClass}"
 			class:admin-card-selected={isManageMode && selectedIds.has(booking.id)}
 			role="button"
 			tabindex="0"
@@ -490,8 +523,7 @@
 				</div>
 			{/if}
 
-			<!-- Header -->
-			<div class="admin-booking-header">
+			<div class="pbc-header-row">
 				<div style="display: flex; align-items: center; gap: 8px;">
 					{#if isManageMode}
 						<button
@@ -509,51 +541,72 @@
 							{/if}
 						</button>
 					{/if}
-					<span class="admin-booking-id">#{booking.id.slice(0, 8).toUpperCase()}</span>
+					<span class="pbc-booking-id-top">#{booking.id.slice(0, 8).toUpperCase()}</span>
 				</div>
-				<div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
-					{#if booking.staffId && booking.staffId !== 'unassigned'}
-						<span class="admin-staff-badge assigned">
-							<User size={10} /> {booking.staffName || 'Staff'}
-						</span>
+				<div class="pbc-badges">
+					{#if booking.staffName && booking.staffId && booking.staffId !== 'unassigned'}
+						<div class="pbc-staff-badge assigned">
+							<User size={10} /> {booking.staffName}
+						</div>
 					{:else}
-						<span class="admin-staff-badge unassigned">
+						<div class="pbc-staff-badge unassigned">
 							<AlertCircle size={10} /> Unassigned
-						</span>
+						</div>
 					{/if}
-					<span class="admin-status-badge {statusClass}">{status.toUpperCase()}</span>
+					<div class="pbc-status-badge {statusClass}">
+						{status.toUpperCase()}
+					</div>
 				</div>
 			</div>
 
-			<!-- Slim Details -->
-			<div class="admin-slim-details">
-				<div class="client-time-row">
-					<div class="client-info">
-						{#if booking.userPhoto}
-							<img src={booking.userPhoto} alt={booking.userName} class="admin-avatar-img-small" />
+			<div class="pbc-top">
+				{#if booking.userPhoto}
+					<img src={booking.userPhoto} alt={booking.userName} class="pbc-avatar-img" />
+				{:else}
+					<div class="pbc-avatar" style="background: {getAvatarColor(booking.userName || '')};">
+						{(booking.userName || 'G').charAt(0).toUpperCase()}
+					</div>
+				{/if}
+
+				<div class="pbc-info">
+					<h4 class="pbc-name">{booking.userName || 'Guest'}</h4>
+					<p class="pbc-services">
+						{#if services.length > 0}
+							{services[0]} {#if services.length > 1}<span class="pbc-more-badge">+{services.length - 1}</span>{/if}
 						{:else}
-							<div
-								class="admin-avatar-fallback-small"
-								style="background: {getAvatarColor(booking.userName || '')};"
-							>
-								{(booking.userName || 'G').charAt(0).toUpperCase()}
-							</div>
+							Service
 						{/if}
-						<span class="client-name">{booking.userName || 'Guest'}</span>
-					</div>
-					<div class="time-info">
-						<span class="time-text">{dateStr} • {booking.time || '--:--'}</span>
-					</div>
+					</p>
+
+					<p class="pbc-phone">
+						<Phone size={11} /> 
+						{booking.userPhone ? maskPhone(booking.userPhone) : 'No phone'}
+					</p>
 				</div>
-				<div class="service-row">
-					{#if services.length > 0}
-						<span class="primary-service">{services[0]}</span>
-						{#if services.length > 1}
-							<span class="extra-services">+{services.length - 1} more</span>
-						{/if}
-					{:else}
-						<span class="primary-service italic">No services</span>
-					{/if}
+			</div>
+
+			{#if booking.notes}
+				<div class="pbc-special-request">
+					<div class="pbc-request-header">
+						<FileText size={14} />
+						<span>Special Request</span>
+					</div>
+					<p>{booking.notes}</p>
+				</div>
+			{/if}
+
+			<div class="pbc-meta-grid pbc-meta-premium">
+				<div class="pbc-meta-block">
+					<span class="pbc-meta-label">Date</span>
+					<span class="pbc-meta-value">{dateStr}</span>
+				</div>
+				<div class="pbc-meta-block">
+					<span class="pbc-meta-label">Time</span>
+					<span class="pbc-meta-value">{formatTime12h(booking.time)}</span>
+				</div>
+				<div class="pbc-meta-block">
+					<span class="pbc-meta-label">Duration</span>
+					<span class="pbc-meta-value">{formatDuration(totalMins)}</span>
 				</div>
 			</div>
 		</div>
@@ -650,85 +703,288 @@
 	</button>
 {/if}
 <style>
-	.admin-booking-card.slim {
-		padding: 12px;
+	/* Premium Card Design for Admin */
+	.premium-booking-card {
+		position: relative;
+		background: var(--admin-surface);
+		border-radius: 16px;
+		padding: 16px;
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 12px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+		border: 1px solid var(--admin-border);
+		transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 		cursor: pointer;
-		transition: transform 0.2s, box-shadow 0.2s;
+		overflow: hidden;
+		margin-bottom: 12px;
 	}
-	.admin-booking-card.slim:active {
-		transform: scale(0.98);
+
+	.premium-booking-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 	}
-	.admin-booking-header {
+
+	.premium-booking-card:active {
+		transform: translateY(0) scale(0.98);
+	}
+
+	.premium-booking-card.admin-card-selected {
+		border-color: var(--admin-accent);
+		box-shadow: 0 0 0 2px var(--admin-accent-light);
+	}
+
+	/* Status Accents (Left border style) */
+	.premium-booking-card::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 4px;
+		background: var(--admin-border);
+		transition: background 0.3s ease;
+	}
+
+	.card-pending::before { background: var(--admin-orange); }
+	.card-confirmed::before { background: var(--admin-green); }
+	.card-completed::before { background: var(--admin-indigo); }
+	.card-cancelled::before { background: var(--admin-red); }
+	.card-overdue::before { background: var(--admin-red); }
+
+	/* --- NEW HEADER SECTION --- */
+	.pbc-header-row {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		padding-bottom: 8px;
-		border-bottom: 1px dashed rgba(255,255,255,0.1);
+		border-bottom: 1px dashed rgba(120, 120, 128, 0.15);
 	}
-	.admin-slim-details {
+
+	.pbc-booking-id-top {
+		font-weight: 800;
+		font-size: 14px;
+		font-family: 'SF Mono', 'Fira Code', monospace;
+		color: var(--admin-text-primary);
+		letter-spacing: 0.5px;
+	}
+
+	.pbc-badges {
 		display: flex;
-		flex-direction: column;
 		gap: 6px;
-	}
-	.client-time-row {
-		display: flex;
-		justify-content: space-between;
 		align-items: center;
+		flex-wrap: wrap;
+		justify-content: flex-end;
 	}
-	.client-info {
-		display: flex;
+
+	.pbc-staff-badge {
+		font-size: 0.65rem;
+		font-weight: 800;
+		padding: 4px 8px;
+		border-radius: 100px;
+		display: inline-flex;
 		align-items: center;
-		gap: 8px;
+		gap: 4px;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
 	}
-	.admin-avatar-img-small {
-		width: 24px;
-		height: 24px;
-		border-radius: 50%;
-		object-fit: cover;
+
+	.pbc-staff-badge.assigned {
+		background: rgba(120, 120, 128, 0.1);
+		color: var(--admin-text-secondary);
 	}
-	.admin-avatar-fallback-small {
-		width: 24px;
-		height: 24px;
+
+	.pbc-staff-badge.unassigned {
+		background: var(--admin-orange-light);
+		color: var(--admin-orange);
+		border: 1px dashed var(--admin-orange);
+	}
+
+	/* --- TOP INFO SECTION --- */
+	.pbc-top {
+		display: flex;
+		gap: 12px;
+		align-items: flex-start;
+	}
+
+	.pbc-avatar {
+		width: 44px;
+		height: 44px;
 		border-radius: 50%;
+		color: #fff;
+		font-weight: 700;
+		font-size: 1.2rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 10px;
-		font-weight: bold;
-		color: white;
+		flex-shrink: 0;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 	}
-	.client-name {
-		font-size: 14px;
-		font-weight: 600;
-		color: var(--admin-text-primary);
+
+	.pbc-avatar-img {
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		object-fit: cover;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 	}
-	.time-info .time-text {
-		font-size: 12px;
-		font-weight: 500;
-		color: var(--admin-text-secondary);
-	}
-	.service-row {
+
+	.pbc-info {
+		flex: 1;
+		min-width: 0;
 		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.pbc-name-row {
+		display: flex;
+		justify-content: space-between;
 		align-items: center;
-		gap: 6px;
+		gap: 8px;
 	}
-	.primary-service {
-		font-size: 13px;
-		font-weight: 500;
+
+	.pbc-name {
+		font-size: 1.05rem;
+		font-weight: 700;
 		color: var(--admin-text-primary);
+		margin: 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
-	.primary-service.italic {
-		font-style: italic;
+
+	.pbc-status-badge {
+		font-size: 0.65rem;
+		font-weight: 800;
+		padding: 4px 8px;
+		border-radius: 100px;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.pbc-status-badge.confirmed { background: var(--admin-accent); color: #000; }
+	.pbc-status-badge.pending { background: var(--admin-orange-light); color: var(--admin-orange); }
+	.pbc-status-badge.completed { background: var(--admin-indigo); color: white; }
+	.pbc-status-badge.cancelled { background: var(--admin-red-light); color: var(--admin-red); }
+	.pbc-status-badge.overdue { background: var(--admin-red); color: white; }
+
+	.pbc-services {
+		font-size: 0.9rem;
 		color: var(--admin-text-secondary);
+		margin: 2px 0 0 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-weight: 500;
 	}
-	.extra-services {
-		font-size: 11px;
-		background: rgba(255,255,255,0.1);
+	
+	.pbc-more-badge {
+		font-size: 0.7rem;
+		background: rgba(120,120,128, 0.16);
 		padding: 2px 6px;
 		border-radius: 4px;
 		color: var(--admin-text-secondary);
+		margin-left: 4px;
+		font-weight: 600;
+	}
+
+	.pbc-phone {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		font-size: 0.8rem;
+		color: var(--admin-text-tertiary);
+		margin: 4px 0 0 0;
+	}
+
+	/* --- META GRID (Date/Time) --- */
+	.pbc-meta-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+		background: rgba(120, 120, 128, 0.08);
+		padding: 10px 12px;
+		border-radius: 12px;
+		margin-top: 4px;
+	}
+
+	.pbc-meta-premium {
+		background: linear-gradient(135deg, rgba(191, 90, 242, 0.2), rgba(255, 215, 0, 0.3));
+		border: 1px solid rgba(255, 215, 0, 0.3);
+		box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5);
+	}
+
+	.pbc-meta-premium .pbc-meta-label {
+		color: rgba(0, 0, 0, 0.65);
+	}
+
+	.pbc-meta-premium .pbc-meta-value {
+		color: #000;
+	}
+
+	.pbc-meta-block {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.pbc-meta-label {
+		font-size: 0.7rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--admin-text-tertiary);
+		font-weight: 700;
+	}
+
+	.pbc-meta-value {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--admin-text-primary);
+	}
+
+	/* --- SPECIAL REQUESTS (Notes) --- */
+	.pbc-special-request {
+		background: var(--admin-orange-light);
+		border-left: 3px solid var(--admin-orange);
+		padding: 10px 12px;
+		border-radius: 0 8px 8px 0;
+		margin-bottom: 4px;
+	}
+
+	.pbc-request-header {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		color: var(--admin-orange);
+		font-size: 0.75rem;
+		font-weight: 800;
+		margin-bottom: 4px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+	}
+
+	.pbc-special-request p {
+		margin: 0;
+		font-size: 0.85rem;
+		color: var(--admin-text-secondary);
+		line-height: 1.4;
+	}
+
+	.admin-select-checkbox {
+		background: none;
+		border: none;
+		padding: 0;
+		margin-right: 8px;
+		margin-top: 2px;
+		color: var(--admin-text-tertiary);
+		cursor: pointer;
+		transition: color 0.2s;
+	}
+	.admin-select-checkbox.checked {
+		color: var(--admin-accent);
 	}
 </style>

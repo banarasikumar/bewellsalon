@@ -58,7 +58,14 @@
 			<button
 				class="admin-header-btn"
 				style="padding-left: 0; padding-right: 4px;"
-				onclick={() => goto('/admin/settings')}
+				onclick={() => {
+					if (title === 'Settings') {
+						if (backUrl) goto(backUrl);
+						else window.history.back();
+					} else {
+						goto('/admin/settings');
+					}
+				}}
 				aria-label="Settings"
 			>
 				<Menu size={24} />
