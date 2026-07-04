@@ -15,11 +15,11 @@ const THEME_KEY = 'theme';
 const THEME_TOGGLED_AT_KEY = 'theme_toggled_at';
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 
-/** Returns time-based theme: clean (light) for day, gold (dark) for night */
+/** Returns time-based theme: glitch (light) for day, gold (dark) for night */
 function getTimeBasedTheme(): Theme {
 	const hour = new Date().getHours();
 	// Daytime: 6 AM to 6 PM -> light theme
-	return hour >= 6 && hour < 18 ? 'clean' : 'gold';
+	return hour >= 6 && hour < 18 ? 'glitch' : 'gold';
 }
 
 const getInitialTheme = (): Theme => {
