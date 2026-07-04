@@ -114,14 +114,12 @@
 }
 
 [data-theme='glitch'] .admin-header {
-	background: rgba(255, 255, 255, 0.65);
-	backdrop-filter: blur(12px);
+	background: #ffffff;
 	border-bottom: 2px solid rgba(108, 93, 211, 0.3);
 }
 
 [data-theme='glitch'] .admin-bottom-nav {
-	background: rgba(255, 255, 255, 0.85);
-	backdrop-filter: blur(12px);
+	background: #ffffff;
 	border-top: 2px solid rgba(108, 93, 211, 0.3);
 }
 
@@ -195,10 +193,7 @@
 	left: 0;
 	right: 0;
 	z-index: 100;
-	background: rgba(28, 28, 30, 0.85);
-	/* Darker glass */
-	backdrop-filter: blur(20px);
-	-webkit-backdrop-filter: blur(20px);
+	background: #1c1c1e;
 	padding: calc(var(--admin-safe-top) + 12px) 20px 12px;
 	display: flex;
 	justify-content: space-between;
@@ -208,7 +203,7 @@
 }
 
 [data-theme='clean'] .admin-header {
-	background: rgba(255, 255, 255, 0.88);
+	background: #ffffff;
 }
 
 .admin-header-title {
@@ -244,10 +239,7 @@
 	left: 0;
 	right: 0;
 	z-index: 100;
-	background: rgba(28, 28, 30, 0.92);
-	/* Darker glass */
-	backdrop-filter: blur(20px);
-	-webkit-backdrop-filter: blur(20px);
+	background: #1c1c1e;
 	display: flex;
 	justify-content: space-around;
 	align-items: center;
@@ -257,7 +249,7 @@
 }
 
 [data-theme='clean'] .admin-bottom-nav {
-	background: rgba(255, 255, 255, 0.92);
+	background: #ffffff;
 }
 
 .admin-nav-item {
