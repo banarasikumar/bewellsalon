@@ -12,6 +12,7 @@
 		completeTimer
 	} from '$lib/stores/serviceTimer';
 	import BookingModal from '$lib/components/staff/BookingModal.svelte';
+	import BookingCard from '$lib/components/staff/BookingCard.svelte';
 	import CircularProgress from '$lib/components/staff/CircularProgress.svelte';
 	import StatusBadge from '$lib/components/staff/StatusBadge.svelte';
 	import EmptyState from '$lib/components/staff/EmptyState.svelte';
@@ -32,7 +33,13 @@
 		showListeningNotification
 	} from '$lib/stores/staffNotifications';
 
+	let isHeroCompact = $state(false);
+
 	onMount(async () => {
+		setTimeout(() => {
+			isHeroCompact = true;
+		}, 2500);
+
 		// Load push enabled state from Firestore for staff app
 		if ($staffUser) {
 			await checkNotificationStatus($staffUser.uid, 'staff');
@@ -205,7 +212,7 @@
 
 <div class="dashboard s-stagger">
 	<!-- ━━━ HERO WELCOME ━━━ -->
-	<section class="hero-card">
+	<section class="hero-card {isHeroCompact ? 'hero-compact' : ''}">
 		<div class="hero-gradient"></div>
 		<div class="hero-content">
 			<div class="hero-text">
@@ -303,302 +310,14 @@
 
 			<div class="upnext-list">
 				{#each $upcomingBookings as booking}
-					<div
-						class="upnext-card s-card s-card-interactive {booking.status === 'in-progress'
-							? 'active-service-mode'
-							: 'card-' + booking.status}"
-						onclick={() => openBooking(booking)}
-						role="button"
-						tabindex="0"
-						onkeydown={(e) => e.key === 'Enter' && openBooking(booking)}
-					>
-						{#if booking.status === 'in-progress'}
-							{@const elapsed = getElapsedSeconds(booking, $now)}
-							{@const totalMins =
-								booking.servicesList?.reduce((a: number, s: any) => a + (s.duration || 30), 0) ||
-								30}
-							{@const totalSeconds = totalMins * 60}
-							{@const progress =
-								totalSeconds > 0 ? Math.min(100, (elapsed / totalSeconds) * 100) : 0}
-							{@const isOvertime = elapsed > totalSeconds}
-							{@const remaining = Math.max(0, totalSeconds - elapsed)}
-							{@const formattedElapsed = (() => {
-								const h = Math.floor(elapsed / 3600);
-								const m = Math.floor((elapsed % 3600) / 60);
-								const s = elapsed % 60;
-								return h > 0
-									? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-									: `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-							})()}
-							{@const formattedRemaining = (() => {
-								const h = Math.floor(remaining / 3600);
-								const m = Math.floor((remaining % 3600) / 60);
-								const s = remaining % 60;
-								return h > 0
-									? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-									: `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-							})()}
-
-							<div class="active-service-content">
-								<div class="service-timer-header">
-									<div class="timer-info">
-										<span class="timer-label">
-											{#if booking.isTimerRunning}
-												🔴 In Service
-											{:else}
-												⏸ Paused
-											{/if}
-										</span>
-										<h3 class="timer-client">{booking.userName || 'Guest'}</h3>
-										<p class="timer-phone">
-											{#if booking.userPhone}
-												<svg
-													class="phone-icon"
-													width="12"
-													height="12"
-													viewBox="0 0 24 24"
-													fill="none"
-													stroke="currentColor"
-													stroke-width="2"
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													><path
-														d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-													/></svg
-												>
-												{maskPhone(booking.userPhone)}
-											{:else}
-												<span class="no-phone">No phone number</span>
-											{/if}
-										</p>
-										<p class="timer-service">
-											{#if booking.servicesList?.length}
-												{booking.servicesList.map((s: any) => s.name).join(', ')}
-											{:else}
-												{booking.serviceName || 'Service'}
-											{/if}
-										</p>
-									</div>
-									<CircularProgress
-										{progress}
-										size={72}
-										strokeWidth={5}
-										color={isOvertime ? 'var(--s-error)' : 'var(--s-accent)'}
-									>
-										<span class="timer-value" class:overtime={isOvertime}>
-											{isOvertime ? '+' : ''}{formattedElapsed}
-										</span>
-									</CircularProgress>
-								</div>
-								<div class="timer-remaining">
-									{#if isOvertime}
-										<span class="overtime-text"
-											>⚠️ Overtime — was expected {formatDuration(totalMins)}</span
-										>
-									{:else}
-										<span class="remaining-text">{formattedRemaining} remaining</span>
-									{/if}
-								</div>
-								{#if booking.payment}
-									<div class="db-payment timer-payment">
-										<span class="payment-badge {getPaymentBadgeClass(booking)}">
-											{getPaymentMethodIcon(booking)}
-											{getPaymentLabel(booking)}
-										</span>
-										<span class="meta-item" style="font-weight:700;color:var(--s-text-primary)"
-											>₹{booking.totalAmount || booking.price || '-'}</span
-										>
-										{#if booking.payment.type === 'token' && booking.payment.amount}
-											<div class="payment-details">
-												<span class="payment-paid">✓ ₹{booking.payment.amount} paid</span>
-												<span class="payment-due"
-													>• ₹{(booking.totalAmount || booking.price || 0) - booking.payment.amount} due</span
-												>
-											</div>
-										{:else if booking.payment.type === 'full' && booking.payment.amount}
-											<span class="payment-paid">✓ Fully paid</span>
-										{/if}
-									</div>
-								{/if}
-								<div class="timer-notes" class:notes-empty={!booking.notes}>
-									<span class="timer-notes-icon">📝</span>
-									<p class="timer-notes-text">
-										{#if booking.notes}
-											{booking.notes}
-										{:else}
-											<span class="notes-none">Notes: None</span>
-										{/if}
-									</p>
-								</div>
-								<div class="timer-actions">
-									{#if !booking.isTimerRunning}
-										<button
-											class="timer-btn-outline"
-											onclick={(e) => {
-												e.stopPropagation();
-												console.log('[Dashboard] Resume clicked for:', booking.id);
-												resumeTimer(booking);
-											}}
-										>
-											▶ Resume
-										</button>
-									{:else}
-										<button
-											class="timer-btn-outline"
-											onclick={(e) => {
-												e.stopPropagation();
-												console.log('[Dashboard] Pause clicked for:', booking.id);
-												pauseTimer(booking);
-											}}
-										>
-											⏸ Pause
-										</button>
-									{/if}
-									<button
-										class="timer-btn-complete"
-										onclick={(e) => {
-											e.stopPropagation();
-											handleCompleteService(booking);
-										}}
-									>
-										✓ Complete Service
-									</button>
-								</div>
-							</div>
-						{:else}
-							<div class="upnext-top">
-								<div class="upnext-client">
-									<div class="client-avatar-sm">
-										{booking.userName?.[0] || 'G'}
-									</div>
-									<div class="upnext-details">
-										<h4>{booking.userName || 'Guest'}</h4>
-										<p class="upnext-phone">
-											{#if booking.userPhone}
-												<svg
-													class="phone-icon"
-													width="12"
-													height="12"
-													viewBox="0 0 24 24"
-													fill="none"
-													stroke="currentColor"
-													stroke-width="2"
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													><path
-														d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-													/></svg
-												>
-												{maskPhone(booking.userPhone)}
-											{:else}
-												<span class="no-phone">No phone number</span>
-											{/if}
-										</p>
-										<p class="upnext-service">
-											{#if booking.servicesList?.length}
-												{booking.servicesList.map((s: any) => s.name).join(', ')}
-											{:else}
-												{booking.serviceName || 'Service'}
-											{/if}
-										</p>
-									</div>
-								</div>
-								<StatusBadge
-									status={booking.status}
-									size="sm"
-									animated={booking.status === 'in-progress'}
-								/>
-							</div>
-
-						<!-- Staff Assignment -->
-						<div class="upnext-staff-row">
-							{#if booking.staffName && booking.staffId && booking.staffId !== 'unassigned'}
-								<span class="staff-badge assigned">
-									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-									{booking.staffName}
-								</span>
-							{:else}
-								<span class="staff-badge unassigned">
-									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-									Unassigned — Available
-								</span>
-							{/if}
-						</div>
-
-							<div class="upnext-meta">
-								<div class="meta-item">
-									<span class="meta-icon">🕐</span>
-									<span>{formatTime12h(booking.time)}</span>
-								</div>
-								{#if booking.servicesList?.some((s: any) => s.duration)}
-									<div class="meta-item">
-										<span class="meta-icon">⏱</span>
-										<span
-											>{formatDuration(
-												booking.servicesList.reduce((a: number, s: any) => a + (s.duration || 0), 0)
-											)}</span
-										>
-									</div>
-								{/if}
-								<div class="meta-item">
-									<span class="meta-icon">💰</span>
-									<span>₹{booking.totalAmount || booking.price || '-'}</span>
-								</div>
-							</div>
-
-							{#if booking.payment}
-								<div class="db-payment">
-									<span class="payment-badge {getPaymentBadgeClass(booking)}">
-										{getPaymentMethodIcon(booking)}
-										{getPaymentLabel(booking)}
-									</span>
-									{#if booking.payment.type === 'token' && booking.payment.amount}
-										<div class="payment-details">
-											<span class="payment-paid">✓ ₹{booking.payment.amount} paid</span>
-											<span class="payment-due"
-												>• ₹{(booking.totalAmount || booking.price || 0) - booking.payment.amount} due</span
-											>
-										</div>
-									{:else if booking.payment.type === 'full' && booking.payment.amount}
-										<span class="payment-paid">✓ Fully paid</span>
-									{/if}
-								</div>
-							{/if}
-
-							<div class="upnext-actions">
-								{#if booking.status === 'pending'}
-									<button
-										class="action-btn-soft confirm"
-										onclick={(e) => {
-											e.stopPropagation();
-											openBooking(booking);
-										}}
-									>
-										✓ Confirm
-									</button>
-									<button
-										class="action-btn-soft decline"
-										onclick={(e) => {
-											e.stopPropagation();
-											openBooking(booking);
-										}}
-									>
-										✕ Decline
-									</button>
-								{:else if booking.status === 'confirmed'}
-									<button
-										class="action-btn-premium {!booking.staffId || booking.staffId === 'unassigned' ? 'action-btn-claim' : ''}"
-										onclick={(e) => {
-											e.stopPropagation();
-											openBooking(booking);
-										}}
-									>
-										{!booking.staffId || booking.staffId === 'unassigned' ? '🙋 Claim & Start' : '▶ Start Service'}
-									</button>
-								{/if}
-							</div>
-						{/if}
-					</div>
+					<BookingCard
+						booking={booking}
+						now={$now}
+						onOpen={openBooking}
+						onResume={(b) => resumeTimer(b)}
+						onPause={(b) => pauseTimer(b)}
+						onComplete={(b) => handleCompleteService(b)}
+					/>
 				{/each}
 			</div>
 		</section>
@@ -628,6 +347,8 @@
 		position: relative;
 		min-height: 100%;
 		z-index: 1;
+		padding: 0 0 100px 0;
+		animation: s-fadeIn 0.3s ease;
 	}
 
 	/* ━━━ HERO ━━━ */
@@ -651,15 +372,56 @@
 		transform: scale(0.98);
 	}
 
+	.hero-card::before {
+		content: '';
+		position: absolute;
+		width: 80px;
+		height: 80px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.08);
+		top: -20px;
+		right: 30%;
+		z-index: 0;
+	}
+
+	.hero-card::after {
+		content: '';
+		position: absolute;
+		width: 50px;
+		height: 50px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.05);
+		bottom: -10px;
+		left: 20%;
+		z-index: 0;
+	}
+
+	/* Compact Hero Modifier */
+	.hero-card.hero-compact {
+		padding: 24px 20px 30px;
+	}
+	.hero-compact .hero-avatar {
+		width: 50px;
+		height: 50px;
+		font-size: 1.4rem;
+	}
+	.hero-compact .hero-content h1 {
+		font-size: 1.4rem;
+	}
+
 	.hero-gradient {
 		position: absolute;
 		inset: 0;
-		background: var(--s-grad-hero, linear-gradient(135deg, #1a0a2e 0%, #3730a3 40%, #7c3aed 100%));
+		background: linear-gradient(-45deg, #1a0a2e, #3730a3, #7c3aed, #6366f1, #4f46e5);
+		background-size: 300% 300%;
+		animation: s-gradientShift 8s ease infinite;
 		z-index: 0;
 	}
 
 	:global(.staff-app.dark) .hero-gradient {
-		background: var(--s-grad-hero, linear-gradient(135deg, #0d0520 0%, #1e1060 40%, #3b0764 100%));
+		background: linear-gradient(-45deg, #0d0520, #1e1060, #3b0764, #312e81, #1e1b4b);
+		background-size: 300% 300%;
+		animation: s-gradientShift 8s ease infinite;
 	}
 
 	.hero-content {
@@ -700,35 +462,44 @@
 
 	.hero-avatar {
 		position: relative;
+		width: 64px;
+		height: 64px;
+		font-size: 1.8rem;
+		border-radius: 50%;
+		transition: all 0.4s var(--s-ease-spring);
 	}
 
 	.hero-avatar::before {
 		content: '';
 		position: absolute;
-		inset: -4px;
+		inset: -5px;
 		border-radius: 50%;
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1));
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(232, 167, 48, 0.6), rgba(255, 255, 255, 0.3));
+		background-size: 200% 200%;
+		animation: s-gradientShift 4s ease infinite;
 		z-index: 0;
-		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 4px 20px rgba(232, 167, 48, 0.3);
+		transition: all 0.4s var(--s-ease-spring);
 	}
 
 	.hero-avatar img {
 		position: relative;
 		z-index: 1;
-		width: 64px;
-		height: 64px;
+		width: 100%;
+		height: 100%;
 		border-radius: 50%;
 		object-fit: cover;
 		border: 2px solid transparent;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 		background-clip: padding-box;
+		transition: all 0.4s var(--s-ease-spring);
 	}
 
 	.hero-avatar .avatar-placeholder {
 		position: relative;
 		z-index: 1;
-		width: 64px;
-		height: 64px;
+		width: 100%;
+		height: 100%;
 		border-radius: 50%;
 		background: rgba(255, 255, 255, 0.2);
 		backdrop-filter: blur(12px);
@@ -737,10 +508,11 @@
 		align-items: center;
 		justify-content: center;
 		font-weight: 800;
-		font-size: 1.8rem;
+		font-size: inherit;
 		border: 2px solid rgba(255, 255, 255, 0.4);
 		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 		box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
+		transition: all 0.4s var(--s-ease-spring);
 	}
 
 	/* ━━━ QUICK ACTIONS ━━━ */
@@ -1088,12 +860,25 @@
 
 	.stat-card:nth-child(1) {
 		border-top: 3px solid var(--s-accent-2, #7c3aed);
+		background: linear-gradient(135deg, rgba(124, 58, 237, 0.06) 0%, rgba(255, 255, 255, 0.9) 100%);
 	}
 	.stat-card:nth-child(2) {
 		border-top: 3px solid var(--s-accent-3, #f43f5e);
+		background: linear-gradient(135deg, rgba(244, 63, 94, 0.06) 0%, rgba(255, 255, 255, 0.9) 100%);
 	}
 	.stat-card:nth-child(3) {
 		border-top: 3px solid var(--s-success, #10b981);
+		background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(255, 255, 255, 0.9) 100%);
+	}
+
+	:global(.staff-app.dark) .stat-card:nth-child(1) {
+		background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(40, 40, 50, 0.9) 100%);
+	}
+	:global(.staff-app.dark) .stat-card:nth-child(2) {
+		background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(40, 40, 50, 0.9) 100%);
+	}
+	:global(.staff-app.dark) .stat-card:nth-child(3) {
+		background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(40, 40, 50, 0.9) 100%);
 	}
 
 	.stat-card.accent {
@@ -1160,19 +945,58 @@
 
 	/* ━━━ UP NEXT ━━━ */
 
+	.upnext-section :global(.s-section-title) {
+		position: relative;
+		padding-bottom: 6px;
+	}
+	.upnext-section :global(.s-section-title)::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 40px;
+		height: 3px;
+		border-radius: 2px;
+		background: var(--s-grad-aurora);
+	}
+
 	.upnext-list {
 		display: flex;
 		flex-direction: column;
 		gap: var(--s-space-md);
 	}
 
+	.upnext-list > .upnext-card {
+		animation: s-fadeInUp 0.4s var(--s-ease-spring) backwards;
+	}
+	.upnext-list > .upnext-card:nth-child(1) { animation-delay: 0ms; }
+	.upnext-list > .upnext-card:nth-child(2) { animation-delay: 80ms; }
+	.upnext-list > .upnext-card:nth-child(3) { animation-delay: 160ms; }
+	.upnext-list > .upnext-card:nth-child(4) { animation-delay: 240ms; }
+	.upnext-list > .upnext-card:nth-child(5) { animation-delay: 320ms; }
+	.upnext-list > .upnext-card:nth-child(6) { animation-delay: 400ms; }
+
 	.upnext-countdown {
 		font-size: var(--s-text-sm);
 		font-weight: 700;
 		color: var(--s-accent);
 		background: var(--s-accent-bg);
-		padding: 3px 10px;
+		padding: 3px 10px 3px 20px;
 		border-radius: var(--s-radius-full);
+		position: relative;
+	}
+
+	.upnext-countdown::before {
+		content: '';
+		position: absolute;
+		left: 8px;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--s-accent);
+		animation: s-pulse 1.5s ease-in-out infinite;
 	}
 
 	/* ═══════════════════════════════════════════
@@ -1232,7 +1056,7 @@
 		left: 0;
 		top: 8px;
 		bottom: 8px;
-		width: 3.5px;
+		width: 4.5px;
 		border-radius: 0 var(--s-radius-sm) var(--s-radius-sm) 0;
 	}
 
@@ -1304,9 +1128,11 @@
 	}
 
 	.upnext-service {
-		margin: 2px 0 0;
+		margin: 4px 0 0;
 		font-size: var(--s-text-sm);
 		color: var(--s-text-secondary);
+		padding: 3px 0;
+		line-height: 1.6;
 	}
 
 	.upnext-meta {
@@ -1393,13 +1219,26 @@
 		cursor: pointer;
 		background: linear-gradient(135deg, var(--s-accent) 0%, var(--s-accent-dark, #b08d4f) 100%);
 		color: white;
-		box-shadow: 0 2px 8px rgba(201, 169, 110, 0.2);
+		box-shadow: 0 4px 14px rgba(232, 167, 48, 0.35);
 		transition: all 0.3s ease;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		gap: 6px;
 		letter-spacing: 0.02em;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.action-btn-premium::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+		animation: s-shimmer 2.5s ease-in-out infinite;
 	}
 
 	@media (hover: hover) {

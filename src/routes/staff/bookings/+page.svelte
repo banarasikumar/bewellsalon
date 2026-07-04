@@ -11,6 +11,7 @@
 		resumeTimer
 	} from '$lib/stores/serviceTimer';
 	import BookingModal from '$lib/components/staff/BookingModal.svelte';
+	import BookingCard from '$lib/components/staff/BookingCard.svelte';
 	import CircularProgress from '$lib/components/staff/CircularProgress.svelte';
 	import ClientDrawer from '$lib/components/staff/ClientDrawer.svelte';
 
@@ -359,317 +360,16 @@
 					</div>
 
 					{#each bookings as booking}
-						<div
-							class="booking-card s-card s-card-interactive {booking.status === 'in-progress'
-								? 'active-service-mode'
-								: 'card-' + booking.status}"
-							onclick={() => openBooking(booking)}
-							role="button"
-							tabindex="0"
-							onkeydown={(e) => e.key === 'Enter' && openBooking(booking)}
-						>
-							{#if booking.status === 'in-progress'}
-								{@const elapsed = getElapsedSeconds(booking, $now)}
-								{@const totalMins =
-									booking.servicesList?.reduce((a: number, s: any) => a + (s.duration || 30), 0) ||
-									30}
-								{@const totalSeconds = totalMins * 60}
-								{@const progress =
-									totalSeconds > 0 ? Math.min(100, (elapsed / totalSeconds) * 100) : 0}
-								{@const isOvertime = elapsed > totalSeconds}
-								{@const remaining = Math.max(0, totalSeconds - elapsed)}
-								{@const formattedElapsed = (() => {
-									const h = Math.floor(elapsed / 3600);
-									const m = Math.floor((elapsed % 3600) / 60);
-									const s = elapsed % 60;
-									return h > 0
-										? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-										: `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-								})()}
-								{@const formattedRemaining = (() => {
-									const h = Math.floor(remaining / 3600);
-									const m = Math.floor((remaining % 3600) / 60);
-									const s = remaining % 60;
-									return h > 0
-										? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-										: `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-								})()}
-
-								<div class="active-service-content">
-									<div class="service-timer-header">
-										<div class="timer-info">
-											<span class="timer-label">
-												{#if booking.isTimerRunning}
-													🔴 In Service
-												{:else}
-													⏸ Paused
-												{/if}
-											</span>
-											<h3 class="timer-client">{booking.userName || 'Guest'}</h3>
-											<p class="timer-phone">
-												{#if booking.userPhone}
-													<svg
-														class="phone-icon"
-														width="12"
-														height="12"
-														viewBox="0 0 24 24"
-														fill="none"
-														stroke="currentColor"
-														stroke-width="2"
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														><path
-															d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-														/></svg
-													>
-													{maskPhone(booking.userPhone)}
-												{:else}
-													<span class="no-phone">No phone number</span>
-												{/if}
-											</p>
-											<p class="timer-service">
-												{#if booking.servicesList?.length}
-													{booking.servicesList.map((s: any) => s.name).join(', ')}
-												{:else}
-													{booking.serviceName || 'Service'}
-												{/if}
-											</p>
-										</div>
-										<CircularProgress
-											{progress}
-											size={72}
-											strokeWidth={5}
-											color={isOvertime ? 'var(--s-error)' : 'var(--s-accent)'}
-										>
-											<span class="timer-value" class:overtime={isOvertime}>
-												{isOvertime ? '+' : ''}{formattedElapsed}
-											</span>
-										</CircularProgress>
-									</div>
-									<div class="timer-remaining">
-										{#if isOvertime}
-											<span class="overtime-text"
-												>⚠️ Overtime — was expected {formatDuration(totalMins)}</span
-											>
-										{:else}
-											<span class="remaining-text">{formattedRemaining} remaining</span>
-										{/if}
-									</div>
-									{#if booking.payment}
-										<div class="bc-payment timer-payment">
-											<span class="payment-badge {getPaymentBadgeClass(booking)}">
-												{getPaymentMethodIcon(booking)}
-												{getPaymentLabel(booking)}
-											</span>
-											<span class="bc-meta-item price"
-												>₹{booking.totalAmount || booking.price || '-'}</span
-											>
-											{#if booking.payment.type === 'token' && booking.payment.amount}
-												<div class="payment-details">
-													<span class="payment-paid">✓ ₹{booking.payment.amount} paid</span>
-													<span class="payment-due"
-														>• ₹{(booking.totalAmount || booking.price || 0) -
-															booking.payment.amount} due</span
-													>
-												</div>
-											{:else if booking.payment.type === 'full' && booking.payment.amount}
-												<span class="payment-paid">✓ Fully paid</span>
-											{/if}
-										</div>
-									{/if}
-									<div class="timer-notes" class:notes-empty={!booking.notes}>
-										<span class="timer-notes-icon">📝</span>
-										<p class="timer-notes-text">
-											{#if booking.notes}
-												{booking.notes}
-											{:else}
-												<span class="notes-none">Notes: None</span>
-											{/if}
-										</p>
-									</div>
-									<div class="timer-actions">
-										{#if !booking.isTimerRunning}
-											<button
-												class="timer-btn-outline"
-												onclick={(e) => {
-													e.stopPropagation();
-													resumeTimer(booking);
-												}}
-											>
-												▶ Resume
-											</button>
-										{:else}
-											<button
-												class="timer-btn-outline"
-												onclick={(e) => {
-													e.stopPropagation();
-													pauseTimer(booking);
-												}}
-											>
-												⏸ Pause
-											</button>
-										{/if}
-										<button
-											class="timer-btn-complete"
-											onclick={(e) => {
-												e.stopPropagation();
-												goto(`/staff/bookings/${booking.id}`);
-											}}
-										>
-											✓ Complete Service
-										</button>
-									</div>
-								</div>
-							{:else}
-								<div class="bc-body">
-									<div class="bc-top">
-										<button
-											class="bc-avatar"
-											onclick={(e) => {
-												e.stopPropagation();
-												openClient(booking);
-											}}
-										>
-											{booking.userName?.[0]?.toUpperCase() || 'G'}
-										</button>
-										<div class="bc-info">
-											<h4 class="bc-name">{booking.userName || 'Guest'}</h4>
-											<p class="bc-phone">
-												{#if booking.userPhone}
-													<svg
-														class="phone-icon"
-														width="12"
-														height="12"
-														viewBox="0 0 24 24"
-														fill="none"
-														stroke="currentColor"
-														stroke-width="2"
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														><path
-															d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-														/></svg
-													>
-													{maskPhone(booking.userPhone)}
-												{:else}
-													<span class="no-phone">No phone number</span>
-												{/if}
-											</p>
-											<p class="bc-services">
-												{#if booking.servicesList?.length}
-													{booking.servicesList.map((s: any) => s.name).join(', ')}
-												{:else}
-													{booking.serviceName || 'Service'}
-												{/if}
-											</p>
-										</div>
-										<div class="bc-badges">
-											<StatusBadge status={booking.status} size="sm" />
-											{#if booking.status === 'completed'}
-												{#if booking.payment?.status === 'paid'}
-													<span class="pay-tag paid">✓ Paid</span>
-												{:else}
-													<span class="pay-tag unpaid">Unpaid</span>
-												{/if}
-											{/if}
-										</div>
-									</div>
-
-									<!-- Staff Assignment -->
-									<div class="bc-staff-row">
-										{#if booking.staffName && booking.staffId && booking.staffId !== 'unassigned'}
-											<span class="staff-badge assigned">
-												<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-												{booking.staffName}
-											</span>
-										{:else}
-											<span class="staff-badge unassigned">
-												<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-												Unassigned — Available
-											</span>
-										{/if}
-									</div>
-
-									<div class="bc-meta">
-										<span class="bc-meta-item">📅 {formatDate(booking.date)}</span>
-										<span class="bc-meta-item">🕐 {formatTime12h(booking.time)}</span>
-										{#if booking.servicesList?.some((s: any) => s.duration)}
-											<span class="bc-meta-item"
-												>⏱ {formatDuration(
-													booking.servicesList.reduce(
-														(a: number, s: any) => a + (s.duration || 0),
-														0
-													)
-												)}</span
-											>
-										{/if}
-										<span class="bc-meta-item price"
-											>₹{booking.totalAmount || booking.price || '-'}</span
-										>
-									</div>
-
-									{#if booking.notes}
-										<div class="bc-notes">
-											<span class="bc-notes-icon">📝</span>
-											<span class="bc-notes-text">{booking.notes}</span>
-										</div>
-									{/if}
-
-									<!-- Payment Info -->
-									{#if booking.payment}
-										<div class="bc-payment">
-											<span class="payment-badge {getPaymentBadgeClass(booking)}">
-												{getPaymentMethodIcon(booking)}
-												{getPaymentLabel(booking)}
-											</span>
-											{#if booking.payment.type === 'token' && booking.payment.amount}
-												<div class="payment-details">
-													<span class="payment-paid">✓ ₹{booking.payment.amount} paid</span>
-													<span class="payment-due"
-														>• ₹{(booking.totalAmount || booking.price || 0) -
-															booking.payment.amount} due</span
-													>
-												</div>
-											{:else if booking.payment.type === 'full' && booking.payment.amount}
-												<span class="payment-paid">✓ Fully paid</span>
-											{/if}
-										</div>
-									{/if}
-
-									<!-- Premium Quick Actions -->
-									<div class="bc-actions">
-										{#if booking.status === 'pending'}
-											<button
-												class="bk-btn bk-btn-confirm"
-												onclick={(e) => quickAction(booking.id, 'confirmed', e)}>✓ Confirm</button
-											>
-											<button
-												class="bk-btn bk-btn-decline"
-												onclick={(e) => quickAction(booking.id, 'cancelled', e)}>✕ Decline</button
-											>
-										{:else if booking.status === 'confirmed'}
-											<button
-												class="bk-btn bk-btn-start {!booking.staffId || booking.staffId === 'unassigned' ? 'bk-btn-claim' : ''}"
-												onclick={async (e) => {
-													e.stopPropagation();
-													if (!booking.staffId || booking.staffId === 'unassigned') {
-														if ($staffUser) {
-															await updateBookingDetails(booking.id, {
-																staffId: $staffUser.uid,
-																staffName: $staffUser.displayName || 'Staff'
-															});
-														}
-													}
-													startServiceTimer(booking);
-													showToast('Timer started!', 'success');
-												}}>{!booking.staffId || booking.staffId === 'unassigned' ? '🙋 Claim & Start' : '▶ Start'}</button
-											>
-										{/if}
-									</div>
-								</div>
-							{/if}
-						</div>
-					{/each}
+						<BookingCard
+								booking={booking}
+								now={$now}
+								onOpen={openBooking}
+								onResume={(b) => resumeTimer(b)}
+								onPause={(b) => pauseTimer(b)}
+								onComplete={(b) => quickAction(b.id, 'completed')}
+								onClientClick={openClient}
+							/>
+						{/each}
 				</div>
 			{/each}
 		</div>
@@ -856,6 +556,15 @@
 		position: relative;
 		display: flex;
 		align-items: center;
+		background: var(--s-bg-glass);
+		backdrop-filter: var(--s-blur);
+		-webkit-backdrop-filter: var(--s-blur);
+		border-radius: var(--s-radius-xl);
+		transition: all 0.3s var(--s-ease);
+	}
+	
+	.search-wrap:focus-within {
+		box-shadow: 0 0 0 3px var(--s-accent-bg), var(--s-shadow-sm);
 	}
 
 	.search-icon {
@@ -863,12 +572,17 @@
 		left: 14px;
 		color: var(--s-text-tertiary);
 		pointer-events: none;
+		transition: color 0.3s var(--s-ease);
+	}
+	
+	.search-wrap:focus-within .search-icon {
+		color: var(--s-accent);
 	}
 
 	.search-input {
 		width: 100%;
 		padding: 12px 40px 12px 42px;
-		background: var(--s-surface);
+		background: transparent;
 		border: 1px solid var(--s-border);
 		border-radius: var(--s-radius-lg);
 		font-size: var(--s-text-base);
@@ -879,7 +593,6 @@
 
 	.search-input:focus {
 		border-color: var(--s-accent);
-		box-shadow: 0 0 0 3px var(--s-accent-bg);
 	}
 
 	.search-input::placeholder {
@@ -925,21 +638,23 @@
 		align-items: center;
 		gap: 4px;
 		white-space: nowrap;
+		position: relative;
+		overflow: hidden;
 	}
-
+	
 	.filter-pill.active {
-		background: var(--s-brand);
 		color: white;
-		border-color: var(--s-brand);
+		background: var(--s-grad-accent, var(--s-accent));
+		border-color: transparent;
+		box-shadow: 0 4px 14px rgba(232, 167, 48, 0.35);
+		transform: scale(1.02);
 	}
-
+	
 	:global(.staff-app.dark) .filter-pill.active {
-		background: var(--s-accent);
-		color: #1a1a2e;
-		border-color: var(--s-accent);
+		color: #ffffff;
 	}
 
-	.filter-pill:active {
+	.filter-pill:not(.active):active {
 		transform: scale(0.95);
 	}
 
@@ -954,11 +669,17 @@
 		align-items: center;
 		justify-content: center;
 		font-weight: 800;
+		animation: s-scaleIn 0.3s var(--s-ease-spring);
 	}
 
 	.filter-pill.active .pill-badge {
-		background: rgba(255, 255, 255, 0.3);
+		background: rgba(255, 255, 255, 0.4);
 		color: white;
+	}
+	
+	:global(.staff-app.dark) .filter-pill.active .pill-badge {
+		background: rgba(0, 0, 0, 0.2);
+		color: #1a1a2e;
 	}
 
 	/* Results */
@@ -970,6 +691,9 @@
 		font-size: var(--s-text-xs);
 		font-weight: 600;
 		color: var(--s-text-tertiary);
+		background: var(--s-bg-tertiary);
+		padding: 3px 10px;
+		border-radius: var(--s-radius-full);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
@@ -992,9 +716,15 @@
 		font-family: var(--s-font-display);
 		font-size: var(--s-text-sm);
 		font-weight: 700;
-		color: var(--s-text-secondary);
+		color: var(--s-text-primary);
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
+		padding: 4px 14px;
+		background: var(--s-bg-glass);
+		backdrop-filter: var(--s-blur);
+		-webkit-backdrop-filter: var(--s-blur);
+		border-radius: var(--s-radius-full);
+		border: 1px solid var(--s-border);
 	}
 
 	.dd-count {
@@ -1212,6 +942,15 @@
 	/* ═══════════════════════════════════════════
 	   BOOKING CARD — Premium Elevated Design
 	   ═══════════════════════════════════════════ */
+	.bookings-list .booking-card {
+		animation: s-fadeInUp 0.4s var(--s-ease-spring) backwards;
+	}
+	.date-group:nth-child(1) .booking-card:nth-child(1) { animation-delay: 0ms; }
+	.date-group:nth-child(1) .booking-card:nth-child(2) { animation-delay: 80ms; }
+	.date-group:nth-child(1) .booking-card:nth-child(3) { animation-delay: 160ms; }
+	.date-group:nth-child(2) .booking-card:nth-child(1) { animation-delay: 240ms; }
+	.date-group:nth-child(2) .booking-card:nth-child(2) { animation-delay: 320ms; }
+
 	.booking-card {
 		display: flex;
 		overflow: hidden;
@@ -1268,7 +1007,7 @@
 		left: 0;
 		top: 8px;
 		bottom: 8px;
-		width: 3.5px;
+		width: 4.5px;
 		border-radius: 0 var(--s-radius-sm) var(--s-radius-sm) 0;
 	}
 
@@ -1523,6 +1262,18 @@
 	.bk-btn-start {
 		background: linear-gradient(135deg, var(--s-accent) 0%, var(--s-accent-dark, #b08d4f) 100%);
 		box-shadow: 0 2px 8px rgba(201, 169, 110, 0.2);
+		position: relative;
+		overflow: hidden;
+	}
+	.bk-btn-start::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+		animation: s-shimmer 2.5s ease-in-out infinite;
 	}
 	@media (hover: hover) {
 		.bk-btn-start:hover {
@@ -1552,26 +1303,26 @@
 	/* FAB */
 	.fab {
 		position: fixed;
-		bottom: calc(var(--s-nav-height, 68px) + 20px);
-		right: 20px;
-		width: 56px;
-		height: 56px;
-		border-radius: var(--s-radius-full);
-		background: var(--s-brand);
+		bottom: calc(var(--s-nav-height, 68px) + 16px);
+		right: 16px;
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background: var(--s-grad-accent, var(--s-brand));
 		color: white;
 		border: none;
-		box-shadow: var(--s-shadow-lg);
+		box-shadow: 0 4px 12px rgba(232, 167, 48, 0.4);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
 		z-index: 50;
-		transition: all var(--s-duration-fast) var(--s-ease);
+		transition: all 0.3s var(--s-ease-spring);
 	}
 
 	:global(.staff-app.dark) .fab {
 		background: var(--s-accent);
-		color: #1a1a2e;
+		color: #ffffff;
 	}
 
 	.fab:active {
