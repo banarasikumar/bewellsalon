@@ -913,6 +913,11 @@
 	}
 
 	.pbc-meta-premium {
+<<<<<<< HEAD
+		background: linear-gradient(135deg, var(--admin-accent-light), rgba(255, 215, 0, 0.12));
+		border: 1px solid rgba(255, 215, 0, 0.15);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+=======
 		background: linear-gradient(135deg, rgba(191, 90, 242, 0.2), rgba(255, 215, 0, 0.3));
 		border: 1px solid rgba(255, 215, 0, 0.3);
 		box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5);
@@ -924,6 +929,7 @@
 
 	.pbc-meta-premium .pbc-meta-value {
 		color: #000;
+>>>>>>> main-backup
 	}
 
 	.pbc-meta-block {
