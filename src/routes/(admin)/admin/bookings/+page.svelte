@@ -585,15 +585,7 @@
 				</div>
 			</div>
 
-			{#if booking.notes}
-				<div class="pbc-special-request">
-					<div class="pbc-request-header">
-						<FileText size={14} />
-						<span>Special Request</span>
-					</div>
-					<p>{booking.notes}</p>
-				</div>
-			{/if}
+
 
 			<div class="pbc-meta-grid pbc-meta-premium">
 				<div class="pbc-meta-block">
@@ -712,21 +704,26 @@
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-		border: 1px solid var(--admin-border);
-		transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+		box-shadow: 
+			0 15px 35px -5px rgba(0, 0, 0, 0.5), 
+			0 5px 15px rgba(0, 0, 0, 0.3);
+		border: 1px solid rgba(255, 255, 255, 0.06);
+		transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 		cursor: pointer;
 		overflow: hidden;
 		margin-bottom: 12px;
 	}
-
-	.premium-booking-card:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+	
+	:global([data-theme='clean']) .premium-booking-card {
+		box-shadow: 
+			0 15px 35px -5px rgba(0, 0, 0, 0.12), 
+			0 5px 15px rgba(0, 0, 0, 0.05),
+			0 2px 5px rgba(0, 0, 0, 0.03);
+		border: 1px solid rgba(0, 0, 0, 0.04);
 	}
 
 	.premium-booking-card:active {
-		transform: translateY(0) scale(0.98);
+		transform: scale(0.98);
 	}
 
 	.premium-booking-card.admin-card-selected {

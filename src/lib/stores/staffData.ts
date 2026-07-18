@@ -120,10 +120,8 @@ function startBookingsListener() {
 				...d.data()
 			})) as Booking[];
 
-			// Filter: Show only unassigned bookings or bookings assigned to the logged-in staff member
-			const bookings = allBookings.filter((b) => {
-				return !b.staffId || b.staffId === 'unassigned' || b.staffId === currentUid;
-			});
+			// Show all bookings, including those assigned to other staff members
+			const bookings = allBookings;
 
 			// Detect new bookings (not in previous set)
 			const currentIds = new Set(bookings.map((b) => b.id));

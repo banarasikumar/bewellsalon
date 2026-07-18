@@ -449,13 +449,7 @@
 					</div>
 				{/if}
 
-				{#if booking.notes}
-					<div
-						style="margin-top: 6px; font-size: 12px; color: var(--admin-text-secondary); font-style: italic;"
-					>
-						"{booking.notes}"
-					</div>
-				{/if}
+
 			</div>
 		{/each}
 	{/if}

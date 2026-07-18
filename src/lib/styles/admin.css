@@ -6,9 +6,9 @@
 /* --- CSS Custom Properties --- */
 :root {
 	/* --- Gold & Noir (Default) --- */
-	--admin-bg: #121212;
-	--admin-surface: #1c1c1e;
-	--admin-surface-hover: #2c2c2e;
+	--admin-bg: #000000;
+	--admin-surface: #27272a;
+	--admin-surface-hover: #3f3f46;
 	--admin-text-primary: #ffffff;
 	--admin-text-secondary: #ebebf5;
 	--admin-text-tertiary: #8e8e93;
@@ -52,7 +52,7 @@
 
 /* --- Clean Theme (Light Mode Override) --- */
 [data-theme='clean'] {
-	--admin-bg: #f5f5f7;
+	--admin-bg: #e5e7eb;
 	--admin-surface: #ffffff;
 	--admin-surface-hover: #f9f9fb;
 	--admin-text-primary: #1c1c1e;
@@ -889,15 +889,22 @@
 	background: var(--admin-surface);
 	border-radius: var(--admin-radius-lg);
 	padding: 18px;
-	border: 1px solid var(--admin-border);
+	border: 1px solid rgba(255, 255, 255, 0.06);
 	border-left: 5px solid transparent;
 	box-shadow:
-		0 2px 8px rgba(0, 0, 0, 0.06),
-		0 6px 20px rgba(0, 0, 0, 0.04);
+		0 15px 35px -5px rgba(0, 0, 0, 0.5), 
+		0 5px 15px rgba(0, 0, 0, 0.3);
 	position: relative;
-	transition:
-		transform 0.2s,
-		box-shadow 0.2s;
+	transition: transform 0.2s;
+}
+
+[data-theme='clean'] .admin-booking-card {
+	border: 1px solid rgba(0, 0, 0, 0.04);
+	border-left: 5px solid transparent;
+	box-shadow: 
+		0 15px 35px -5px rgba(0, 0, 0, 0.12), 
+		0 5px 15px rgba(0, 0, 0, 0.05),
+		0 2px 5px rgba(0, 0, 0, 0.03);
 }
 
 .admin-booking-card:active {

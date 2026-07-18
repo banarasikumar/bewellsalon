@@ -2,6 +2,7 @@
 	import CircularProgress from '$lib/components/staff/CircularProgress.svelte';
 	import StatusBadge from '$lib/components/staff/StatusBadge.svelte';
 	import { getElapsedSeconds } from '$lib/stores/serviceTimer';
+	import { auth } from '$lib/firebase';
 
 	let {
 		booking,
@@ -164,15 +165,7 @@
 				</div>
 			{/if}
 
-			{#if booking.notes}
-				<div class="special-request">
-					<div class="request-header">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-						<span>Special Request</span>
-					</div>
-					<p>{booking.notes}</p>
-				</div>
-			{/if}
+
 
 			<div class="timer-actions">
 				{#if !booking.isTimerRunning}
@@ -209,6 +202,45 @@
 		</div>
 	{:else}
 		<div class="bc-body">
+			<!-- TOP HEADER ROW -->
+			<div class="bc-header-row">
+				<span class="bc-booking-id">#{booking.id ? booking.id.substring(0,8).toUpperCase() : 'BKG12345'}</span>
+				
+				<div class="bc-badges">
+					{#if booking.staffName && booking.staffId && booking.staffId !== 'unassigned'}
+						<span class="bc-staff-badge assigned">
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+							{#if auth.currentUser && booking.staffId === auth.currentUser.uid}
+								{booking.staffName} (You)
+							{:else}
+								{booking.staffName}
+							{/if}
+						</span>
+					{:else}
+						<span class="bc-staff-badge unassigned">
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+							Unassigned
+						</span>
+					{/if}
+					
+					{#if booking.status === 'confirmed'}
+						{@const isAssignedToOther = booking.staffId && booking.staffId !== 'unassigned' && auth.currentUser?.uid && booking.staffId !== auth.currentUser.uid}
+						{#if isAssignedToOther}
+							<button class="bc-small-action-btn req-btn">
+								✋ Req
+							</button>
+						{:else}
+							<button class="bc-small-action-btn premium-btn">
+								Start
+							</button>
+						{/if}
+					{:else}
+						<StatusBadge status={booking.status} size="sm" animated={booking.status === 'in-progress'} />
+					{/if}
+				</div>
+			</div>
+
+			<!-- CLIENT INFO -->
 			<div class="bc-top">
 				<button
 					class="bc-avatar"
@@ -222,53 +254,31 @@
 				<div class="bc-info">
 					<div class="bc-name-row">
 						<h4 class="bc-name">{booking.userName || 'Guest'}</h4>
-						<StatusBadge status={booking.status} size="sm" animated={booking.status === 'in-progress'} />
 					</div>
-					
 					<p class="bc-services">
 						{#if booking.servicesList?.length}
-							{booking.servicesList.map((s: any) => s.name).join(', ')}
+							{booking.servicesList[0].name} {#if booking.servicesList.length > 1}<span class="bc-more-badge">+{booking.servicesList.length - 1}</span>{/if}
 						{:else}
 							{booking.serviceName || 'Service'}
-						{/if}
-					</p>
-
-					<p class="bc-phone">
-						{#if booking.userPhone}
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-							{maskPhone(booking.userPhone)}
-						{:else}
-							<span class="no-phone">No phone</span>
 						{/if}
 					</p>
 				</div>
 			</div>
 
-			{#if booking.staffName && booking.staffId && booking.staffId !== 'unassigned'}
-				<div class="bc-staff-assigned">
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-					<span>{booking.staffName}</span>
+			<!-- COMPACT META -->
+			<div class="bc-meta-compact">
+				<div class="meta-item">
+					<span class="meta-lbl">Date</span>
+					<span class="meta-val">{formatDate(booking.date)}</span>
 				</div>
-			{:else}
-				<div class="bc-staff-unassigned">
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-					<span>Unassigned</span>
-				</div>
-			{/if}
-
-			<div class="bc-meta-grid">
-				<div class="meta-block">
-					<span class="meta-label">Date</span>
-					<span class="meta-value">{formatDate(booking.date)}</span>
-				</div>
-				<div class="meta-block">
-					<span class="meta-label">Time</span>
-					<span class="meta-value">{formatTime12h(booking.time)}</span>
+				<div class="meta-item">
+					<span class="meta-lbl">Time</span>
+					<span class="meta-val">{formatTime12h(booking.time)}</span>
 				</div>
 				{#if booking.servicesList?.some((s: any) => s.duration)}
-					<div class="meta-block">
-						<span class="meta-label">Duration</span>
-						<span class="meta-value">{formatDuration(booking.servicesList.reduce((a: number, s: any) => a + (s.duration || 0), 0))}</span>
+					<div class="meta-item">
+						<span class="meta-lbl">Duration</span>
+						<span class="meta-val">{formatDuration(booking.servicesList.reduce((a: number, s: any) => a + (s.duration || 0), 0))}</span>
 					</div>
 				{/if}
 			</div>
@@ -282,26 +292,10 @@
 				</div>
 			{/if}
 
-			{#if booking.notes}
-				<div class="special-request">
-					<div class="request-header">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-						<span>Special Request</span>
-					</div>
-					<p>{booking.notes}</p>
-				</div>
-			{/if}
-
-			{#if booking.status === 'pending' || booking.status === 'confirmed'}
+			{#if booking.status === 'pending'}
 				<div class="bc-actions">
-					{#if booking.status === 'pending'}
-						<button class="action-btn action-confirm">Confirm</button>
-						<button class="action-btn action-decline">Decline</button>
-					{:else if booking.status === 'confirmed'}
-						<button class="action-btn action-primary premium-btn">
-							{!booking.staffId || booking.staffId === 'unassigned' ? 'Claim & Start' : 'Start Service'}
-						</button>
-					{/if}
+					<button class="action-btn action-confirm">Confirm</button>
+					<button class="action-btn action-decline">Decline</button>
 				</div>
 			{/if}
 		</div>
@@ -318,19 +312,19 @@
 		display: flex;
 		flex-direction: column;
 		gap: 16px;
-		box-shadow: var(--s-shadow-md);
-		border: 1px solid var(--s-border-strong);
-		transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+		box-shadow: 
+			0 15px 35px -5px rgba(0, 0, 0, 0.12), 
+			0 5px 15px rgba(0, 0, 0, 0.05),
+			0 2px 5px rgba(0, 0, 0, 0.03);
+		border: 1px solid rgba(0, 0, 0, 0.04);
+		transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 		cursor: pointer;
 		overflow: hidden;
 		animation: s-fadeInUp 0.4s var(--s-ease-spring) backwards;
 		margin-bottom: 16px;
 	}
 
-	.booking-card:hover {
-		transform: translateY(-4px);
-		box-shadow: var(--s-shadow-lg);
-	}
+
 
 	.booking-card:active {
 		transform: translateY(0) scale(0.97);
@@ -338,8 +332,10 @@
 
 	:global(.staff-app.dark) .booking-card {
 		background: var(--s-surface);
-		box-shadow: var(--s-shadow-md);
-		border-color: rgba(255, 255, 255, 0.08);
+		box-shadow: 
+			0 15px 35px -5px rgba(0, 0, 0, 0.5), 
+			0 5px 15px rgba(0, 0, 0, 0.3);
+		border-color: rgba(255, 255, 255, 0.06);
 	}
 
 	/* Active Service Mode Accent */
@@ -362,20 +358,89 @@
 	}
 
 	/* --- TOP INFO SECTION --- */
+	/* NEW CSS FOR COMPACT STAFF LAYOUT */
+	.bc-header-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding-bottom: 8px;
+		border-bottom: 1px dashed rgba(120, 120, 128, 0.15);
+		margin-bottom: 4px;
+	}
+
+	:global(.staff-app.dark) .bc-header-row {
+		border-bottom-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.bc-booking-id {
+		font-weight: 800;
+		font-size: 13px;
+		font-family: 'SF Mono', 'Fira Code', monospace;
+		color: var(--s-text-primary);
+		letter-spacing: 0.5px;
+	}
+
+	.bc-badges {
+		display: flex;
+		gap: 6px;
+		align-items: center;
+	}
+
+	.bc-staff-badge {
+		font-size: 0.65rem;
+		font-weight: 800;
+		padding: 4px 8px;
+		border-radius: 100px;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.bc-staff-badge.assigned {
+		background: rgba(120, 120, 128, 0.1);
+		color: var(--s-text-secondary);
+	}
+
+	.bc-staff-badge.unassigned {
+		background: var(--s-warning-bg);
+		color: var(--s-warning);
+		border: 1px dashed var(--s-warning);
+	}
+
+	.bc-small-action-btn {
+		font-size: 0.7rem;
+		font-weight: 800;
+		padding: 4px 10px;
+		border-radius: 100px;
+		cursor: pointer;
+		border: none;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.req-btn {
+		background: var(--s-bg-tertiary);
+		color: var(--s-text-secondary);
+		box-shadow: none;
+	}
+
 	.bc-top {
 		display: flex;
 		gap: 12px;
 		align-items: flex-start;
+		margin-top: 6px;
 	}
 
 	.bc-avatar {
-		width: 48px;
-		height: 48px;
+		width: 44px;
+		height: 44px;
 		border-radius: 50%;
 		background: var(--s-bg-primary);
 		color: var(--s-text-primary);
 		font-weight: 800;
-		font-size: 1.3rem;
+		font-size: 1.2rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -408,7 +473,7 @@
 
 	.bc-name {
 		font-family: var(--s-font-display);
-		font-size: 1.2rem;
+		font-size: 1.1rem;
 		font-weight: 800;
 		color: var(--s-text-primary);
 		margin: 0;
@@ -421,111 +486,55 @@
 	.bc-services {
 		font-size: 0.95rem;
 		color: var(--s-text-secondary);
-		margin: 4px 0 0 0;
+		margin: 2px 0 0 0;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		font-weight: 600;
-	}
-
-	.bc-phone {
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		font-size: 0.8rem;
-		color: var(--s-text-tertiary);
-		margin: 2px 0 0 0;
 	}
 
-	.phone-icon {
-		color: var(--s-text-tertiary);
-	}
-
-	/* --- STAFF ASSIGNMENT --- */
-	.bc-staff-assigned, .bc-staff-unassigned {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		font-size: 0.75rem;
-		font-weight: 600;
-		padding: 4px 10px;
-		border-radius: 100px;
-		width: fit-content;
-	}
-
-	.bc-staff-assigned {
-		background: var(--s-bg-tertiary);
+	.bc-more-badge {
+		background: var(--s-bg-secondary);
 		color: var(--s-text-secondary);
+		padding: 2px 6px;
+		border-radius: 6px;
+		font-size: 0.75rem;
+		margin-left: 6px;
+		font-weight: 700;
 	}
 
-	.bc-staff-unassigned {
-		background: var(--s-warning-bg);
-		color: var(--s-warning);
-		border: 1px dashed var(--s-warning);
-	}
-
-	/* --- META GRID (Date/Time) --- */
-	.bc-meta-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-		gap: 12px;
+	/* --- COMPACT META --- */
+	.bc-meta-compact {
+		display: flex;
 		background: var(--s-bg-primary);
-		padding: 12px 16px;
-		border-radius: 12px;
-		margin-top: 4px;
+		padding: 10px 14px;
+		border-radius: 10px;
 		border: 1px solid var(--s-border);
+		gap: 16px;
+		margin-top: 4px;
 	}
 
-	.meta-block {
+	.meta-item {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
+		flex: 1;
 	}
 
-	.meta-label {
-		font-size: 0.7rem;
+	.meta-lbl {
+		font-size: 0.65rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: var(--s-text-tertiary);
-		font-weight: 600;
-	}
-
-	.meta-value {
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--s-text-primary);
-	}
-
-	/* --- SPECIAL REQUESTS (Notes) --- */
-	.special-request {
-		background: rgba(232, 167, 48, 0.05);
-		border-left: 3px solid var(--s-accent);
-		padding: 10px 12px;
-		border-radius: 0 8px 8px 0;
-		margin-top: 4px;
-	}
-
-	:global(.staff-app.dark) .special-request {
-		background: rgba(232, 167, 48, 0.1);
-	}
-
-	.request-header {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		color: var(--s-accent);
-		font-size: 0.75rem;
 		font-weight: 700;
-		margin-bottom: 4px;
-		text-transform: uppercase;
-		letter-spacing: 0.02em;
 	}
 
-	.special-request p {
-		margin: 0;
+	.meta-val {
 		font-size: 0.85rem;
-		color: var(--s-text-secondary);
-		line-height: 1.4;
+		font-weight: 800;
+		color: var(--s-text-primary);
 	}
 
 	/* --- PAYMENT BAR --- */

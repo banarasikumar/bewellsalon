@@ -472,12 +472,7 @@
 								>
 							</div>
 
-							{#if booking.notes}
-								<div class="bc-notes">
-									<span class="bc-notes-icon">📝</span>
-									<span class="bc-notes-text">{booking.notes}</span>
-								</div>
-							{/if}
+
 
 							{#if booking.payment}
 								<div class="bc-payment">
@@ -957,33 +952,19 @@
 		position: relative;
 		border-radius: var(--s-radius-xl);
 		background: var(--s-surface);
-		border: 1px solid var(--s-border);
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.04),
-			0 6px 18px rgba(0, 0, 0, 0.06);
-		transition:
-			transform var(--s-duration-normal) var(--s-ease),
-			box-shadow var(--s-duration-normal) var(--s-ease);
+		border: 1px solid rgba(0, 0, 0, 0.04);
+		box-shadow: 
+			0 15px 35px -5px rgba(0, 0, 0, 0.12), 
+			0 5px 15px rgba(0, 0, 0, 0.05),
+			0 2px 5px rgba(0, 0, 0, 0.03);
+		transition: transform var(--s-duration-normal) var(--s-ease);
 	}
 	:global(.staff-app.dark) .booking-card {
 		background: var(--s-surface-raised);
-		border-color: var(--s-border-strong);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.25),
-			0 8px 24px rgba(0, 0, 0, 0.35);
-	}
-	@media (hover: hover) {
-		.booking-card:hover {
-			transform: translateY(-3px);
-			box-shadow:
-				0 6px 12px rgba(0, 0, 0, 0.08),
-				0 12px 36px rgba(0, 0, 0, 0.12);
-		}
-		:global(.staff-app.dark) .booking-card:hover {
-			box-shadow:
-				0 8px 16px rgba(0, 0, 0, 0.35),
-				0 16px 40px rgba(0, 0, 0, 0.45);
-		}
+		border-color: rgba(255, 255, 255, 0.06);
+		box-shadow: 
+			0 15px 35px -5px rgba(0, 0, 0, 0.5), 
+			0 5px 15px rgba(0, 0, 0, 0.3);
 	}
 	.booking-card:active {
 		transform: scale(0.985);
