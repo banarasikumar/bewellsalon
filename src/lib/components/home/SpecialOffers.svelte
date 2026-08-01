@@ -24,6 +24,7 @@
 	});
 </script>
 
+{#if $appSettings?.specialOffersEnabled !== false && offers.length > 0}
 <section id="special-offers" class="offers-section container section-padding">
 	<div class="section-header">
 		<h2 class="section-title">
@@ -81,6 +82,7 @@
 		{/if}
 	</div>
 </section>
+{/if}
 
 <style>
 	.offers-section {

@@ -3,6 +3,9 @@
 	
 	const isEnabled = $derived(($appSettings.promoTickerEnabled ?? true) && !!$appSettings.promoTickerText);
 	const promoText = $derived($appSettings.promoTickerText || "✨ FESTIVE SPECIAL: Get 15% OFF on all Premium Beauty Packages this week! ✨");
+	const color1 = $derived($appSettings.promoTickerColor1 || '#9333ea');
+	const color2 = $derived($appSettings.promoTickerColor2 || '#db2777');
+	const height = $derived($appSettings.promoTickerHeight || 30);
 
 	const scrollToOffers = (e: Event) => {
 		e.preventDefault();
@@ -48,7 +51,12 @@
 </script>
 
 {#if isEnabled}
-	<a href="#special-offers" class="promo-ticker" onclick={scrollToOffers}>
+	<a
+		href="#special-offers"
+		class="promo-ticker"
+		onclick={scrollToOffers}
+		style="background: linear-gradient(135deg, {color1}, {color2}); height: {height}px;"
+	>
 		<div class="ticker-content">
 			<span class="ticker-text">{promoText}</span>
 			<span class="ticker-text">{promoText}</span>

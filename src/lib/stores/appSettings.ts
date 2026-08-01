@@ -7,6 +7,9 @@ export interface AppSettings {
 	totalChairs: number;
 	promoTickerText: string;
 	promoTickerEnabled: boolean;
+	promoTickerColor1?: string;
+	promoTickerColor2?: string;
+	promoTickerHeight?: number;
 	specialOffers: Array<{
 		id: number;
 		badge: string;
@@ -21,6 +24,10 @@ export interface AppSettings {
 	referralRewardOnReg: number;
 	referralRewardOnBooking: number;
 	refereeSignUpBonus: number;
+	menuImageUrl: string;
+	menuImageEnabled: boolean;
+	menuPdfUrl: string;
+	specialOffersEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -28,6 +35,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 	totalChairs: 3,
 	promoTickerText: '✨ FESTIVE SPECIAL: Get 15% OFF on all Premium Beauty Packages this week! Tap to book now. ✨',
 	promoTickerEnabled: true,
+	promoTickerColor1: '#9333ea',
+	promoTickerColor2: '#db2777',
+	promoTickerHeight: 40,
 	specialOffers: [
 		{
 			id: 1,
@@ -61,7 +71,11 @@ const DEFAULT_SETTINGS: AppSettings = {
 	promoVideoEnabled: false,
 	referralRewardOnReg: 100,
 	referralRewardOnBooking: 200,
-	refereeSignUpBonus: 150
+	refereeSignUpBonus: 150,
+	menuImageUrl: '',
+	menuImageEnabled: true,
+	menuPdfUrl: '',
+	specialOffersEnabled: true
 };
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);

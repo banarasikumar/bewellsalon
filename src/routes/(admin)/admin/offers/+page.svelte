@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { appSettings, updateAppSetting } from '$lib/stores/appSettings';
+	import { onMount } from 'svelte';
+	import { appSettings, updateAppSetting, initAppSettingsListener } from '$lib/stores/appSettings';
 	import { showToast } from '$lib/stores/toast';
+	import { storage } from '$lib/firebase';
+	import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 	import { fade, fly, slide } from 'svelte/transition';
 	import {
 		Save,
@@ -25,7 +28,9 @@
 		ChevronUp,
 		Crop,
 		RotateCcw,
-		X
+		X,
+		FileText,
+		Download
 	} from 'lucide-svelte';
 
 	// Save States
@@ -33,15 +38,17 @@
 	let savingTicker = $state(false);
 	let savingVideo = $state(false);
 	let savingOffers = $state(false);
+	let savingMenuImage = $state(false);
+	let savingMenuPdf = $state(false);
 	let savingCardIndex = $state<number | null>(null);
 
 	// View Tabs: 'editor' or 'preview'
 	let activeTab = $state<'editor' | 'preview'>('editor');
 
 	// Collapsible Sections Accordion State (No section expanded by default; single section expanded at a time)
-	let activeSection = $state<'marquee' | 'video' | 'offers' | null>(null);
+	let activeSection = $state<'marquee' | 'menu' | 'video' | 'offers' | null>(null);
 
-	function toggleSection(section: 'marquee' | 'video' | 'offers') {
+	function toggleSection(section: 'marquee' | 'menu' | 'video' | 'offers') {
 		if (activeSection === section) {
 			activeSection = null;
 		} else {
@@ -56,8 +63,15 @@
 	// Local state copies
 	let localTickerText = $state($appSettings.promoTickerText || '');
 	let localTickerEnabled = $state($appSettings.promoTickerEnabled ?? true);
+	let localTickerColor1 = $state($appSettings.promoTickerColor1 || '#9333ea');
+	let localTickerColor2 = $state($appSettings.promoTickerColor2 || '#db2777');
+	let localTickerHeight = $state($appSettings.promoTickerHeight || 40);
 	let localVideoUrl = $state($appSettings.promoVideoUrl || '');
 	let localVideoEnabled = $state($appSettings.promoVideoEnabled || false);
+	let localMenuImageUrl = $state($appSettings.menuImageUrl || '');
+	let localMenuImageEnabled = $state($appSettings.menuImageEnabled ?? true);
+	let localMenuPdfUrl = $state($appSettings.menuPdfUrl || '');
+	let uploadingPdf = $state(false);
 	let localOffers = $state(
 		$appSettings.specialOffers && $appSettings.specialOffers.length > 0
 			? JSON.parse(JSON.stringify($appSettings.specialOffers))
@@ -91,26 +105,61 @@
 					}
 				]
 	);
+	let localSpecialOffersEnabled = $state($appSettings.specialOffersEnabled ?? true);
 
 	// Check if local changes differ from published DB settings
 	let isDirty = $derived(
 		$appSettings &&
 			(localTickerText !== ($appSettings.promoTickerText || '') ||
 				localTickerEnabled !== ($appSettings.promoTickerEnabled ?? true) ||
+				localTickerColor1 !== ($appSettings.promoTickerColor1 || '#9333ea') ||
+				localTickerColor2 !== ($appSettings.promoTickerColor2 || '#db2777') ||
+				localTickerHeight !== ($appSettings.promoTickerHeight || 40) ||
+				localMenuImageUrl !== ($appSettings.menuImageUrl || '') ||
+				localMenuImageEnabled !== ($appSettings.menuImageEnabled ?? true) ||
+				localMenuPdfUrl !== ($appSettings.menuPdfUrl || '') ||
 				localVideoUrl !== ($appSettings.promoVideoUrl || '') ||
 				localVideoEnabled !== ($appSettings.promoVideoEnabled || false) ||
+				localSpecialOffersEnabled !== ($appSettings.specialOffersEnabled ?? true) ||
 				JSON.stringify(localOffers) !== JSON.stringify($appSettings.specialOffers || []))
 	);
 
-	// Sync local state when appSettings updates from Firestore initially
+	onMount(() => {
+		initAppSettingsListener();
+	});
+
+	// Sync local state when appSettings updates from Firestore
 	$effect(() => {
-		if (!isDirty && !savingAll && !savingTicker && !savingVideo && !savingOffers && savingCardIndex === null && $appSettings) {
-			localTickerText = $appSettings.promoTickerText || '';
-			localTickerEnabled = $appSettings.promoTickerEnabled ?? true;
-			localVideoUrl = $appSettings.promoVideoUrl || '';
-			localVideoEnabled = $appSettings.promoVideoEnabled || false;
-			if ($appSettings.specialOffers && $appSettings.specialOffers.length > 0) {
-				localOffers = JSON.parse(JSON.stringify($appSettings.specialOffers));
+		if ($appSettings) {
+			// Guarantee empty local states populate from Firestore cloud values
+			if (!localMenuImageUrl && $appSettings.menuImageUrl) {
+				localMenuImageUrl = $appSettings.menuImageUrl;
+			}
+			if (!localMenuPdfUrl && $appSettings.menuPdfUrl) {
+				localMenuPdfUrl = $appSettings.menuPdfUrl;
+			}
+			if (!localVideoUrl && $appSettings.promoVideoUrl) {
+				localVideoUrl = $appSettings.promoVideoUrl;
+			}
+			if (!localTickerText && $appSettings.promoTickerText) {
+				localTickerText = $appSettings.promoTickerText;
+			}
+
+			if (!isDirty && !savingAll && !savingTicker && !savingVideo && !savingMenuImage && !savingMenuPdf && !savingOffers && savingCardIndex === null) {
+				localTickerText = $appSettings.promoTickerText || '';
+				localTickerEnabled = $appSettings.promoTickerEnabled ?? true;
+				localTickerColor1 = $appSettings.promoTickerColor1 || '#9333ea';
+				localTickerColor2 = $appSettings.promoTickerColor2 || '#db2777';
+				localTickerHeight = $appSettings.promoTickerHeight || 40;
+				localMenuImageUrl = $appSettings.menuImageUrl || '';
+				localMenuImageEnabled = $appSettings.menuImageEnabled ?? true;
+				localMenuPdfUrl = $appSettings.menuPdfUrl || '';
+				localVideoUrl = $appSettings.promoVideoUrl || '';
+				localVideoEnabled = $appSettings.promoVideoEnabled || false;
+				localSpecialOffersEnabled = $appSettings.specialOffersEnabled ?? true;
+				if ($appSettings.specialOffers && $appSettings.specialOffers.length > 0) {
+					localOffers = JSON.parse(JSON.stringify($appSettings.specialOffers));
+				}
 			}
 		}
 	});
@@ -199,13 +248,26 @@
 		savingTicker = true;
 		const success1 = await updateAppSetting('promoTickerText', localTickerText);
 		const success2 = await updateAppSetting('promoTickerEnabled', localTickerEnabled);
+		const success3 = await updateAppSetting('promoTickerColor1', localTickerColor1);
+		const success4 = await updateAppSetting('promoTickerColor2', localTickerColor2);
+		const success5 = await updateAppSetting('promoTickerHeight', localTickerHeight);
 
-		if (success1 && success2) {
+		if (success1 && success2 && success3 && success4 && success5) {
 			showToast('Promo Marquee Ticker published successfully!', 'success');
 		} else {
 			showToast('Failed to publish marquee ticker.', 'error');
 		}
 		savingTicker = false;
+	}
+
+	// Reset Marquee Ticker to factory defaults
+	function resetTickerDefaults() {
+		localTickerText = '✨ FESTIVE SPECIAL: Get 15% OFF on all Premium Beauty Packages this week! Tap to book now. ✨';
+		localTickerEnabled = true;
+		localTickerColor1 = '#9333ea';
+		localTickerColor2 = '#db2777';
+		localTickerHeight = 40;
+		showToast('Reset marquee settings to default values.', 'info');
 	}
 
 	// Save Video Settings
@@ -221,6 +283,63 @@
 			showToast('Failed to publish video settings.', 'error');
 		}
 		savingVideo = false;
+	}
+
+	// Upload base64 data URL to Firebase Storage and get permanent HTTPS URL
+	async function uploadDataUrlToStorage(dataUrl: string, folder: string = 'menu_images'): Promise<string> {
+		if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+			return dataUrl;
+		}
+		try {
+			const res = await fetch(dataUrl);
+			const blob = await res.blob();
+			const filename = `${folder}/img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.webp`;
+			const imgRef = storageRef(storage, filename);
+			await uploadBytes(imgRef, blob, { contentType: 'image/webp' });
+			const downloadUrl = await getDownloadURL(imgRef);
+			return downloadUrl;
+		} catch (err) {
+			console.error('Failed to upload image to Firebase Storage:', err);
+			return dataUrl;
+		}
+	}
+
+	// Save Menu Image
+	async function saveMenuImage() {
+		if (savingMenuImage) return;
+		savingMenuImage = true;
+		try {
+			if (localMenuImageUrl && localMenuImageUrl.startsWith('data:image/')) {
+				localMenuImageUrl = await uploadDataUrlToStorage(localMenuImageUrl, 'menu_images');
+			}
+			const success1 = await updateAppSetting('menuImageUrl', localMenuImageUrl);
+			const success2 = await updateAppSetting('menuImageEnabled', localMenuImageEnabled);
+
+			if (success1 && success2) {
+				showToast('Menu Image uploaded to Cloud & published successfully!', 'success');
+			} else {
+				showToast('Failed to publish menu image.', 'error');
+			}
+		} catch (err) {
+			console.error('Error saving menu image:', err);
+			showToast('Error uploading menu image to Cloud Storage.', 'error');
+		} finally {
+			savingMenuImage = false;
+		}
+	}
+
+	// Save Menu PDF
+	async function saveMenuPdf() {
+		if (savingMenuPdf) return;
+		savingMenuPdf = true;
+		const success = await updateAppSetting('menuPdfUrl', localMenuPdfUrl);
+
+		if (success) {
+			showToast('Menu PDF published successfully!', 'success');
+		} else {
+			showToast('Failed to publish menu PDF.', 'error');
+		}
+		savingMenuPdf = false;
 	}
 
 	// Check if a single offer card has unsaved draft changes
@@ -247,13 +366,22 @@
 	async function saveSingleCard(index: number) {
 		if (savingCardIndex !== null) return;
 		savingCardIndex = index;
-		const success = await updateAppSetting('specialOffers', localOffers);
-		if (success) {
-			showToast(`Card #${index + 1} ("${localOffers[index].title || 'Offer'}") published successfully!`, 'success');
-		} else {
-			showToast(`Failed to publish Card #${index + 1}.`, 'error');
+		try {
+			if (localOffers[index]?.image && localOffers[index].image.startsWith('data:image/')) {
+				localOffers[index].image = await uploadDataUrlToStorage(localOffers[index].image, 'offer_images');
+			}
+			const success = await updateAppSetting('specialOffers', localOffers);
+			if (success) {
+				showToast(`Card #${index + 1} ("${localOffers[index].title || 'Offer'}") published successfully!`, 'success');
+			} else {
+				showToast(`Failed to publish Card #${index + 1}.`, 'error');
+			}
+		} catch (err) {
+			console.error('Error saving card:', err);
+			showToast(`Error publishing Card #${index + 1}.`, 'error');
+		} finally {
+			savingCardIndex = null;
 		}
-		savingCardIndex = null;
 	}
 
 	// Discard Single Card Draft Changes
@@ -281,21 +409,40 @@
 	async function saveAllOffers() {
 		if (savingOffers) return;
 		savingOffers = true;
-		const success = await updateAppSetting('specialOffers', localOffers);
-		if (success) {
-			showToast('All Special Offer Cards published successfully!', 'success');
-		} else {
-			showToast('Failed to publish offer cards.', 'error');
+		try {
+			for (let i = 0; i < localOffers.length; i++) {
+				if (localOffers[i]?.image && localOffers[i].image.startsWith('data:image/')) {
+					localOffers[i].image = await uploadDataUrlToStorage(localOffers[i].image, 'offer_images');
+				}
+			}
+			const success1 = await updateAppSetting('specialOffers', localOffers);
+			const success2 = await updateAppSetting('specialOffersEnabled', localSpecialOffersEnabled);
+			if (success1 && success2) {
+				showToast('All Special Offer Cards published successfully!', 'success');
+			} else {
+				showToast('Failed to publish offer cards.', 'error');
+			}
+		} catch (err) {
+			console.error('Error saving all offers:', err);
+			showToast('Error uploading offer images to Cloud Storage.', 'error');
+		} finally {
+			savingOffers = false;
 		}
-		savingOffers = false;
 	}
 
 	// Reset changes to live DB values
 	function resetChanges() {
 		localTickerText = $appSettings.promoTickerText || '';
 		localTickerEnabled = $appSettings.promoTickerEnabled ?? true;
+		localTickerColor1 = $appSettings.promoTickerColor1 || '#9333ea';
+		localTickerColor2 = $appSettings.promoTickerColor2 || '#db2777';
+		localTickerHeight = $appSettings.promoTickerHeight || 40;
+		localMenuImageUrl = $appSettings.menuImageUrl || '';
+		localMenuImageEnabled = $appSettings.menuImageEnabled ?? true;
+		localMenuPdfUrl = $appSettings.menuPdfUrl || '';
 		localVideoUrl = $appSettings.promoVideoUrl || '';
 		localVideoEnabled = $appSettings.promoVideoEnabled || false;
+		localSpecialOffersEnabled = $appSettings.specialOffersEnabled ?? true;
 		if ($appSettings.specialOffers) {
 			localOffers = JSON.parse(JSON.stringify($appSettings.specialOffers));
 		}
@@ -424,6 +571,7 @@
 
 	// Interactive Image Cropper Modal State
 	let cropperModalOpen = $state(false);
+	let cropperMode = $state<'offer' | 'menu'>('offer');
 	let cropperOfferIndex = $state<number | null>(null);
 	let cropperImageSrc = $state<string>('');
 	let cropperZoom = $state<number>(1);
@@ -438,18 +586,23 @@
 	let initialOffsetY = 0;
 
 	let cropperBaseScale = $derived(
-		Math.max(
-			360 / (cropperNaturalWidth || 360),
-			270 / (cropperNaturalHeight || 270)
-		)
+		cropperMode === 'menu'
+			? Math.max(
+					270 / (cropperNaturalWidth || 270),
+					382 / (cropperNaturalHeight || 382)
+				)
+			: Math.max(
+					360 / (cropperNaturalWidth || 360),
+					270 / (cropperNaturalHeight || 270)
+				)
 	);
 
 	let cropperRenderWidth = $derived((cropperNaturalWidth || 360) * cropperBaseScale);
 	let cropperRenderHeight = $derived((cropperNaturalHeight || 270) * cropperBaseScale);
 
 	function clampCropperOffsets(targetX: number = cropperOffsetX, targetY: number = cropperOffsetY) {
-		const viewportWidth = 360;
-		const viewportHeight = 270;
+		const viewportWidth = cropperMode === 'menu' ? 270 : 360;
+		const viewportHeight = cropperMode === 'menu' ? 382 : 270;
 
 		const currentW = cropperRenderWidth * cropperZoom;
 		const currentH = cropperRenderHeight * cropperZoom;
@@ -479,10 +632,89 @@
 
 			const img = new Image();
 			img.onload = () => {
+				cropperMode = 'offer';
 				cropperNaturalWidth = img.naturalWidth || 360;
 				cropperNaturalHeight = img.naturalHeight || 270;
 				cropperImageSrc = rawDataUrl;
 				cropperOfferIndex = offerIndex;
+				cropperZoom = 1;
+				cropperOffsetX = 0;
+				cropperOffsetY = 0;
+				cropperModalOpen = true;
+				clampCropperOffsets(0, 0);
+			};
+			img.src = rawDataUrl;
+		};
+		reader.readAsDataURL(file);
+		target.value = '';
+	}
+
+	async function handlePdfUpload(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (!file) return;
+
+		if (file.type !== 'application/pdf') {
+			showToast('Please select a valid PDF file.', 'error');
+			target.value = '';
+			return;
+		}
+
+		if (file.size > 4 * 1024 * 1024) {
+			showToast('PDF size should be less than 4MB.', 'error');
+			target.value = '';
+			return;
+		}
+
+		uploadingPdf = true;
+		try {
+			const pdfRef = storageRef(storage, `menu/salon_menu_${Date.now()}.pdf`);
+			await uploadBytes(pdfRef, file);
+			const downloadUrl = await getDownloadURL(pdfRef);
+			localMenuPdfUrl = downloadUrl;
+			showToast('PDF uploaded successfully! Click publish to save.', 'success');
+		} catch (error) {
+			console.error('PDF upload failed:', error);
+			showToast('Failed to upload PDF.', 'error');
+		} finally {
+			uploadingPdf = false;
+			target.value = ''; // Reset input
+		}
+	}
+
+	function handleMenuImageUpload(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (!file) return;
+
+		if (file.size > 4 * 1024 * 1024) {
+			showToast('File size must be less than 4 MB.', 'error');
+			target.value = '';
+			return;
+		}
+
+		const validFormats = ['image/jpeg', 'image/png', 'image/webp'];
+		if (!validFormats.includes(file.type)) {
+			showToast('Invalid format. Use JPG, PNG or WEBP.', 'error');
+			target.value = '';
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const rawDataUrl = e.target?.result as string;
+
+			const img = new Image();
+			img.onload = () => {
+				if (img.naturalWidth < 397 || img.naturalHeight < 562) {
+					showToast('Image must be at least 397x562 (A4 Portrait).', 'error');
+					return;
+				}
+				cropperMode = 'menu';
+				cropperNaturalWidth = img.naturalWidth || 397;
+				cropperNaturalHeight = img.naturalHeight || 562;
+				cropperImageSrc = rawDataUrl;
+				cropperOfferIndex = null;
 				cropperZoom = 1;
 				cropperOffsetX = 0;
 				cropperOffsetY = 0;
@@ -501,6 +733,7 @@
 
 		const img = new Image();
 		img.onload = () => {
+			cropperMode = 'offer';
 			cropperNaturalWidth = img.naturalWidth || 360;
 			cropperNaturalHeight = img.naturalHeight || 270;
 			cropperImageSrc = imgUrl;
@@ -580,20 +813,21 @@
 	}
 
 	function applyCroppedImage() {
-		if (cropperOfferIndex === null || !cropperImageSrc) return;
+		if (!cropperImageSrc) return;
+		if (cropperMode === 'offer' && cropperOfferIndex === null) return;
 
 		const img = new Image();
 		img.crossOrigin = 'anonymous';
 		img.onload = () => {
-			const canvasWidth = 1200;
-			const canvasHeight = 900;
+			const canvasWidth = cropperMode === 'menu' ? 397 : 1200;
+			const canvasHeight = cropperMode === 'menu' ? 562 : 900;
 			const canvas = document.createElement('canvas');
 			canvas.width = canvasWidth;
 			canvas.height = canvasHeight;
 			const ctx = canvas.getContext('2d');
 			if (!ctx) return;
 
-			const canvasScale = canvasWidth / 360;
+			const canvasScale = cropperMode === 'menu' ? canvasWidth / 270 : canvasWidth / 360;
 
 			const canvasBaseScale = Math.max(
 				canvasWidth / (img.naturalWidth || canvasWidth),
@@ -610,18 +844,29 @@
 			ctx.drawImage(img, drawX, drawY, drawW, drawH);
 
 			try {
-				const croppedUrl = canvas.toDataURL('image/webp', 0.9);
-				localOffers[cropperOfferIndex].image = croppedUrl;
-				localOffers[cropperOfferIndex].rawImage = cropperImageSrc;
+				const quality = cropperMode === 'menu' ? 0.7 : 0.8;
+				const croppedUrl = canvas.toDataURL('image/webp', quality);
+				if (cropperMode === 'menu') {
+					localMenuImageUrl = croppedUrl;
+				} else if (cropperOfferIndex !== null) {
+					localOffers[cropperOfferIndex].image = croppedUrl;
+					localOffers[cropperOfferIndex].rawImage = cropperImageSrc;
+					localOffers[cropperOfferIndex].mediaType = 'image';
+				}
 			} catch {
-				const croppedUrl = canvas.toDataURL('image/jpeg', 0.9);
-				localOffers[cropperOfferIndex].image = croppedUrl;
-				localOffers[cropperOfferIndex].rawImage = cropperImageSrc;
+				const quality = cropperMode === 'menu' ? 0.7 : 0.8;
+				const croppedUrl = canvas.toDataURL('image/jpeg', quality);
+				if (cropperMode === 'menu') {
+					localMenuImageUrl = croppedUrl;
+				} else if (cropperOfferIndex !== null) {
+					localOffers[cropperOfferIndex].image = croppedUrl;
+					localOffers[cropperOfferIndex].rawImage = cropperImageSrc;
+					localOffers[cropperOfferIndex].mediaType = 'image';
+				}
 			}
 
-			localOffers[cropperOfferIndex].mediaType = 'image';
 			closeCropperModal();
-			showToast('Custom cropped image applied to card!', 'success');
+			showToast('Custom cropped image applied successfully!', 'success');
 		};
 		img.src = cropperImageSrc;
 	}
@@ -680,12 +925,27 @@
 
 			<!-- SIMULATED TOP MARQUEE TICKER -->
 			{#if localTickerEnabled && localTickerText}
-				<div class="simulated-ticker-wrap">
+				<div class="simulated-ticker-wrap" style="background: linear-gradient(135deg, {localTickerColor1}, {localTickerColor2}); height: {localTickerHeight}px;">
 					<div class="simulated-ticker-track">
 						<span class="ticker-text-item">{localTickerText}</span>
 						<span class="ticker-text-item">{localTickerText}</span>
 						<span class="ticker-text-item">{localTickerText}</span>
 					</div>
+				</div>
+			{/if}
+
+			<!-- SIMULATED MENU IMAGE -->
+			{#if localMenuImageEnabled && localMenuImageUrl}
+				<div class="simulated-menu-section" style="background: #fdfbf7; border-radius: 20px; padding: 30px 20px; text-align: center; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);">
+					<h2 style="font-family: serif; text-transform: uppercase; letter-spacing: 1.5px; color: #8e9c6c; font-size: 22px; margin-bottom: 6px; font-weight: 700;">SALON MENU</h2>
+					<p style="color: #64748b; font-size: 13px; margin-bottom: 24px;">Explore our complete range of services</p>
+					
+					<img src={localMenuImageUrl} alt="Salon Menu Preview" style="width: 100%; border-radius: 16px; display: block; margin-bottom: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);" />
+					
+					<button style="background: #9ba879; color: #1e293b; border: none; padding: 14px 28px; border-radius: 30px; font-weight: 700; font-size: 14px; width: 100%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(155, 168, 121, 0.3); transition: transform 0.2s;">
+						<Download size="18" />
+						Download Complete Menu
+					</button>
 				</div>
 			{/if}
 
@@ -777,29 +1037,16 @@
 						</div>
 						<div class="widget-title-box">
 							<h2>Scrolling Announcement Marquee</h2>
-							<span class="widget-status-tag {localTickerEnabled ? 'active' : 'inactive'}">
-								{localTickerEnabled ? 'Marquee Active' : 'Marquee Hidden'}
-							</span>
 						</div>
 					</div>
 
 					<div class="widget-header-right">
-						<div class="chevron-box">
-							{#if activeSection === 'marquee'}
-								<ChevronUp size="20" />
-							{:else}
-								<ChevronDown size="20" />
-							{/if}
+						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
+							<label class="toggle-switch-wrap" title="Toggle Marquee Banner ON/OFF">
+								<input type="checkbox" bind:checked={localTickerEnabled} />
+								<span class="toggle-slider"></span>
+							</label>
 						</div>
-						{#if activeSection === 'marquee'}
-							<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
-								<label class="toggle-switch-wrap" title="Toggle Marquee Banner ON/OFF">
-									<input type="checkbox" bind:checked={localTickerEnabled} />
-									<span class="toggle-slider"></span>
-									<span class="toggle-label">{localTickerEnabled ? 'Active' : 'Hidden'}</span>
-								</label>
-							</div>
-						{/if}
 					</div>
 				</button>
 
@@ -812,11 +1059,20 @@
 
 						<!-- Live Ticker Animation Preview -->
 						{#if localTickerEnabled}
-							<div class="live-ticker-preview-box" in:slide={{ duration: 200 }}>
-								<div class="preview-badge">LIVE MARQUEE PREVIEW</div>
-								<div class="marquee-track">
-									<span>{localTickerText || 'Enter announcement text below...'}</span>
-									<span>{localTickerText || 'Enter announcement text below...'}</span>
+							<div style="margin-bottom: 20px;">
+								<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+									<span style="font-size: 11.5px; font-weight: 800; color: #9333ea; letter-spacing: 0.5px;">LIVE MARQUEE PREVIEW</span>
+									<span style="font-size: 11px; color: #64748b;">{localTickerHeight}px Height</span>
+								</div>
+								<div
+									class="live-ticker-preview-box"
+									style="background: linear-gradient(135deg, {localTickerColor1}, {localTickerColor2}); height: {localTickerHeight}px; margin-bottom: 0;"
+									in:slide={{ duration: 200 }}
+								>
+									<div class="marquee-track">
+										<span>{localTickerText || 'Enter announcement text below...'}</span>
+										<span>{localTickerText || 'Enter announcement text below...'}</span>
+									</div>
 								</div>
 							</div>
 						{:else}
@@ -825,6 +1081,54 @@
 								<p>Marquee Ticker is currently turned OFF. Toggle active switch above to enable banner.</p>
 							</div>
 						{/if}
+
+						<!-- Color & Height Customization Controls -->
+						<div style="margin-top: 20px; margin-bottom: 24px; background: rgba(0,0,0,0.02); padding: 18px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); display: flex; gap: 24px; flex-wrap: wrap;">
+							<!-- Gradient Color Pickers -->
+							<div style="flex: 2; min-width: 260px;">
+								<label style="font-size: 12.5px; font-weight: 700; color: #0f172a; margin-bottom: 8px; display: block;">Banner Gradient Colors</label>
+								<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+									<div style="display: flex; align-items: center; gap: 8px; background: #ffffff; padding: 6px 12px; border-radius: 10px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+										<span style="font-size: 12px; font-weight: 600; color: #64748b;">Color 1:</span>
+										<input type="color" bind:value={localTickerColor1} style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0; background: none;" />
+										<span style="font-size: 12px; font-family: monospace; font-weight: 600; color: #0f172a;">{localTickerColor1}</span>
+									</div>
+									<div style="display: flex; align-items: center; gap: 8px; background: #ffffff; padding: 6px 12px; border-radius: 10px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+										<span style="font-size: 12px; font-weight: 600; color: #64748b;">Color 2:</span>
+										<input type="color" bind:value={localTickerColor2} style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0; background: none;" />
+										<span style="font-size: 12px; font-family: monospace; font-weight: 600; color: #0f172a;">{localTickerColor2}</span>
+									</div>
+								</div>
+								<!-- Preset Gradient Palettes -->
+								<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+									<button type="button" class="preset-chip" onclick={() => { localTickerColor1 = '#9333ea'; localTickerColor2 = '#db2777'; }}>Purple / Pink</button>
+									<button type="button" class="preset-chip" onclick={() => { localTickerColor1 = '#0d9488'; localTickerColor2 = '#06b6d4'; }}>Teal / Cyan</button>
+									<button type="button" class="preset-chip" onclick={() => { localTickerColor1 = '#f59e0b'; localTickerColor2 = '#ef4444'; }}>Sunset Orange</button>
+									<button type="button" class="preset-chip" onclick={() => { localTickerColor1 = '#15803d'; localTickerColor2 = '#047857'; }}>Emerald</button>
+									<button type="button" class="preset-chip" onclick={() => { localTickerColor1 = '#1e293b'; localTickerColor2 = '#475569'; }}>Midnight</button>
+								</div>
+							</div>
+
+							<!-- Banner Height Range Slider -->
+							<div style="flex: 1; min-width: 200px;">
+								<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+									<label style="font-size: 12.5px; font-weight: 700; color: #0f172a;">Banner Height</label>
+									<span style="font-size: 12px; font-weight: 800; color: #9333ea; background: rgba(147,51,234,0.1); padding: 2px 8px; border-radius: 6px;">{localTickerHeight}px</span>
+								</div>
+								<input
+									type="range"
+									min="30"
+									max="60"
+									step="2"
+									bind:value={localTickerHeight}
+									style="width: 100%; accent-color: #9333ea; cursor: pointer; margin-top: 6px;"
+								/>
+								<div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 6px;">
+									<span>Compact (30px)</span>
+									<span>Tall (60px)</span>
+								</div>
+							</div>
+						</div>
 
 						<!-- Textarea Input -->
 						<div class="input-group">
@@ -859,7 +1163,11 @@
 						</div>
 
 						<!-- Bottom Right Corner Publish Bar -->
-						<div class="widget-footer-bar">
+						<div class="widget-footer-bar" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+							<button type="button" class="btn btn-outline" onclick={resetTickerDefaults} title="Reset marquee settings to default values">
+								<RotateCcw size="15" />
+								<span>Reset Defaults</span>
+							</button>
 							<button class="btn btn-save-sm" onclick={saveTicker} disabled={savingTicker}>
 								{#if savingTicker}
 									<div class="spinner-sm"></div>
@@ -869,6 +1177,145 @@
 									<span>Publish Marquee</span>
 								{/if}
 							</button>
+						</div>
+					</div>
+				{/if}
+			</div>
+
+			<!-- SECTION: MENU IMAGE WIDGET -->
+			<div class="accordion-widget-card glass-panel menu-border {activeSection === 'menu' ? 'expanded' : 'collapsed'}">
+				<button class="widget-header-bar" onclick={() => toggleSection('menu')}>
+					<div class="widget-header-left">
+						<div class="panel-icon teal">
+							<ImageIcon size="20" />
+						</div>
+						<div class="widget-title-box">
+							<h2>Salon Menu Image</h2>
+						</div>
+					</div>
+
+					<div class="widget-header-right">
+						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
+							<label class="toggle-switch-wrap" title="Toggle Menu Image ON/OFF">
+								<input type="checkbox" bind:checked={localMenuImageEnabled} />
+								<span class="toggle-slider"></span>
+							</label>
+						</div>
+					</div>
+				</button>
+
+				{#if activeSection === 'menu'}
+					<div class="accordion-body" in:slide={{ duration: 250 }} out:slide={{ duration: 200 }}>
+						<div class="section-controls-top" style="margin-top: 16px;">
+							<p class="section-desc">Upload and manage the HD Salon Menu image (A4 format) and downloadable PDF version for customers.</p>
+						</div>
+
+						<!-- Resolution & Format Banner -->
+						<div class="resolution-info-bar" style="margin-bottom: 24px; border-radius: 12px; padding: 12px 18px;">
+							<div class="res-item">
+								<span class="res-label">Recommended Dimension:</span>
+								<span class="res-value gold">397 × 562 px (A4 Portrait)</span>
+							</div>
+							<div class="res-item">
+								<span class="res-label">Supported Formats:</span>
+								<span class="res-value cyan">JPEG, PNG, WebP, PDF (Max 4MB)</span>
+							</div>
+						</div>
+
+						<!-- SUB-SECTION 1: MENU IMAGE UPLOAD & PREVIEW -->
+						<div class="inner-glass-card" style="margin-bottom: 24px; background: #ffffff; border: 1.5px solid #cbd5e1; padding: 20px; border-radius: 16px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+								<div class="field-title" style="font-size: 15px; font-weight: 800; color: #0f172a;">1. HD Salon Menu Image</div>
+								{#if localMenuImageUrl}
+									<span style="font-size: 11px; font-weight: 800; color: #0d9488; background: rgba(13,148,136,0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(13,148,136,0.2);">
+										✓ Live Image Active
+									</span>
+								{/if}
+							</div>
+							<p class="field-hint" style="margin-bottom: 16px;">This image will be displayed on the customer home page when users open the Salon Menu.</p>
+
+							<!-- TOP: Current Image Preview Box -->
+							{#if localMenuImageUrl}
+								<div style="display: flex; flex-direction: column; align-items: center; gap: 10px; background: #f8fafc; padding: 18px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+									<span style="font-size: 11.5px; font-weight: 800; color: #64748b; letter-spacing: 0.5px;">CURRENT LIVE PREVIEW</span>
+									<a href={localMenuImageUrl} target="_blank" rel="noopener noreferrer" title="Click to open full high-res image">
+										<img src={localMenuImageUrl} alt="Current Menu Preview" style="max-width: 180px; max-height: 240px; object-fit: contain; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); border: 1px solid #cbd5e1; transition: transform 0.2s;" />
+									</a>
+									<a href={localMenuImageUrl} target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size: 11.5px; padding: 5px 14px; display: inline-flex; align-items: center; gap: 4px;">
+										<Eye size="13" /> View Full Image
+									</a>
+								</div>
+							{/if}
+
+							<!-- BOTTOM: Dropzone Upload Box (Select New Image / Replace) -->
+							<div class="media-upload-area" style="padding: 24px; border-radius: 14px; text-align: center; background: #f8fafc; border: 2px dashed #cbd5e1;">
+								<input
+									type="file"
+									id="menuImageUpload"
+									accept="image/jpeg, image/png, image/webp"
+									onchange={handleMenuImageUpload}
+									style="display: none;"
+								/>
+								<label for="menuImageUpload" class="btn btn-outline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 600;">
+									<ImageIcon size="18" />
+									<span>{localMenuImageUrl ? 'Select New Image (Replace)' : 'Select Image (Min 397x562)'}</span>
+								</label>
+							</div>
+
+							<div class="form-actions" style="margin-top: 20px; display: flex; justify-content: flex-end;">
+								<button class="btn btn-save-sm" onclick={saveMenuImage} disabled={savingMenuImage}>
+									{#if savingMenuImage}
+										<RefreshCw class="spin" size="16" /> Publishing Image...
+									{:else}
+										<Save size="16" /> Publish Menu Image
+									{/if}
+								</button>
+							</div>
+						</div>
+
+						<!-- SUB-SECTION 2: MENU PDF UPLOAD & DOWNLOAD -->
+						<div class="inner-glass-card" style="background: #ffffff; border: 1.5px solid #cbd5e1; padding: 20px; border-radius: 16px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+								<div class="field-title" style="font-size: 15px; font-weight: 800; color: #0f172a;">2. Downloadable Menu PDF (Optional)</div>
+								{#if localMenuPdfUrl}
+									<span style="font-size: 11px; font-weight: 800; color: #0f766e; background: rgba(15,118,110,0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(15,118,110,0.2);">
+										✓ Cloud PDF Available
+									</span>
+								{/if}
+							</div>
+							<p class="field-hint" style="margin-bottom: 16px;">Upload a PDF version of your menu. When users click "Download Complete Menu" in the app, this PDF file will be downloaded directly.</p>
+
+							<div class="media-upload-area" style="padding: 24px; border-radius: 14px; background: #f8fafc; border: 2px dashed #cbd5e1;">
+								<input
+									type="file"
+									id="menuPdfUpload"
+									accept="application/pdf"
+									onchange={handlePdfUpload}
+									style="display: none;"
+								/>
+								<div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: center;">
+									<label for="menuPdfUpload" class="btn btn-outline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; opacity: {uploadingPdf ? '0.5' : '1'}; font-weight: 600;">
+										<FileText size="18" />
+										<span>{uploadingPdf ? 'Uploading PDF...' : (localMenuPdfUrl ? 'Replace PDF (Max 4MB)' : 'Select PDF File (Max 4MB)')}</span>
+									</label>
+
+									{#if localMenuPdfUrl && !uploadingPdf}
+										<a href={localMenuPdfUrl} target="_blank" download="Bewell_Salon_Menu.pdf" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-color: #0f766e; color: #0f766e; background: rgba(15,118,110,0.05);">
+											<Download size="18" /> Download Current PDF
+										</a>
+									{/if}
+								</div>
+							</div>
+
+							<div class="form-actions" style="margin-top: 20px; display: flex; justify-content: flex-end;">
+								<button class="btn btn-save-sm" onclick={saveMenuPdf} disabled={savingMenuPdf}>
+									{#if savingMenuPdf}
+										<RefreshCw class="spin" size="16" /> Publishing PDF...
+									{:else}
+										<Save size="16" /> Publish Menu PDF
+									{/if}
+								</button>
+							</div>
 						</div>
 					</div>
 				{/if}
@@ -884,29 +1331,16 @@
 						</div>
 						<div class="widget-title-box">
 							<h2>Promotional Video Ad Spotlight</h2>
-							<span class="widget-status-tag {localVideoEnabled ? 'active' : 'inactive'}">
-								{localVideoEnabled ? 'Spotlight Active' : 'Spotlight Hidden'}
-							</span>
 						</div>
 					</div>
 
 					<div class="widget-header-right">
-						<div class="chevron-box">
-							{#if activeSection === 'video'}
-								<ChevronUp size="20" />
-							{:else}
-								<ChevronDown size="20" />
-							{/if}
+						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
+							<label class="toggle-switch-wrap" title="Toggle Video Spotlight ON/OFF">
+								<input type="checkbox" bind:checked={localVideoEnabled} />
+								<span class="toggle-slider"></span>
+							</label>
 						</div>
-						{#if activeSection === 'video'}
-							<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
-								<label class="toggle-switch-wrap" title="Toggle Video Spotlight ON/OFF">
-									<input type="checkbox" bind:checked={localVideoEnabled} />
-									<span class="toggle-slider"></span>
-									<span class="toggle-label">{localVideoEnabled ? 'Active' : 'Hidden'}</span>
-								</label>
-							</div>
-						{/if}
 					</div>
 				</button>
 
@@ -988,19 +1422,15 @@
 						</div>
 						<div class="widget-title-box">
 							<h2>Featured Deal Cards Studio</h2>
-							<span class="widget-status-tag active-count">
-								{localOffers.length} Active Offer Cards
-							</span>
 						</div>
 					</div>
 
 					<div class="widget-header-right">
-						<div class="chevron-box">
-							{#if activeSection === 'offers'}
-								<ChevronUp size="20" />
-							{:else}
-								<ChevronDown size="20" />
-							{/if}
+						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
+							<label class="toggle-switch-wrap" title="Toggle Featured Deal Cards ON/OFF">
+								<input type="checkbox" bind:checked={localSpecialOffersEnabled} />
+								<span class="toggle-slider"></span>
+							</label>
 						</div>
 					</div>
 				</button>
@@ -1083,9 +1513,6 @@
 													onchange={(e) => (offer.enabled = (e.target as HTMLInputElement).checked)}
 												/>
 												<span class="toggle-slider"></span>
-												<span class="toggle-status-text {offer.enabled !== false ? 'active' : 'disabled'}">
-													{offer.enabled !== false ? 'Active' : 'Disabled'}
-												</span>
 											</label>
 											<div class="action-icon-group">
 												<button
@@ -1449,21 +1876,41 @@
 				</div>
 
 				<div class="cropper-modal-body">
-					<p class="cropper-hint">Drag image to position inside 4:3 deal card frame. Adjust scale ruler to zoom in/out.</p>
+					<p class="cropper-hint">
+						{#if cropperMode === 'menu'}
+							Drag image to position inside A4 portrait frame. Adjust scale ruler to zoom in/out.
+						{:else}
+							Drag image to position inside 4:3 deal card frame. Adjust scale ruler to zoom in/out.
+						{/if}
+					</p>
 
 					<!-- RESOLUTION INFO BADGES -->
 					<div class="resolution-info-bar">
 						<div class="res-item">
 							<span class="res-label">Recommended:</span>
-							<span class="res-value gold">1200 × 900 px (4:3 HD)</span>
+							<span class="res-value gold">
+								{#if cropperMode === 'menu'}
+									397 × 562 px (A4)
+								{:else}
+									1200 × 900 px (4:3 HD)
+								{/if}
+							</span>
 						</div>
 						<div class="res-item">
 							<span class="res-label">Current Image:</span>
 							<span class="res-value cyan">{cropperNaturalWidth} × {cropperNaturalHeight} px</span>
-							{#if cropperNaturalWidth >= 1200 && cropperNaturalHeight >= 900}
-								<span class="res-badge green">HD Quality</span>
+							{#if cropperMode === 'menu'}
+								{#if cropperNaturalWidth >= 397 && cropperNaturalHeight >= 562}
+									<span class="res-badge green">Good Quality</span>
+								{:else}
+									<span class="res-badge orange">Auto-Fitted</span>
+								{/if}
 							{:else}
-								<span class="res-badge orange">Auto-Fitted</span>
+								{#if cropperNaturalWidth >= 1200 && cropperNaturalHeight >= 900}
+									<span class="res-badge green">HD Quality</span>
+								{:else}
+									<span class="res-badge orange">Auto-Fitted</span>
+								{/if}
 							{/if}
 						</div>
 					</div>
@@ -1472,6 +1919,7 @@
 					<div class="crop-viewport-wrapper">
 						<div
 							class="crop-viewport-box"
+							style="width: {cropperMode === 'menu' ? 270 : 360}px; height: {cropperMode === 'menu' ? 382 : 270}px;"
 							onmousedown={handleCropperMouseDown}
 							onmousemove={handleCropperMouseMove}
 							onmouseup={handleCropperMouseUp}
@@ -1494,7 +1942,13 @@
 							<div class="crop-grid-overlay">
 								<div class="grid-line horizontal"></div>
 								<div class="grid-line vertical"></div>
-								<span class="crop-aspect-badge">4 : 3 Deal Card Frame (1200×900 HD)</span>
+								<span class="crop-aspect-badge">
+									{#if cropperMode === 'menu'}
+										A4 Menu Portrait (397×562)
+									{:else}
+										4 : 3 Deal Card Frame (1200×900 HD)
+									{/if}
+								</span>
 							</div>
 						</div>
 					</div>
@@ -1769,38 +2223,66 @@
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 	}
 
-	/* --- ACCORDION WIDGET CARDS (3D ELEVATION) --- */
+	/* --- ACCORDION WIDGET CARDS (IMMERSIVE GLASS DESIGN) --- */
 	.accordion-editor-layout {
 		display: flex;
 		flex-direction: column;
-		gap: 24px;
+		gap: 20px;
 	}
 
 	.accordion-widget-card {
-		border-radius: 22px;
+		border-radius: 20px;
 		padding: 0;
-		box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.15), 0 6px 12px -4px rgba(15, 23, 42, 0.1), inset 0 2px 0 rgba(255, 255, 255, 0.8);
 		position: relative;
 		overflow: hidden;
-		transition: all 0.25s ease;
+		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+		border: 1.5px solid rgba(0, 0, 0, 0.08);
+	}
+
+	.accordion-widget-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 16px 35px -6px rgba(15, 23, 42, 0.12), 0 6px 16px -4px rgba(15, 23, 42, 0.06);
 	}
 
 	.accordion-widget-card.marquee-border {
-		background: linear-gradient(135deg, rgba(147, 51, 234, 0.08) 0%, rgba(219, 39, 119, 0.04) 100%), #f8f5ff;
-		border: 2.5px solid #7e22ce !important;
-		border-left: 10px solid #7e22ce !important;
+		background: linear-gradient(135deg, rgba(147, 51, 234, 0.06) 0%, rgba(219, 39, 119, 0.03) 100%), #ffffff;
+		border: 1.5px solid rgba(147, 51, 234, 0.3) !important;
+	}
+	.accordion-widget-card.marquee-border:hover,
+	.accordion-widget-card.marquee-border.expanded {
+		border-color: rgba(147, 51, 234, 0.6) !important;
+		box-shadow: 0 14px 36px -6px rgba(147, 51, 234, 0.15);
+	}
+
+	.accordion-widget-card.menu-border {
+		background: linear-gradient(135deg, rgba(13, 148, 136, 0.06) 0%, rgba(20, 184, 166, 0.03) 100%), #ffffff;
+		border: 1.5px solid rgba(13, 148, 136, 0.3) !important;
+	}
+	.accordion-widget-card.menu-border:hover,
+	.accordion-widget-card.menu-border.expanded {
+		border-color: rgba(13, 148, 136, 0.6) !important;
+		box-shadow: 0 14px 36px -6px rgba(13, 148, 136, 0.15);
 	}
 
 	.accordion-widget-card.video-border {
-		background: linear-gradient(135deg, rgba(255, 159, 10, 0.08) 0%, rgba(245, 158, 11, 0.04) 100%), #fff9f0;
-		border: 2.5px solid #d97706 !important;
-		border-left: 10px solid #d97706 !important;
+		background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(239, 68, 68, 0.03) 100%), #ffffff;
+		border: 1.5px solid rgba(245, 158, 11, 0.3) !important;
+	}
+	.accordion-widget-card.video-border:hover,
+	.accordion-widget-card.video-border.expanded {
+		border-color: rgba(245, 158, 11, 0.6) !important;
+		box-shadow: 0 14px 36px -6px rgba(245, 158, 11, 0.15);
 	}
 
 	.accordion-widget-card.offers-border {
-		background: linear-gradient(135deg, rgba(212, 175, 55, 0.09) 0%, rgba(245, 158, 11, 0.05) 100%), #fffdf5;
-		border: 2.5px solid #b8860b !important;
-		border-left: 10px solid #b8860b !important;
+		background: linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(245, 158, 11, 0.04) 100%), #ffffff;
+		border: 1.5px solid rgba(212, 175, 55, 0.35) !important;
+	}
+	.accordion-widget-card.offers-border:hover,
+	.accordion-widget-card.offers-border.expanded {
+		border-color: rgba(212, 175, 55, 0.7) !important;
+		box-shadow: 0 14px 36px -6px rgba(212, 175, 55, 0.18);
 	}
 
 	.widget-header-bar {
@@ -1808,7 +2290,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 22px 26px;
+		padding: 20px 24px;
 		background: transparent;
 		border: none;
 		cursor: pointer;
@@ -1817,125 +2299,70 @@
 	}
 
 	.widget-header-bar:hover {
-		background: rgba(0, 0, 0, 0.03);
+		background: rgba(0, 0, 0, 0.02);
+	}
+
+	.widget-header-left {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+	}
+
+	.widget-header-right {
+		display: flex;
+		align-items: center;
+		gap: 14px;
 	}
 
 	.widget-title-box h2 {
 		font-family: var(--admin-font-display);
-		font-size: 21px;
-		font-weight: 900;
+		font-size: 1.12rem;
+		font-weight: 800;
 		color: #0f172a;
-		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	.widget-status-tag {
-		font-size: 11.5px;
-		font-weight: 900;
-		padding: 5px 14px;
-		border-radius: 20px;
-		letter-spacing: 0.5px;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-	}
-
-	.widget-status-tag.active {
-		background: linear-gradient(180deg, #d1e7dd 0%, #a3cfbb 100%);
-		color: #0f5132;
-		border: 1.5px solid #84c59b;
-	}
-
-	.widget-status-tag.inactive {
-		background: linear-gradient(180deg, #f8d7da 0%, #f1aeb5 100%);
-		color: #842029;
-		border: 1.5px solid #ea868f;
-	}
-
-	.widget-status-tag.active-count {
-		background: linear-gradient(180deg, #fff3cd 0%, #ffe69c 100%);
-		color: #664d03;
-		border: 1.5px solid #ffda6a;
-	}
-
-	.chevron-box {
-		width: 44px;
-		height: 44px;
-		border-radius: 12px;
-		background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
-		border: 2px solid #475569;
-		border-bottom: 4px solid #1e293b;
-		color: #0f172a;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.15s ease;
-		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-	}
-
-	.chevron-box:active {
-		transform: translateY(2px);
-		border-bottom: 1px solid #1e293b;
-	}
-
-	.widget-header-bar:hover .chevron-box {
-		background: linear-gradient(180deg, #ffd700 0%, #d4af37 100%);
-		color: #000000;
-		border-color: #784b00;
-	}
-
-	.widget-footer-bar {
-		display: flex;
-		justify-content: flex-end;
-		align-items: center;
-		padding-top: 20px;
-		margin-top: 24px;
-		border-top: 2.5px solid rgba(0, 0, 0, 0.08);
-	}
-
-	.accordion-body {
-		padding: 0 26px 30px;
-		border-top: 2.5px solid rgba(0, 0, 0, 0.08);
-		margin-top: 0;
-	}
-
-	/* --- 3D Section Cards & Inset Inputs --- */
-	.glass-panel {
-		background: #ffffff;
-		border: 2.5px solid #475569;
-		border-radius: 22px;
-		box-shadow: 0 10px 28px -4px rgba(15, 23, 42, 0.12), inset 0 2px 0 rgba(255, 255, 255, 0.8);
-		position: relative;
-	}
-
-	.inner-glass-card {
-		background: #f1f5f9;
-		border: 2.5px solid #475569;
-		border-radius: 20px;
-		padding: 22px;
-		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+		letter-spacing: -0.01em;
+		margin: 0;
 	}
 
 	.panel-icon {
-		width: 48px;
-		height: 48px;
+		width: 44px;
+		height: 44px;
 		border-radius: 14px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
-		border: 1.5px solid rgba(255, 255, 255, 0.4);
+		transition: transform 0.25s ease;
+	}
+
+	.widget-header-bar:hover .panel-icon {
+		transform: scale(1.08);
 	}
 
 	.panel-icon.purple {
-		background: #9333ea;
+		background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
 		color: #ffffff;
+		box-shadow: 0 4px 14px rgba(126, 34, 206, 0.35);
 	}
+
+	.panel-icon.teal {
+		background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+		color: #ffffff;
+		box-shadow: 0 4px 14px rgba(15, 118, 110, 0.35);
+	}
+
 	.panel-icon.orange {
-		background: #ff9f0a;
-		color: #000000;
+		background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+		color: #ffffff;
+		box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
 	}
+
 	.panel-icon.gold {
-		color: #b8860b;
+		background: linear-gradient(135deg, #eab308 0%, #b8860b 100%);
+		color: #ffffff;
+		box-shadow: 0 4px 14px rgba(184, 134, 11, 0.35);
 	}
+
+
 
 	/* --- Live Ticker Animation Preview --- */
 	.live-ticker-preview-box {
@@ -2323,30 +2750,35 @@
 	.cards-editor-grid {
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
+		gap: 28px;
 	}
 
 	.offer-editor-card {
 		padding: 24px;
-		background: rgba(255, 255, 255, 0.03);
-		border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.1));
-		border-radius: 20px;
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-		backdrop-filter: blur(12px);
-		transition: border-color 0.2s ease;
+		background: #ffffff !important;
+		border: 2px solid rgba(212, 175, 55, 0.35) !important;
+		border-left: 8px solid #d4af37 !important;
+		border-radius: 20px !important;
+		box-shadow: 0 14px 35px -5px rgba(15, 23, 42, 0.12), 0 6px 16px -4px rgba(15, 23, 42, 0.06) !important;
+		transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+		margin-bottom: 8px;
 	}
 
 	.offer-editor-card:hover {
-		border-color: rgba(212, 175, 55, 0.3);
+		border-color: #d4af37 !important;
+		box-shadow: 0 20px 42px -6px rgba(212, 175, 55, 0.25), 0 8px 20px -4px rgba(15, 23, 42, 0.1) !important;
+		transform: translateY(-2px);
 	}
 
 	.card-toolbar {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding-bottom: 14px;
-		margin-bottom: 20px;
-		border-bottom: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+		padding: 14px 18px;
+		margin-bottom: 24px;
+		background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+		border: 1.5px solid rgba(212, 175, 55, 0.25);
+		border-radius: 14px;
 		gap: 12px;
 		flex-wrap: wrap;
 	}
@@ -2362,14 +2794,14 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		background: rgba(212, 175, 55, 0.15);
-		border: 1px solid rgba(212, 175, 55, 0.3);
-		color: #d4af37;
-		padding: 5px 12px;
-		border-radius: 8px;
+		background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+		color: #ffffff;
+		padding: 6px 14px;
+		border-radius: 20px;
 		font-size: 12px;
-		font-weight: 800;
+		font-weight: 900;
 		letter-spacing: 0.5px;
+		box-shadow: 0 3px 10px rgba(184, 134, 11, 0.35);
 	}
 
 	.card-theme-tag {
@@ -2778,13 +3210,6 @@
 		transform: translateX(12px);
 	}
 
-	.toggle-status-text {
-		font-size: 11px;
-		font-weight: 800;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-	}
-
 	.toggle-status-text.active {
 		color: #166534;
 	}
@@ -3074,6 +3499,9 @@
 		border-radius: 24px;
 		padding: 24px;
 		box-shadow: var(--admin-shadow-xl);
+		display: flex;
+		flex-direction: column;
+		gap: 40px;
 	}
 
 	.preview-notice-bar {
@@ -3108,7 +3536,6 @@
 		overflow: hidden;
 		display: flex;
 		align-items: center;
-		margin-bottom: 32px;
 		box-shadow: 0 4px 15px rgba(219, 39, 119, 0.4);
 	}
 
@@ -3133,7 +3560,6 @@
 	}
 
 	.simulated-video-section {
-		margin-bottom: 40px;
 		text-align: center;
 	}
 
@@ -3164,7 +3590,7 @@
 	}
 
 	.simulated-offers-section {
-		padding: 20px 0;
+		padding: 0;
 	}
 
 	.simulated-section-header {
@@ -3728,5 +4154,28 @@
 		.accordion-body {
 			padding: 0 16px 20px;
 		}
+	}
+	.field-title {
+		font-size: 1.05rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		margin-bottom: 6px;
+	}
+
+	.media-upload-area {
+		border: 2px dashed rgba(100, 116, 139, 0.4);
+		border-radius: 12px;
+		padding: 32px 16px;
+		background: rgba(100, 116, 139, 0.05);
+		transition: all 0.3s ease;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.media-upload-area:hover {
+		border-color: rgba(212, 175, 55, 0.8);
+		background: rgba(212, 175, 55, 0.1);
 	}
 </style>

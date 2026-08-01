@@ -16,6 +16,7 @@
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import ServiceCart from '$lib/components/home/ServiceCart.svelte';
 	import MembershipTiers from '$lib/components/home/MembershipTiers.svelte';
+	import MenuSection from '$lib/components/home/MenuSection.svelte';
 
 	// Derive featured services from the store (e.g., take first 4)
 	// In the future, we could add a 'isFeatured' flag to the Service model
@@ -46,6 +47,7 @@
 		</div>
 	</section>
 
+	<MenuSection />
 	<SpecialOffers />
 	<PromoVideo />
 	<HomeGallery />
