@@ -1,5 +1,6 @@
 <script lang="ts">
 	import HeroCarousel from '$lib/components/home/HeroCarousel.svelte';
+	import QuickActions from '$lib/components/home/QuickActions.svelte';
 	import ServiceHighlight from '$lib/components/home/ServiceHighlight.svelte';
 	import { appServices } from '$lib/stores/appData';
 	import PromoTicker from '$lib/components/home/PromoTicker.svelte';
@@ -27,7 +28,7 @@
 <div class="home-page">
 	<PromoTicker />
 	<HeroCarousel />
-
+	<QuickActions />
 	<section class="container section">
 		<div class="section-header">
 			<h2>Featured Services</h2>

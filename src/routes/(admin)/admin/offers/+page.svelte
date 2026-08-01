@@ -30,14 +30,17 @@
 		RotateCcw,
 		X,
 		FileText,
-		Download
+		Download,
+		Phone
 	} from 'lucide-svelte';
+	import QuickActions from '$lib/components/home/QuickActions.svelte';
 
 	// Save States
 	let savingAll = $state(false);
 	let savingTicker = $state(false);
 	let savingVideo = $state(false);
 	let savingOffers = $state(false);
+	let savingQuickActions = $state(false);
 	let savingMenuImage = $state(false);
 	let savingMenuPdf = $state(false);
 	let savingCardIndex = $state<number | null>(null);
@@ -46,9 +49,9 @@
 	let activeTab = $state<'editor' | 'preview'>('editor');
 
 	// Collapsible Sections Accordion State (No section expanded by default; single section expanded at a time)
-	let activeSection = $state<'marquee' | 'menu' | 'video' | 'offers' | null>(null);
+	let activeSection = $state<'marquee' | 'menu' | 'video' | 'offers' | 'quick-actions' | null>(null);
 
-	function toggleSection(section: 'marquee' | 'menu' | 'video' | 'offers') {
+	function toggleSection(section: 'marquee' | 'menu' | 'video' | 'offers' | 'quick-actions') {
 		if (activeSection === section) {
 			activeSection = null;
 		} else {
@@ -68,9 +71,11 @@
 	let localTickerHeight = $state($appSettings.promoTickerHeight || 40);
 	let localVideoUrl = $state($appSettings.promoVideoUrl || '');
 	let localVideoEnabled = $state($appSettings.promoVideoEnabled || false);
+	let localMenuWidgetEnabled = $state($appSettings.menuWidgetEnabled ?? true);
 	let localMenuImageUrl = $state($appSettings.menuImageUrl || '');
 	let localMenuImageEnabled = $state($appSettings.menuImageEnabled ?? true);
 	let localMenuPdfUrl = $state($appSettings.menuPdfUrl || '');
+	let localMenuPdfEnabled = $state($appSettings.menuPdfEnabled ?? true);
 	let uploadingPdf = $state(false);
 	let localOffers = $state(
 		$appSettings.specialOffers && $appSettings.specialOffers.length > 0
@@ -106,6 +111,8 @@
 				]
 	);
 	let localSpecialOffersEnabled = $state($appSettings.specialOffersEnabled ?? true);
+	let localQuickActionsEnabled = $state($appSettings.quickActionsEnabled ?? true);
+	let localQuickActionsPhoneNumber = $state($appSettings.quickActionsPhoneNumber || '+918928390360');
 
 	// Check if local changes differ from published DB settings
 	let isDirty = $derived(
@@ -115,11 +122,15 @@
 				localTickerColor1 !== ($appSettings.promoTickerColor1 || '#9333ea') ||
 				localTickerColor2 !== ($appSettings.promoTickerColor2 || '#db2777') ||
 				localTickerHeight !== ($appSettings.promoTickerHeight || 40) ||
+				localMenuWidgetEnabled !== ($appSettings.menuWidgetEnabled ?? true) ||
 				localMenuImageUrl !== ($appSettings.menuImageUrl || '') ||
 				localMenuImageEnabled !== ($appSettings.menuImageEnabled ?? true) ||
 				localMenuPdfUrl !== ($appSettings.menuPdfUrl || '') ||
+				localMenuPdfEnabled !== ($appSettings.menuPdfEnabled ?? true) ||
 				localVideoUrl !== ($appSettings.promoVideoUrl || '') ||
 				localVideoEnabled !== ($appSettings.promoVideoEnabled || false) ||
+				localQuickActionsEnabled !== ($appSettings.quickActionsEnabled ?? true) ||
+				localQuickActionsPhoneNumber !== ($appSettings.quickActionsPhoneNumber || '+918928390360') ||
 				localSpecialOffersEnabled !== ($appSettings.specialOffersEnabled ?? true) ||
 				JSON.stringify(localOffers) !== JSON.stringify($appSettings.specialOffers || []))
 	);
@@ -138,6 +149,9 @@
 			if (!localMenuPdfUrl && $appSettings.menuPdfUrl) {
 				localMenuPdfUrl = $appSettings.menuPdfUrl;
 			}
+			if (!localMenuPdfUrl) {
+				localMenuPdfEnabled = false;
+			}
 			if (!localVideoUrl && $appSettings.promoVideoUrl) {
 				localVideoUrl = $appSettings.promoVideoUrl;
 			}
@@ -145,17 +159,21 @@
 				localTickerText = $appSettings.promoTickerText;
 			}
 
-			if (!isDirty && !savingAll && !savingTicker && !savingVideo && !savingMenuImage && !savingMenuPdf && !savingOffers && savingCardIndex === null) {
+			if (!isDirty && !savingAll && !savingTicker && !savingVideo && !savingMenuImage && !savingMenuPdf && !savingOffers && !savingQuickActions && savingCardIndex === null) {
 				localTickerText = $appSettings.promoTickerText || '';
 				localTickerEnabled = $appSettings.promoTickerEnabled ?? true;
 				localTickerColor1 = $appSettings.promoTickerColor1 || '#9333ea';
 				localTickerColor2 = $appSettings.promoTickerColor2 || '#db2777';
 				localTickerHeight = $appSettings.promoTickerHeight || 40;
+				localMenuWidgetEnabled = $appSettings.menuWidgetEnabled ?? true;
 				localMenuImageUrl = $appSettings.menuImageUrl || '';
 				localMenuImageEnabled = $appSettings.menuImageEnabled ?? true;
 				localMenuPdfUrl = $appSettings.menuPdfUrl || '';
+				localMenuPdfEnabled = $appSettings.menuPdfEnabled ?? true;
 				localVideoUrl = $appSettings.promoVideoUrl || '';
 				localVideoEnabled = $appSettings.promoVideoEnabled || false;
+				localQuickActionsEnabled = $appSettings.quickActionsEnabled ?? true;
+				localQuickActionsPhoneNumber = $appSettings.quickActionsPhoneNumber || '+918928390360';
 				localSpecialOffersEnabled = $appSettings.specialOffersEnabled ?? true;
 				if ($appSettings.specialOffers && $appSettings.specialOffers.length > 0) {
 					localOffers = JSON.parse(JSON.stringify($appSettings.specialOffers));
@@ -314,8 +332,9 @@
 			}
 			const success1 = await updateAppSetting('menuImageUrl', localMenuImageUrl);
 			const success2 = await updateAppSetting('menuImageEnabled', localMenuImageEnabled);
+			const success3 = await updateAppSetting('menuWidgetEnabled', localMenuWidgetEnabled);
 
-			if (success1 && success2) {
+			if (success1 && success2 && success3) {
 				showToast('Menu Image uploaded to Cloud & published successfully!', 'success');
 			} else {
 				showToast('Failed to publish menu image.', 'error');
@@ -332,9 +351,11 @@
 	async function saveMenuPdf() {
 		if (savingMenuPdf) return;
 		savingMenuPdf = true;
-		const success = await updateAppSetting('menuPdfUrl', localMenuPdfUrl);
+		const success1 = await updateAppSetting('menuPdfUrl', localMenuPdfUrl);
+		const success2 = await updateAppSetting('menuPdfEnabled', localMenuPdfEnabled);
+		const success3 = await updateAppSetting('menuWidgetEnabled', localMenuWidgetEnabled);
 
-		if (success) {
+		if (success1 && success2 && success3) {
 			showToast('Menu PDF published successfully!', 'success');
 		} else {
 			showToast('Failed to publish menu PDF.', 'error');
@@ -430,6 +451,21 @@
 		}
 	}
 
+	// Save Quick Actions
+	async function saveQuickActions() {
+		if (savingQuickActions) return;
+		savingQuickActions = true;
+		const success1 = await updateAppSetting('quickActionsEnabled', localQuickActionsEnabled);
+		const success2 = await updateAppSetting('quickActionsPhoneNumber', localQuickActionsPhoneNumber);
+
+		if (success1 && success2) {
+			showToast('Quick Actions settings published successfully!', 'success');
+		} else {
+			showToast('Failed to publish quick actions settings.', 'error');
+		}
+		savingQuickActions = false;
+	}
+
 	// Reset changes to live DB values
 	function resetChanges() {
 		localTickerText = $appSettings.promoTickerText || '';
@@ -437,11 +473,15 @@
 		localTickerColor1 = $appSettings.promoTickerColor1 || '#9333ea';
 		localTickerColor2 = $appSettings.promoTickerColor2 || '#db2777';
 		localTickerHeight = $appSettings.promoTickerHeight || 40;
+		localMenuWidgetEnabled = $appSettings.menuWidgetEnabled ?? true;
 		localMenuImageUrl = $appSettings.menuImageUrl || '';
 		localMenuImageEnabled = $appSettings.menuImageEnabled ?? true;
 		localMenuPdfUrl = $appSettings.menuPdfUrl || '';
+		localMenuPdfEnabled = $appSettings.menuPdfEnabled ?? true;
 		localVideoUrl = $appSettings.promoVideoUrl || '';
 		localVideoEnabled = $appSettings.promoVideoEnabled || false;
+		localQuickActionsEnabled = $appSettings.quickActionsEnabled ?? true;
+		localQuickActionsPhoneNumber = $appSettings.quickActionsPhoneNumber || '+918928390360';
 		localSpecialOffersEnabled = $appSettings.specialOffersEnabled ?? true;
 		if ($appSettings.specialOffers) {
 			localOffers = JSON.parse(JSON.stringify($appSettings.specialOffers));
@@ -672,6 +712,7 @@
 			await uploadBytes(pdfRef, file);
 			const downloadUrl = await getDownloadURL(pdfRef);
 			localMenuPdfUrl = downloadUrl;
+			localMenuPdfEnabled = true;
 			showToast('PDF uploaded successfully! Click publish to save.', 'success');
 		} catch (error) {
 			console.error('PDF upload failed:', error);
@@ -934,18 +975,29 @@
 				</div>
 			{/if}
 
-			<!-- SIMULATED MENU IMAGE -->
-			{#if localMenuImageEnabled && localMenuImageUrl}
-				<div class="simulated-menu-section" style="background: #fdfbf7; border-radius: 20px; padding: 30px 20px; text-align: center; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);">
-					<h2 style="font-family: serif; text-transform: uppercase; letter-spacing: 1.5px; color: #8e9c6c; font-size: 22px; margin-bottom: 6px; font-weight: 700;">SALON MENU</h2>
-					<p style="color: #64748b; font-size: 13px; margin-bottom: 24px;">Explore our complete range of services</p>
+			<!-- SIMULATED QUICK ACTIONS -->
+			{#if localQuickActionsEnabled}
+				<div style="margin: 16px 0;">
+					<QuickActions phoneNumber={localQuickActionsPhoneNumber} enabled={localQuickActionsEnabled} />
+				</div>
+			{/if}
+
+			<!-- SIMULATED MENU IMAGE & PDF -->
+			{#if localMenuWidgetEnabled && (localMenuImageEnabled || localMenuPdfEnabled)}
+				<div class="simulated-menu-section" style="background: #111116; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 20px; padding: 24px 16px; text-align: center; box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);">
+					{#if localMenuImageEnabled && localMenuImageUrl}
+						<h2 style="font-family: serif; text-transform: uppercase; letter-spacing: 1.5px; color: #d4af37; font-size: 20px; margin-bottom: 6px; font-weight: 700;">SALON MENU</h2>
+						<p style="color: #a0a0a0; font-size: 13px; margin-bottom: 20px;">Explore our complete range of services</p>
+						
+						<img src={localMenuImageUrl} alt="Salon Menu Preview" style="width: 100%; border-radius: 14px; display: block; margin-bottom: 20px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 20px rgba(0,0,0,0.4);" />
+					{/if}
 					
-					<img src={localMenuImageUrl} alt="Salon Menu Preview" style="width: 100%; border-radius: 16px; display: block; margin-bottom: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);" />
-					
-					<button style="background: #9ba879; color: #1e293b; border: none; padding: 14px 28px; border-radius: 30px; font-weight: 700; font-size: 14px; width: 100%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(155, 168, 121, 0.3); transition: transform 0.2s;">
-						<Download size="18" />
-						Download Complete Menu
-					</button>
+					{#if localMenuPdfEnabled && localMenuPdfUrl}
+						<a href={localMenuPdfUrl} download="Salon_Menu.pdf" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #d4af37, #b8860b); color: #000000; border: none; padding: 14px 24px; border-radius: 30px; font-weight: 700; font-size: 14px; width: 100%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); text-decoration: none; transition: transform 0.2s;">
+							<Download size="18" />
+							Download Complete Menu
+						</a>
+					{/if}
 				</div>
 			{/if}
 
@@ -1182,6 +1234,87 @@
 				{/if}
 			</div>
 
+			<!-- SECTION 2: QUICK ACTIONS WIDGET -->
+			<div class="accordion-widget-card glass-panel {activeSection === 'quick-actions' ? 'expanded' : 'collapsed'}">
+				<!-- WIDGET HEADER BAR (Click to Expand / Collapse) -->
+				<button class="widget-header-bar" onclick={() => toggleSection('quick-actions')}>
+					<div class="widget-header-left">
+						<div class="panel-icon gold">
+							<Zap size="20" />
+						</div>
+						<div class="widget-title-box">
+							<h2>Quick Actions Settings</h2>
+						</div>
+					</div>
+					<div class="widget-header-right">
+						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
+							<label class="toggle-switch-wrap" title="Toggle Quick Actions ON/OFF">
+								<input type="checkbox" bind:checked={localQuickActionsEnabled} />
+								<span class="toggle-slider"></span>
+							</label>
+						</div>
+					</div>
+				</button>
+
+				<!-- EXPANDABLE CONTENT BODY -->
+				{#if activeSection === 'quick-actions'}
+					<div class="accordion-body" transition:slide={{ duration: 250 }}>
+						<div class="section-controls-top">
+							<p class="section-desc">Manage quick call and social action buttons for the home screen.</p>
+						</div>
+
+						<!-- Phone Number Input -->
+						<div class="form-group" style="padding: 0 16px; margin-bottom: 20px;">
+							<label for="quickActionsPhone" style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #1e293b; font-size: 0.95rem;">
+								<span>Salon Phone Number</span>
+							</label>
+							<div class="input-with-icon" style="position: relative; margin-top: 6px;">
+								<div style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #d4af37; display: flex; align-items: center;">
+									<Phone size="18" />
+								</div>
+								<input
+									type="text"
+									id="quickActionsPhone"
+									class="input-field"
+									style="padding-left: 42px; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.8px; background: #0f172a; border: 1.5px solid rgba(212,175,55,0.4); color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"
+									bind:value={localQuickActionsPhoneNumber}
+									placeholder="+91 8928390360"
+								/>
+							</div>
+						</div>
+
+						<!-- Live Widget Preview -->
+						<div style="padding: 0 16px; margin-bottom: 20px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+								<span style="font-size: 11.5px; font-weight: 800; color: #d4af37; letter-spacing: 0.8px;">LIVE QUICK ACTIONS PREVIEW</span>
+								{#if !localQuickActionsEnabled}
+									<span style="font-size: 11px; font-weight: 700; color: #ef4444; background: rgba(239,68,68,0.1); padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(239,68,68,0.25);">DISABLED IN APP</span>
+								{:else}
+									<span style="font-size: 11px; font-weight: 700; color: #22c55e; background: rgba(34,197,94,0.1); padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(34,197,94,0.25);">ACTIVE ON HOME</span>
+								{/if}
+							</div>
+
+							<div class="admin-quick-actions-preview-wrapper" style="background: #090d16; border: 1.5px solid rgba(212, 175, 55, 0.35); border-radius: 16px; padding: 12px; overflow: hidden; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 8px 25px rgba(0,0,0,0.2);">
+								<QuickActions phoneNumber={localQuickActionsPhoneNumber} enabled={localQuickActionsEnabled} isPreview={true} />
+							</div>
+						</div>
+
+						<!-- Bottom Right Corner Publish Bar -->
+						<div class="widget-footer-bar">
+							<button class="btn btn-save-sm" onclick={saveQuickActions} disabled={savingQuickActions}>
+								{#if savingQuickActions}
+									<div class="spinner-sm"></div>
+									<span>Publishing...</span>
+								{:else}
+									<Save size="15" />
+									<span>Publish Quick Actions</span>
+								{/if}
+							</button>
+						</div>
+					</div>
+				{/if}
+			</div>
+
 			<!-- SECTION: MENU IMAGE WIDGET -->
 			<div class="accordion-widget-card glass-panel menu-border {activeSection === 'menu' ? 'expanded' : 'collapsed'}">
 				<button class="widget-header-bar" onclick={() => toggleSection('menu')}>
@@ -1196,8 +1329,8 @@
 
 					<div class="widget-header-right">
 						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
-							<label class="toggle-switch-wrap" title="Toggle Menu Image ON/OFF">
-								<input type="checkbox" bind:checked={localMenuImageEnabled} />
+							<label class="toggle-switch-wrap" title="Toggle Master Salon Menu Widget ON/OFF">
+								<input type="checkbox" bind:checked={localMenuWidgetEnabled} />
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
@@ -1226,11 +1359,17 @@
 						<div class="inner-glass-card" style="margin-bottom: 24px; background: #ffffff; border: 1.5px solid #cbd5e1; padding: 20px; border-radius: 16px;">
 							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
 								<div class="field-title" style="font-size: 15px; font-weight: 800; color: #0f172a;">1. HD Salon Menu Image</div>
-								{#if localMenuImageUrl}
-									<span style="font-size: 11px; font-weight: 800; color: #0d9488; background: rgba(13,148,136,0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(13,148,136,0.2);">
-										✓ Live Image Active
-									</span>
-								{/if}
+								<div style="display: flex; align-items: center; gap: 12px;">
+									{#if localMenuImageUrl}
+										<span style="font-size: 11px; font-weight: 800; color: #0d9488; background: rgba(13,148,136,0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(13,148,136,0.2);">
+											✓ Live Image Active
+										</span>
+									{/if}
+									<label class="toggle-switch-wrap" title="Toggle Menu Image Section ON/OFF">
+										<input type="checkbox" bind:checked={localMenuImageEnabled} />
+										<span class="toggle-slider"></span>
+									</label>
+								</div>
 							</div>
 							<p class="field-hint" style="margin-bottom: 16px;">This image will be displayed on the customer home page when users open the Salon Menu.</p>
 
@@ -1277,11 +1416,21 @@
 						<div class="inner-glass-card" style="background: #ffffff; border: 1.5px solid #cbd5e1; padding: 20px; border-radius: 16px;">
 							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
 								<div class="field-title" style="font-size: 15px; font-weight: 800; color: #0f172a;">2. Downloadable Menu PDF (Optional)</div>
-								{#if localMenuPdfUrl}
-									<span style="font-size: 11px; font-weight: 800; color: #0f766e; background: rgba(15,118,110,0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(15,118,110,0.2);">
-										✓ Cloud PDF Available
-									</span>
-								{/if}
+								<div style="display: flex; align-items: center; gap: 12px;">
+									{#if localMenuPdfUrl}
+										<span style="font-size: 11px; font-weight: 800; color: #0f766e; background: rgba(15,118,110,0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(15,118,110,0.2);">
+											✓ Cloud PDF Available
+										</span>
+									{:else}
+										<span style="font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; border: 1px solid #cbd5e1;">
+											No PDF File Uploaded
+										</span>
+									{/if}
+									<label class="toggle-switch-wrap" style="opacity: {localMenuPdfUrl ? '1' : '0.4'}; cursor: {localMenuPdfUrl ? 'pointer' : 'not-allowed'};" title={localMenuPdfUrl ? "Toggle Menu PDF Download Section ON/OFF" : "Please select or upload a PDF file first to enable PDF download"}>
+										<input type="checkbox" bind:checked={localMenuPdfEnabled} disabled={!localMenuPdfUrl} />
+										<span class="toggle-slider"></span>
+									</label>
+								</div>
 							</div>
 							<p class="field-hint" style="margin-bottom: 16px;">Upload a PDF version of your menu. When users click "Download Complete Menu" in the app, this PDF file will be downloaded directly.</p>
 
@@ -1858,6 +2007,8 @@
 					</div>
 				{/if}
 			</div>
+			
+
 		</div>
 	{/if}
 

@@ -1,27 +1,35 @@
 <script lang="ts">
 	import { appSettings } from '$lib/stores/appSettings';
 	import { Download } from 'lucide-svelte';
+
+	let menuWidgetEnabled = $derived($appSettings?.menuWidgetEnabled ?? true);
+	let menuImageEnabled = $derived($appSettings?.menuImageEnabled ?? true);
+	let menuPdfEnabled = $derived($appSettings?.menuPdfEnabled ?? true);
 </script>
 
-{#if $appSettings?.menuImageEnabled && $appSettings?.menuImageUrl}
+{#if menuWidgetEnabled && (menuImageEnabled || menuPdfEnabled)}
 	<section class="container menu-section">
-		<div class="section-header">
-			<h2>Salon Menu</h2>
-			<p>Explore our complete range of services</p>
-		</div>
+		{#if menuImageEnabled && $appSettings?.menuImageUrl}
+			<div class="section-header">
+				<h2>Salon Menu</h2>
+				<p>Explore our complete range of services</p>
+			</div>
 
-		<div class="menu-image-container">
-			<img src={$appSettings?.menuImageUrl} alt="Salon Menu" class="menu-image" />
-		</div>
+			<div class="menu-image-container">
+				<img src={$appSettings?.menuImageUrl} alt="Salon Menu" class="menu-image" />
+			</div>
+		{/if}
 
-		<div class="download-container">
-			<a href={$appSettings?.menuPdfUrl || $appSettings?.menuImageUrl} download="Salon_Menu" class="download-btn" target="_blank" rel="noopener noreferrer">
-				<span class="btn-content">
-					<Download size="20" class="icon" />
-					<span class="text">Download Complete Menu</span>
-				</span>
-			</a>
-		</div>
+		{#if menuPdfEnabled && $appSettings?.menuPdfUrl}
+			<div class="download-container">
+				<a href={$appSettings.menuPdfUrl} download="Salon_Menu.pdf" class="download-btn" target="_blank" rel="noopener noreferrer">
+					<span class="btn-content">
+						<Download size="20" class="icon" />
+						<span class="text">Download Complete Menu</span>
+					</span>
+				</a>
+			</div>
+		{/if}
 	</section>
 {/if}
 

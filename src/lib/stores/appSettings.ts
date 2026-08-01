@@ -27,6 +27,8 @@ export interface AppSettings {
 	menuImageUrl: string;
 	menuImageEnabled: boolean;
 	menuPdfUrl: string;
+	menuPdfEnabled: boolean;
+	menuWidgetEnabled: boolean;
 	specialOffersEnabled: boolean;
 }
 
@@ -75,6 +77,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 	menuImageUrl: '',
 	menuImageEnabled: true,
 	menuPdfUrl: '',
+	menuPdfEnabled: true,
+	menuWidgetEnabled: true,
 	specialOffersEnabled: true
 };
 
