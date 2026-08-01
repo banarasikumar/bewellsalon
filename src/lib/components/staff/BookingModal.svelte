@@ -1753,11 +1753,15 @@
 
 	.ov-client-info h3 {
 		margin: 0 !important;
+		font-family: var(--s-font-display) !important;
 		font-size: 1.1rem !important;
-		font-weight: 700;
+		font-weight: 800 !important;
 		color: var(--s-text-primary, #1a1a2e) !important;
 		text-transform: none !important;
-		letter-spacing: normal !important;
+		letter-spacing: -0.01em !important;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.ov-client-info p {

@@ -1483,8 +1483,14 @@
 
 	.info-details h2 {
 		margin: 0 0 4px;
-		font-size: var(--s-text-lg);
-		font-weight: 700;
+		font-family: var(--s-font-display);
+		font-size: 1.1rem;
+		font-weight: 800;
+		color: var(--s-text-primary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		letter-spacing: -0.01em;
 	}
 
 	.info-details p {

@@ -229,8 +229,13 @@
 	.client-name {
 		margin: 0 0 4px;
 		font-family: var(--s-font-display);
-		font-size: var(--s-text-xl);
-		font-weight: 700;
+		font-size: 1.1rem;
+		font-weight: 800;
+		color: var(--s-text-primary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		letter-spacing: -0.01em;
 	}
 
 	.client-contact {

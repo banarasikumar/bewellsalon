@@ -18,6 +18,7 @@
 	import EmptyState from '$lib/components/staff/EmptyState.svelte';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { slide } from 'svelte/transition';
 
 	// Mask phone: show first 3 and last 2 digits, stars in between
 	function maskPhone(phone: string): string {
@@ -33,13 +34,7 @@
 		showListeningNotification
 	} from '$lib/stores/staffNotifications';
 
-	let isHeroCompact = $state(false);
-
 	onMount(async () => {
-		setTimeout(() => {
-			isHeroCompact = true;
-		}, 2500);
-
 		// Load push enabled state from Firestore for staff app
 		if ($staffUser) {
 			await checkNotificationStatus($staffUser.uid, 'staff');
@@ -212,7 +207,7 @@
 
 <div class="dashboard s-stagger">
 	<!-- ━━━ HERO WELCOME ━━━ -->
-	<section class="hero-card {isHeroCompact ? 'hero-compact' : ''}">
+	<section class="hero-card">
 		<div class="hero-gradient"></div>
 		<div class="hero-content">
 			<div class="hero-text">
@@ -394,19 +389,6 @@
 		bottom: -10px;
 		left: 20%;
 		z-index: 0;
-	}
-
-	/* Compact Hero Modifier */
-	.hero-card.hero-compact {
-		padding: 24px 20px 30px;
-	}
-	.hero-compact .hero-avatar {
-		width: 50px;
-		height: 50px;
-		font-size: 1.4rem;
-	}
-	.hero-compact .hero-content h1 {
-		font-size: 1.4rem;
 	}
 
 	.hero-gradient {

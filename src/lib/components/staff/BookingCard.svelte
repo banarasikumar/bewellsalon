@@ -323,12 +323,18 @@
 		overflow: hidden;
 		animation: s-fadeInUp 0.4s var(--s-ease-spring) backwards;
 		margin-bottom: 16px;
+		/* GPU Hardware Acceleration for smooth scrolling */
+		transform: translateZ(0);
+		will-change: transform;
 	}
 
 
 
-	.booking-card:active {
-		transform: translateY(0) scale(0.97);
+	/* Only apply active scale on devices with a mouse to prevent scroll jitter on touch screens */
+	@media (hover: hover) and (pointer: fine) {
+		.booking-card:active {
+			transform: translateY(0) scale(0.97);
+		}
 	}
 
 	:global(.staff-app.dark) .booking-card {

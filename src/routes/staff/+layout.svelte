@@ -278,7 +278,11 @@
 		padding: var(--s-space-lg) var(--s-space-lg);
 		padding-bottom: calc(var(--s-nav-height) + 24px);
 		overflow-x: hidden;
+		overflow-y: auto;
 		transition: padding-bottom 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		/* Hardware acceleration for smooth scrolling */
+		-webkit-overflow-scrolling: touch;
+		transform: translateZ(0);
 	}
 
 	:global(body:has(.modal-backdrop)) .staff-main {

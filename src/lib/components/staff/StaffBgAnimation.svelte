@@ -61,11 +61,12 @@
 	.orb {
 		position: absolute;
 		border-radius: 50%;
-		filter: blur(90px);
+		/* Removed heavy blur(90px) to fix mobile scroll jitter. Radial gradient is already soft. */
 		will-change: transform;
 		animation-timing-function: ease-in-out;
 		animation-iteration-count: infinite;
 		animation-direction: alternate;
+		transform: translateZ(0);
 	}
 
 	/* Light mode opacities (subtle) */
