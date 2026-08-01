@@ -923,7 +923,7 @@
 							<div class="staff-selection-grid">
 								<button
 									class="staff-chip {selectedStaffId === 'unassigned' ? 'active' : ''}"
-									on:click={() => {
+									onclick={() => {
 										selectedStaffId = 'unassigned';
 										selectedStaffName = 'Any available staff';
 									}}
@@ -936,7 +936,7 @@
 								{#each availableStaff as staff}
 									<button
 										class="staff-chip {selectedStaffId === staff.id ? 'active' : ''}"
-										on:click={() => {
+										onclick={() => {
 											selectedStaffId = staff.id;
 											selectedStaffName = staff.name;
 										}}
@@ -970,7 +970,7 @@
 						</div>
 
 						<!-- Premium Input Trigger -->
-						<button class="premium-input-trigger" on:click={openDateModal}>
+						<button class="premium-input-trigger" onclick={openDateModal}>
 							<div class="input-content">
 								<span class="input-label-mini">Date</span>
 								<span class="input-value {selectedDate ? 'active' : 'placeholder'}">
@@ -988,7 +988,7 @@
 								{#each quickDates as qd}
 									<button
 										class="quick-date-chip {selectedDate === qd.dateStr ? 'active' : ''}"
-										on:click={() => handleQuickDateSelect(qd.dateStr)}
+										onclick={() => handleQuickDateSelect(qd.dateStr)}
 									>
 										<span class="chip-label">{qd.label}</span>
 										<span class="chip-sub">{qd.sub}</span>
@@ -1006,7 +1006,7 @@
 						</div>
 
 						<!-- Premium Input Trigger -->
-						<button class="premium-input-trigger" on:click={openTimeModal}>
+						<button class="premium-input-trigger" onclick={openTimeModal}>
 							<div class="input-content">
 								<span class="input-label-mini">Time</span>
 								<span class="input-value {selectedTime ? 'active' : 'placeholder'}">
@@ -1047,7 +1047,7 @@
 								? 'shake-anim'
 								: ''} {isValidForContinue ? 'glow-ready' : 'glow-dim'}"
 							disabled={isLoadingAuth}
-							on:click={handleContinue}
+							onclick={handleContinue}
 						>
 							Continue Booking
 						</button>
@@ -1082,13 +1082,13 @@
 
 	<!-- SUMMARY MODAL -->
 	{#if showSummaryModal}
-		<div class="modal-backdrop" transition:fade={{ duration: 200 }} on:click={closeSummaryModal}>
+		<div class="modal-backdrop" transition:fade={{ duration: 200 }} onclick={closeSummaryModal}>
 			<div
 				class="summary-modal glass-panel"
 				transition:scale={{ start: 0.9, duration: 300, easing: cubicOut }}
-				on:click|stopPropagation
+				onclick={(e) => e.stopPropagation()}
 			>
-				<button class="modal-close-btn" on:click={closeSummaryModal}><X size={20} /></button>
+				<button class="modal-close-btn" onclick={closeSummaryModal}><X size={20} /></button>
 
 				<div class="summary-header">
 					<h3 class="font-cinzel text-2xl font-bold">
@@ -1102,7 +1102,7 @@
 					<div class="booking-details-card">
 						<div class="card-header">
 							<h4>BOOKING DETAILS</h4>
-							<button class="edit-link" on:click={closeSummaryModal}>Edit</button>
+							<button class="edit-link" onclick={closeSummaryModal}>Edit</button>
 						</div>
 
 						<!-- Services -->
@@ -1182,12 +1182,12 @@
 										<Sparkles size={14} />
 										<span>{couponCode.toUpperCase()}</span>
 									</div>
-									<button class="remove-coupon" on:click={removeCoupon}>
+									<button class="remove-coupon" onclick={removeCoupon}>
 										<X size={14} />
 									</button>
 								</div>
 							{:else}
-								<button class="view-coupons-btn" on:click={() => (showCouponsModal = true)}>
+								<button class="view-coupons-btn" onclick={() => (showCouponsModal = true)}>
 									<div class="view-coupons-left">
 										<Ticket size={18} class="text-gold" />
 										<span>View all coupons & offers</span>
@@ -1220,7 +1220,7 @@
 									<input
 										type="checkbox"
 										bind:checked={useBeuCash}
-										on:change={() => {
+										onchange={() => {
 											if (useBeuCash) removeCoupon();
 										}}
 										disabled={beuCashBalance === 0}
@@ -1284,7 +1284,7 @@
 						<div class="payment-options-grid">
 							<button
 								class="payment-option compact {paymentType === 'full' ? 'active' : ''}"
-								on:click={() => (paymentType = 'full')}
+								onclick={() => (paymentType = 'full')}
 							>
 								<div class="option-icon-wrapper">
 									<Check size={20} />
@@ -1297,7 +1297,7 @@
 
 							<button
 								class="payment-option compact {paymentType === 'token' ? 'active' : ''}"
-								on:click={() => (paymentType = 'token')}
+								onclick={() => (paymentType = 'token')}
 							>
 								<div class="option-icon-wrapper">
 									<Sparkles size={20} />
@@ -1317,7 +1317,7 @@
 
 							<button
 								class="payment-option compact {paymentType === 'free' ? 'active' : ''}"
-								on:click={() => (paymentType = 'free')}
+								onclick={() => (paymentType = 'free')}
 							>
 								<div class="option-icon-wrapper">
 									<MapPin size={20} />
@@ -1351,7 +1351,7 @@
 											<div class="premium-upi-box">
 												<span class="premium-upi-label">UPI:</span>
 												<span class="premium-upi-text">mab0450550a0279816@yesbank</span>
-												<button class="premium-copy-btn" on:click|preventDefault={copyUpiId}>
+												<button class="premium-copy-btn" onclick={(e) => { e.preventDefault(); copyUpiId(); }}>
 													<FileText size={16} />
 												</button>
 											</div>
@@ -1408,7 +1408,7 @@
 						disabled={isSubmitting ||
 							paymentType === '' ||
 							((paymentType === 'token' || paymentType === 'full') && !paymentConfirmed)}
-						on:click={submitBooking}
+						onclick={submitBooking}
 					>
 						{#if isSubmitting}
 							<div class="spinner"></div>
@@ -1435,12 +1435,12 @@
 		<div
 			class="modal-backdrop"
 			transition:fade={{ duration: 200 }}
-			on:click={() => (showCouponsModal = false)}
+			onclick={() => (showCouponsModal = false)}
 		>
 			<div
 				class="summary-modal glass-panel coupons-modal"
 				transition:fly={{ y: 50, duration: 300, easing: cubicOut }}
-				on:click|stopPropagation
+				onclick={(e) => e.stopPropagation()}
 			>
 				<div class="summary-header">
 					<div class="header-left">
@@ -1450,7 +1450,7 @@
 							<p class="text-xs text-secondary">Unlock special offers</p>
 						</div>
 					</div>
-					<button class="close-btn" on:click={() => (showCouponsModal = false)}>
+					<button class="close-btn" onclick={() => (showCouponsModal = false)}>
 						<X size={20} />
 					</button>
 				</div>
@@ -1468,7 +1468,7 @@
 							/>
 							<button
 								class="apply-coupon-btn"
-								on:click={applyCoupon}
+								onclick={applyCoupon}
 								disabled={isApplyingCoupon || !couponCode.trim()}
 							>
 								{#if isApplyingCoupon}
@@ -1491,17 +1491,17 @@
 
 	<!-- DATE PICKER MODAL -->
 	{#if showDateModal}
-		<div class="modal-backdrop" transition:fade={{ duration: 200 }} on:click={closeDateModal}>
+		<div class="modal-backdrop" transition:fade={{ duration: 200 }} onclick={closeDateModal}>
 			<div
 				class="custom-picker-modal glass-panel"
 				transition:scale={{ start: 0.9, duration: 300, easing: cubicOut }}
-				on:click|stopPropagation
+				onclick={(e) => e.stopPropagation()}
 			>
-				<button class="modal-close-btn" on:click={closeDateModal}><X size={20} /></button>
+				<button class="modal-close-btn" onclick={closeDateModal}><X size={20} /></button>
 
 				<div class="picker-header">
 					{#if !isCurrentMonthView}
-						<button class="nav-arrow-btn" on:click={() => changeMonth(-1)}>
+						<button class="nav-arrow-btn" onclick={() => changeMonth(-1)}>
 							<ChevronLeft size={20} />
 						</button>
 					{:else}
@@ -1512,7 +1512,7 @@
 						{currentViewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
 					</h3>
 					{#if !isMaxMonthView}
-						<button class="nav-arrow-btn" on:click={() => changeMonth(1)}>
+						<button class="nav-arrow-btn" onclick={() => changeMonth(1)}>
 							<ChevronRight size={20} />
 						</button>
 					{:else}
@@ -1536,7 +1536,7 @@
 									? 'selected'
 									: ''}"
 								disabled={!day.available}
-								on:click={() => handleDateSelect(day.dateStr)}
+								onclick={() => handleDateSelect(day.dateStr)}
 							>
 								{day.day}
 							</button>
@@ -1549,13 +1549,13 @@
 
 	<!-- TIME PICKER MODAL -->
 	{#if showTimeModal}
-		<div class="modal-backdrop" transition:fade={{ duration: 200 }} on:click={closeTimeModal}>
+		<div class="modal-backdrop" transition:fade={{ duration: 200 }} onclick={closeTimeModal}>
 			<div
 				class="custom-picker-modal glass-panel"
 				transition:scale={{ start: 0.9, duration: 300, easing: cubicOut }}
-				on:click|stopPropagation
+				onclick={(e) => e.stopPropagation()}
 			>
-				<button class="modal-close-btn" on:click={closeTimeModal}><X size={20} /></button>
+				<button class="modal-close-btn" onclick={closeTimeModal}><X size={20} /></button>
 
 				<div class="picker-header">
 					<h3 class="current-month-label">Select Time</h3>
@@ -1586,7 +1586,7 @@
 									: isFilling
 										? 'filling'
 										: 'available'}"
-								on:click={() => !isFull && handleTimeSelect(t)}
+								onclick={() => !isFull && handleTimeSelect(t)}
 								disabled={isFull}
 							>
 								{t}
