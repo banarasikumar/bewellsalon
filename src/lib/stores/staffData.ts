@@ -116,8 +116,8 @@ function startBookingsListener() {
 		(snapshot) => {
 			const currentUid = auth.currentUser?.uid;
 			const allBookings = snapshot.docs.map((d) => ({
-				id: d.id,
-				...d.data()
+				...d.data(),
+				id: d.id
 			})) as Booking[];
 
 			// Show all bookings, including those assigned to other staff members
@@ -189,8 +189,8 @@ function startServicesListener() {
 		qServices,
 		(snapshot) => {
 			const services = snapshot.docs.map((d) => ({
-				id: d.id,
-				...d.data()
+				...d.data(),
+				id: d.id
 			})) as Service[];
 			staffServices.set(services);
 		},
@@ -223,8 +223,8 @@ function startCustomServicesListener() {
 		qCustomServices,
 		(snapshot) => {
 			const services = snapshot.docs.map((d) => ({
-				id: d.id,
-				...d.data()
+				...d.data(),
+				id: d.id
 			})) as Service[];
 			customServices.set(services);
 		},

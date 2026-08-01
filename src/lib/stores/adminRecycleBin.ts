@@ -37,8 +37,8 @@ export function initRecycleBinListener() {
 		q,
 		(snapshot) => {
 			const items = snapshot.docs.map((d) => ({
-				id: d.id,
-				...d.data()
+				...d.data(),
+				id: d.id
 			})) as RecycledBooking[];
 			recycledBookings.set(items);
 		},

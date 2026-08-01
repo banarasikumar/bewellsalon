@@ -33,8 +33,8 @@ export function initAppServiceListener() {
 		q,
 		(snapshot) => {
 			const services = snapshot.docs.map((d) => ({
-				id: d.id,
-				...d.data()
+				...d.data(),
+				id: d.id
 			})) as Service[];
 			appServices.set(services);
 		},

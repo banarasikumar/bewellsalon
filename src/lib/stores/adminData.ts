@@ -104,8 +104,8 @@ export function initBookingListener() {
 		q,
 		(snapshot) => {
 			const bookings = snapshot.docs.map((d) => ({
-				id: d.id,
-				...d.data()
+				...d.data(),
+				id: d.id
 			})) as Booking[];
 
 			const newBookingsMap = new Map(bookings.map((b) => [b.id, b]));
@@ -188,8 +188,8 @@ export function initUserListener() {
 		q,
 		(snapshot) => {
 			const users = snapshot.docs.map((d) => ({
-				id: d.id,
-				...d.data()
+				...d.data(),
+				id: d.id
 			})) as AppUser[];
 
 			// On initial load, just set data — no toasts
@@ -247,8 +247,8 @@ export function initServiceListener() {
 		q,
 		(snapshot) => {
 			const services = snapshot.docs.map((d) => ({
-				id: d.id,
-				...d.data()
+				...d.data(),
+				id: d.id
 			})) as Service[];
 			allServices.set(services);
 		},

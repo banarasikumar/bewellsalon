@@ -6,6 +6,7 @@ export interface AppSettings {
 	defaultPaymentGateway: 'default' | 'razorpay';
 	totalChairs: number;
 	promoTickerText: string;
+	promoTickerEnabled: boolean;
 	specialOffers: Array<{
 		id: number;
 		badge: string;
@@ -26,6 +27,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	defaultPaymentGateway: 'default',
 	totalChairs: 3,
 	promoTickerText: '✨ FESTIVE SPECIAL: Get 15% OFF on all Premium Beauty Packages this week! Tap to book now. ✨',
+	promoTickerEnabled: true,
 	specialOffers: [
 		{
 			id: 1,

@@ -3,8 +3,8 @@
 	import { onMount } from 'svelte';
 	import { appSettings } from '$lib/stores/appSettings';
 
-	// Reactive offers from the database
-	const offers = $derived($appSettings.specialOffers || []);
+	// Reactive active offers from the database (filter out disabled cards)
+	const offers = $derived(($appSettings.specialOffers || []).filter((o: any) => o.enabled !== false));
 
 	let visible = $state(false);
 
@@ -37,23 +37,43 @@
 	<div class="offers-grid">
 		{#if visible}
 			{#each offers as offer, i}
-				<div class="offer-card glow-card" in:fly={{ y: 50, duration: 800, delay: i * 200 }}>
-					<div class="offer-badge {i === 0 ? 'hot' : i === 1 ? 'festive' : 'student'}">{offer.badge}</div>
-					<div class="offer-icon">
-						{#if offer.icon && offer.icon.startsWith('http')}
-							<img src={offer.icon} alt={offer.title} class="offer-img-icon" />
-						{:else}
-							{offer.icon || '✨'}
-						{/if}
-					</div>
-					<h3>{offer.title}</h3>
-					<p>{offer.desc}</p>
-					<div class="offer-price">
-						{#if offer.oldPrice}
-							<span class="old-price">{offer.oldPrice}</span>
-						{/if}
-						<span class="new-price">{offer.newPrice}</span>
-					</div>
+				{@const hasFullBg = (offer.mediaType === 'image' || offer.image || (offer.icon && offer.icon.startsWith('http'))) && offer.mediaType !== 'emoji'}
+				{@const bgUrl = offer.image || (offer.icon && offer.icon.startsWith('http') ? offer.icon : '')}
+
+				<div
+					class="offer-card glow-card {hasFullBg ? 'has-full-cover' : ''}"
+					style={hasFullBg ? `background-image: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%), url('${bgUrl}'); background-size: cover; background-position: center;` : ''}
+					in:fly={{ y: 50, duration: 800, delay: i * 200 }}
+				>
+					{#if offer.badge && offer.badge.trim()}
+						<div class="offer-badge {i === 0 ? 'hot' : i === 1 ? 'festive' : 'student'}">{offer.badge}</div>
+					{/if}
+					
+					{#if !hasFullBg && offer.icon && offer.icon.trim()}
+						<div class="offer-icon">
+							{offer.icon}
+						</div>
+					{/if}
+
+					{#if offer.title && offer.title.trim()}
+						<h3>{offer.title}</h3>
+					{/if}
+
+					{#if offer.desc && offer.desc.trim()}
+						<p>{offer.desc}</p>
+					{/if}
+
+					{#if (offer.oldPrice && offer.oldPrice.trim()) || (offer.newPrice && offer.newPrice.trim())}
+						<div class="offer-price">
+							{#if offer.oldPrice && offer.oldPrice.trim()}
+								<span class="old-price">{offer.oldPrice}</span>
+							{/if}
+							{#if offer.newPrice && offer.newPrice.trim()}
+								<span class="new-price">{offer.newPrice}</span>
+							{/if}
+						</div>
+					{/if}
+
 					<div class="sparkle-line"></div>
 					<button class="tc-btn">T&C</button>
 				</div>
@@ -116,6 +136,25 @@
 			transform var(--transition-bounce),
 			box-shadow var(--transition-smooth);
 		backdrop-filter: blur(10px);
+	}
+
+	.offer-card.has-full-cover {
+		min-height: 280px;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		text-align: left;
+		padding: 24px;
+	}
+
+	.offer-card.has-full-cover h3 {
+		color: #ffffff;
+		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+	}
+
+	.offer-card.has-full-cover p {
+		color: rgba(255, 255, 255, 0.9);
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 	}
 
 	.offer-card:hover {
@@ -207,17 +246,24 @@
 	}
 
 	.tc-btn {
-		background: transparent;
-		color: var(--color-text-secondary);
-		font-size: 0.8rem;
-		padding: 4px 12px;
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		position: absolute;
+		bottom: 12px;
+		right: 12px;
+		background: rgba(0, 0, 0, 0.4);
+		backdrop-filter: blur(4px);
+		color: rgba(255, 255, 255, 0.85);
+		font-size: 0.75rem;
+		font-weight: 700;
+		padding: 3px 10px;
+		border: 1px solid rgba(255, 255, 255, 0.25);
 		border-radius: var(--radius-full);
 		transition: all 0.2s;
+		z-index: 3;
 	}
 
 	.tc-btn:hover {
-		background: rgba(255, 255, 255, 0.1);
-		color: var(--color-text-primary);
+		background: rgba(212, 175, 55, 0.25);
+		border-color: var(--color-accent-gold);
+		color: #ffffff;
 	}
 </style>

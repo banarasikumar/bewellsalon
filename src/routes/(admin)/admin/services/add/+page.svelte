@@ -18,6 +18,10 @@
 	import { ArrowLeft, Upload, Save } from 'lucide-svelte';
 	import Loader from '$lib/components/ui/Loader.svelte';
 	import { uploadStore } from '$lib/stores/uploadStore';
+	import { allServices } from '$lib/stores/adminData';
+	import { get } from 'svelte/store';
+	import Cropper from 'svelte-easy-crop';
+	import getCroppedImg from '$lib/utils/cropImage';
 
 	let isEditing = $state(false);
 	let loading = $state(false);
@@ -34,7 +38,13 @@
 	let imageFile = $state<File | null>(null);
 	let imagePreview = $state<string | null>(null);
 	let currentImageUrl = $state<string | null>(null);
-	let manualImageFilename = $state('');
+
+	// Crop state
+	let showCropModal = $state(false);
+	let crop = $state({ x: 0, y: 0 });
+	let zoom = $state(1);
+	let cropSrc = $state<string | null>(null);
+	let pixelCrop = $state<any>(null);
 
 	let categories = $state<string[]>(['Hair', 'Nails', 'Skin', 'Massage', 'Makeup', 'Other']);
 
@@ -61,19 +71,34 @@
 	async function loadService(id: string) {
 		loading = true;
 		try {
-			const snap = await getDoc(doc(db, 'services', id));
-			if (snap.exists()) {
-				const data = snap.data();
-				name = data.name;
-				category = data.category;
-				price = data.price.toString();
-				originalPrice = data.originalPrice ? data.originalPrice.toString() : '';
-				duration = data.duration.toString();
-				description = data.description || '';
-				currentImageUrl = data.image || null;
+			// First try to read from the allServices store (populated by real-time listener)
+			const storeServices = get(allServices);
+			const storeService = storeServices.find((s) => s.id === id);
+
+			if (storeService) {
+				name = storeService.name;
+				category = storeService.category;
+				price = storeService.price.toString();
+				originalPrice = storeService.originalPrice ? storeService.originalPrice.toString() : '';
+				duration = storeService.duration.toString();
+				description = storeService.description || '';
+				currentImageUrl = storeService.image || null;
 			} else {
-				showToast('Service not found', 'error');
-				goto('/admin/services');
+				// Fallback to direct Firestore fetch if store isn't populated yet
+				const snap = await getDoc(doc(db, 'services', id));
+				if (snap.exists()) {
+					const data = snap.data();
+					name = data.name;
+					category = data.category;
+					price = data.price.toString();
+					originalPrice = data.originalPrice ? data.originalPrice.toString() : '';
+					duration = data.duration.toString();
+					description = data.description || '';
+					currentImageUrl = data.image || null;
+				} else {
+					showToast('Service not found', 'error');
+					goto('/admin/services');
+				}
 			}
 		} catch (error) {
 			console.error('Error loading service:', error);
@@ -86,9 +111,51 @@
 	function handleImageSelect(e: Event) {
 		const input = e.target as HTMLInputElement;
 		if (input.files && input.files[0]) {
-			imageFile = input.files[0];
-			manualImageFilename = ''; // Clear manual entry if file selected
+			const file = input.files[0];
+			const url = URL.createObjectURL(file);
+			const img = new Image();
+			img.onload = () => {
+				if (img.width < 512 || img.height < 512) {
+					showToast('Image dimensions must be at least 512x512 pixels', 'error');
+					URL.revokeObjectURL(url);
+					input.value = ''; // Reset input
+					return;
+				}
+				cropSrc = url;
+				showCropModal = true;
+				// Clean up input value so the same file can be selected again if needed
+				input.value = '';
+			};
+			img.src = url;
+		}
+	}
+
+	async function handleCropDone() {
+		if (!cropSrc) {
+			showToast('No image source found', 'error');
+			return;
+		}
+		if (!pixelCrop) {
+			showToast('Please touch or move the image slightly to confirm crop area', 'error');
+			return;
+		}
+		try {
+			uploading = true;
+			const croppedBlob = await getCroppedImg(cropSrc, pixelCrop, 1024, 1024);
+			const ext = 'webp';
+			const safeName = name.trim().replace(/\s+/g, '_') || 'service';
+			const fileName = `${safeName}_crop_${Date.now()}.${ext}`;
+			imageFile = new File([croppedBlob], fileName, { type: 'image/webp' });
 			imagePreview = URL.createObjectURL(imageFile);
+
+			showCropModal = false;
+			cropSrc = null;
+			pixelCrop = null;
+		} catch (e) {
+			console.error('Cropping error:', e);
+			showToast('Failed to crop image', 'error');
+		} finally {
+			uploading = false;
 		}
 	}
 
@@ -103,12 +170,7 @@
 			let imageUrl = currentImageUrl;
 			let needsBackgroundUpload = false;
 
-			// Priority 1: Manual Filename
-			if (manualImageFilename) {
-				imageUrl = `/assets/service_images/${manualImageFilename}`;
-			}
-			// Priority 2: Uploaded File (if no manual filename entered)
-			else if (imageFile) {
+			if (imageFile) {
 				needsBackgroundUpload = true;
 				// Leave imageUrl as currentImageUrl for now or null
 			}
@@ -141,7 +203,7 @@
 				if (hasImage) {
 					showToast('Service created successfully', 'success');
 				} else {
-					showToast('Service saved as disabled (no image)', 'info');
+					showToast('Service saved as disabled (no image)', 'success');
 				}
 			}
 
@@ -153,7 +215,7 @@
 
 				const storagePath = `services/${newFileName}`;
 				uploadStore.addUpload(renamedFile, storagePath, docRefPath, 'image');
-				showToast('Image uploading in background...', 'info');
+				showToast('Image uploading in background...', 'success');
 			}
 
 			goto('/admin/services');
@@ -181,61 +243,8 @@
 			<Loader size={120} />
 		</div>
 	{:else}
-		<!-- Image Upload -->
 		<div class="admin-form-section">
 			<span class="admin-label">Service Image</span>
-
-			<!-- Manual Filename Input -->
-			<div style="margin-bottom: 12px;">
-				<label class="admin-label" style="font-size: 12px; margin-bottom: 4px;">
-					Manual Filename (from /assets/service_images/)
-					<div style="display: flex; gap: 8px;">
-						<input
-							type="text"
-							bind:value={manualImageFilename}
-							class="admin-input"
-							style="margin-top: 0; flex: 1;"
-							placeholder="e.g. facial_new.webp"
-							oninput={() => {
-								if (manualImageFilename) {
-									imagePreview = `/assets/service_images/${manualImageFilename}`;
-									imageFile = null; // Clear file selection if typing manually
-								}
-							}}
-						/>
-						<label
-							class="admin-btn-secondary"
-							style="height: auto; padding: 8px 12px; font-size: 12px; font-weight: 500; white-space: nowrap; display: flex; align-items: center; cursor: pointer;"
-						>
-							Select File
-							<input
-								type="file"
-								accept="image/*"
-								style="display: none;"
-								onchange={(e) => {
-									const input = e.target as HTMLInputElement;
-									if (input.files && input.files[0]) {
-										manualImageFilename = input.files[0].name;
-										imagePreview = `/assets/service_images/${manualImageFilename}`;
-										imageFile = null; // Clear 'upload' file selection
-									}
-								}}
-							/>
-						</label>
-					</div>
-				</label>
-				{#if manualImageFilename}
-					<p style="font-size: 11px; color: var(--admin-text-tertiary); margin-top: 4px;">
-						Path: /assets/service_images/{manualImageFilename}
-					</p>
-				{:else}
-					<p
-						style="font-size: 11px; color: var(--admin-text-tertiary); margin-top: 4px; margin-bottom: 8px;"
-					>
-						OR upload a file below (requires Firebase Storage)
-					</p>
-				{/if}
-			</div>
 
 			<label class="admin-image-upload">
 				{#if imagePreview || currentImageUrl}
@@ -352,6 +361,58 @@
 		{/if}
 	</button>
 </div>
+
+<!-- Crop Modal -->
+{#if showCropModal && cropSrc}
+	<div class="admin-crop-modal">
+		<div class="admin-crop-modal-content">
+			<div class="admin-crop-header">
+				<h3>Crop Image</h3>
+				<span class="admin-crop-subtitle">Minimum size 512x512, will be resized to 1024x1024</span>
+			</div>
+			
+			<div class="admin-crop-container">
+				<Cropper
+					image={cropSrc}
+					bind:crop
+					bind:zoom
+					aspect={1}
+					oncropcomplete={(e) => {
+						pixelCrop = e.pixels;
+					}}
+				/>
+			</div>
+
+			<div class="admin-crop-controls">
+				<span>Zoom</span>
+				<input type="range" min="1" max="3" step="0.1" bind:value={zoom} />
+			</div>
+
+			<div class="admin-crop-actions">
+				<button 
+					class="admin-btn-secondary" 
+					onclick={() => {
+						showCropModal = false;
+						cropSrc = null;
+						pixelCrop = null;
+					}}
+				>
+					Cancel
+				</button>
+				<button class="admin-btn-primary" onclick={handleCropDone} disabled={uploading}>
+					{#if uploading}
+						<div class="admin-spinner-small">
+							<Loader size={18} />
+						</div>
+						Cropping...
+					{:else}
+						Done
+					{/if}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.admin-back-btn {
@@ -575,5 +636,80 @@
 		justify-content: center;
 		height: 300px;
 		color: var(--admin-accent);
+	}
+
+	/* Crop Modal */
+	.admin-crop-modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.8);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+		padding: 20px;
+	}
+
+	.admin-crop-modal-content {
+		background: var(--admin-surface);
+		width: 100%;
+		max-width: 500px;
+		border-radius: 16px;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.admin-crop-header {
+		padding: 16px 20px;
+		border-bottom: 1px solid var(--admin-border);
+	}
+
+	.admin-crop-header h3 {
+		margin: 0;
+		font-size: 18px;
+		color: var(--admin-text);
+	}
+
+	.admin-crop-subtitle {
+		font-size: 12px;
+		color: var(--admin-text-secondary);
+		display: block;
+		margin-top: 4px;
+	}
+
+	.admin-crop-container {
+		position: relative;
+		width: 100%;
+		height: 400px;
+		background: #000;
+	}
+
+	.admin-crop-controls {
+		padding: 16px 20px;
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		border-bottom: 1px solid var(--admin-border);
+	}
+
+	.admin-crop-controls span {
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--admin-text);
+	}
+
+	.admin-crop-controls input[type="range"] {
+		flex: 1;
+		accent-color: var(--admin-accent);
+	}
+
+	.admin-crop-actions {
+		padding: 16px 20px;
+		display: flex;
+		gap: 12px;
 	}
 </style>

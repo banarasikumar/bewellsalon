@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { appSettings } from '$lib/stores/appSettings';
 	
+	const isEnabled = $derived(($appSettings.promoTickerEnabled ?? true) && !!$appSettings.promoTickerText);
 	const promoText = $derived($appSettings.promoTickerText || "✨ FESTIVE SPECIAL: Get 15% OFF on all Premium Beauty Packages this week! ✨");
 
 	const scrollToOffers = (e: Event) => {
@@ -46,13 +47,15 @@
 	};
 </script>
 
-<a href="#special-offers" class="promo-ticker" onclick={scrollToOffers}>
-	<div class="ticker-content">
-		<span class="ticker-text">{promoText}</span>
-		<span class="ticker-text">{promoText}</span>
-		<span class="ticker-text">{promoText}</span>
-	</div>
-</a>
+{#if isEnabled}
+	<a href="#special-offers" class="promo-ticker" onclick={scrollToOffers}>
+		<div class="ticker-content">
+			<span class="ticker-text">{promoText}</span>
+			<span class="ticker-text">{promoText}</span>
+			<span class="ticker-text">{promoText}</span>
+		</div>
+	</a>
+{/if}
 
 <style>
 	.promo-ticker {

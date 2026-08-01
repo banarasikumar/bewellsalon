@@ -70,15 +70,19 @@
 	async function toggleServiceStatus(service: Service, event: MouseEvent) {
 		event.stopPropagation();
 		try {
+			console.log('[Toggle] Service id:', service.id, 'name:', service.name);
+			console.log('[Toggle] isActive current:', service.isActive);
 			const newStatus = !service.isActive; // Toggle
 			await updateDoc(doc(db, 'services', service.id), {
 				isActive: newStatus,
 				updatedAt: new Date().toISOString()
 			});
 			showToast(`Service ${newStatus ? 'enabled' : 'disabled'}`, 'success');
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error toggling service:', error);
-			showToast('Failed to update service status', 'error');
+			console.error('Error code:', error?.code);
+			console.error('Error message:', error?.message);
+			showToast(`Failed to update service status: ${error?.code || error?.message || 'Unknown error'}`, 'error');
 		}
 	}
 
