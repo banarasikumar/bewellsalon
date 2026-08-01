@@ -3,6 +3,7 @@
 	import { updateBookingStatus, updateBookingDetails, type Booking } from '$lib/stores/adminData';
 	import { staffUser } from '$lib/stores/staffAuth';
 	import { showToast } from '$lib/stores/toast';
+	import { Calendar, Clock, Timer } from 'lucide-svelte';
 	import {
 		now,
 		getElapsedSeconds,
@@ -457,39 +458,32 @@
 								{/if}
 							</div>
 
-							<div class="bc-meta">
-								<span class="bc-meta-item">📅 {formatDate(booking.date)}</span>
-								<span class="bc-meta-item">🕐 {formatTime12h(booking.time)}</span>
+							<div class="bc-meta-compact">
+								<div class="meta-icon-item date-col">
+									<Calendar size={14} color="var(--s-text-tertiary)" />
+									<span class="meta-val">{formatDate(booking.date)}</span>
+								</div>
+								<div class="meta-icon-item time-col">
+									<Clock size={14} color="var(--s-text-tertiary)" />
+									<span class="meta-val">{formatTime12h(booking.time)}</span>
+								</div>
 								{#if booking.servicesList?.some((s: any) => s.duration)}
-									<span class="bc-meta-item"
-										>⏱ {formatDuration(
-											booking.servicesList.reduce((a: number, s: any) => a + (s.duration || 0), 0)
-										)}</span
-									>
+									<div class="meta-icon-item duration-col">
+										<Timer size={14} color="var(--s-text-tertiary)" />
+										<span class="meta-val">{formatDuration(booking.servicesList.reduce((a: number, s: any) => a + (s.duration || 0), 0))}</span>
+									</div>
 								{/if}
-								<span class="bc-meta-item price"
-									>₹{booking.totalAmount || booking.price || '-'}</span
-								>
 							</div>
 
 
 
 							{#if booking.payment}
-								<div class="bc-payment">
+								<div class="card-payment-bar">
 									<span class="payment-badge {getPaymentBadgeClass(booking)}">
 										{getPaymentMethodIcon(booking)}
 										{getPaymentLabel(booking)}
 									</span>
-									{#if booking.payment.type === 'token' && booking.payment.amount}
-										<div class="payment-details">
-											<span class="payment-paid">✓ ₹{booking.payment.amount} paid</span>
-											<span class="payment-due"
-												>• ₹{(booking.totalAmount || booking.price || 0) - booking.payment.amount} due</span
-											>
-										</div>
-									{:else if booking.payment.type === 'full' && booking.payment.amount}
-										<span class="payment-paid">✓ Fully paid</span>
-									{/if}
+									<span class="payment-price">₹{booking.totalAmount || booking.price || '-'}</span>
 								</div>
 							{/if}
 						</div>
@@ -1093,41 +1087,74 @@
 		word-break: break-word;
 	}
 
-	.bc-meta {
+	.bc-meta-compact {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		align-items: center;
+		background: var(--s-bg-secondary);
+		padding: 8px 12px;
+		border-radius: 10px;
+		border: 1px solid var(--s-border);
+		margin-top: 4px;
+	}
+
+	.meta-icon-item {
 		display: flex;
-		gap: var(--s-space-lg);
-		margin-top: var(--s-space-md);
-		padding: var(--s-space-md) 0;
-		border-top: 1px solid var(--s-border);
-		border-bottom: 1px solid var(--s-border);
-		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
 	}
 
-	.bc-meta-item {
-		font-size: var(--s-text-sm);
-		font-weight: 600;
-		color: var(--s-text-secondary);
+	.date-col {
+		justify-content: center;
 	}
 
-	.bc-meta-item.price {
-		color: var(--s-text-primary);
+	.time-col {
+		justify-content: center;
+	}
+
+	.duration-col {
+		justify-content: center;
+	}
+
+	.meta-dot {
+		color: var(--s-text-tertiary);
+		font-size: 0.8rem;
 		font-weight: 700;
 	}
 
-	/* ── Payment Info ── */
-	.bc-payment {
-		display: flex;
-		align-items: center;
-		gap: var(--s-space-sm);
-		margin-top: var(--s-space-sm);
-		flex-wrap: wrap;
+	.meta-val {
+		font-size: 0.85rem;
+		font-weight: 800;
+		color: var(--s-text-primary);
 	}
 
-	.bc-payment.timer-payment {
-		justify-content: center;
-		margin-bottom: var(--s-space-sm);
-		padding-top: var(--s-space-sm);
-		border-top: 1px solid var(--s-border);
+	/* ── Payment Info ── */
+	/* --- PAYMENT BAR --- */
+	.card-payment-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 8px 12px;
+		border-radius: 10px;
+		background: var(--s-bg-secondary);
+		border: 1px solid var(--s-border);
+		margin-top: 4px;
+	}
+
+	.payment-badge {
+		font-size: 0.75rem;
+		font-weight: 600;
+		padding: 2px 8px;
+		border-radius: 100px;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.payment-price {
+		font-weight: 700;
+		font-size: 0.95rem;
+		color: var(--s-text-primary);
 	}
 
 	.payment-badge {

@@ -2,6 +2,29 @@
 	import type { Booking, AppUser } from '$lib/stores/adminData';
 	import { getUserPhoto, getUserPhone } from '$lib/stores/adminData';
 	import { goto } from '$app/navigation';
+	import { db } from '$lib/firebase';
+	import { doc, updateDoc } from 'firebase/firestore';
+
+	let isEditingCommission = $state(false);
+	let editCommissionValue = $state(0);
+
+	function startEditingCommission() {
+		editCommissionValue = Number(commissionRate) || 0;
+		isEditingCommission = true;
+	}
+	
+	async function saveCommission() {
+		if (!staff) return;
+		try {
+			await updateDoc(doc(db, 'users', staff.id), {
+				commissionRate: editCommissionValue,
+				commission: editCommissionValue
+			});
+			isEditingCommission = false;
+		} catch(err) {
+			console.error('Failed to update commission:', err);
+		}
+	}
 
 	// Helper for default avatars
 	function getAvatarColor(name: string) {
@@ -60,8 +83,9 @@
 	);
 	
 	// Assuming a default commission rate if not explicitly set on the user. We will use a standard 20% or if user has it, use theirs.
+	let isCommissionEnabled = $derived(staff?.commissionEnabled !== false);
 	let commissionRate = $derived(staff?.commission || staff?.commissionRate || 20);
-	let commission = $derived((revenue * Number(commissionRate)) / 100);
+	let commission = $derived(isCommissionEnabled ? ((revenue * Number(commissionRate)) / 100) : 0);
 
 	let clients = $derived(
 		new Set(filteredBookings.map((b) => b.userId || b.userPhone || b.userName)).size
@@ -237,11 +261,15 @@
 					<span class="stat-lbl">Revenue</span>
 				</div>
 			</div>
-			<div class="stat-card s-glass commission">
+			<div class="stat-card s-glass commission" style={!isCommissionEnabled ? 'opacity: 0.7;' : ''}>
 				<div class="stat-icon">💵</div>
 				<div class="stat-info">
 					<span class="stat-val">₹{commission.toFixed(0)}</span>
-					<span class="stat-lbl">Commission ({commissionRate}%)</span>
+					{#if isCommissionEnabled}
+						<span class="stat-lbl">Commission ({commissionRate}%)</span>
+					{:else}
+						<span class="stat-lbl">Commission (Disabled)</span>
+					{/if}
 				</div>
 			</div>
 			

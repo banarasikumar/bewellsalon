@@ -916,11 +916,11 @@
 	}
 
 	.pbc-meta-premium .pbc-meta-label {
-		color: rgba(0, 0, 0, 0.65);
+		color: var(--admin-text-tertiary);
 	}
 
 	.pbc-meta-premium .pbc-meta-value {
-		color: #000;
+		color: var(--admin-text-primary);
 	}
 
 	.pbc-meta-block {

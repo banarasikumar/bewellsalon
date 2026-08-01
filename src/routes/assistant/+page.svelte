@@ -14,6 +14,7 @@
 		role: 'user' | 'assistant'; 
 		text: string; 
 		action?: { label: string; path: string };
+		actions?: { label: string; path: string }[];
 		mapEmbed?: string;
 	}[] = $state([
 		{
@@ -158,6 +159,7 @@
 					role: 'assistant', 
 					text: data.reply,
 					action: data.action,
+					actions: data.actions,
 					mapEmbed: data.mapEmbed
 				};
 				smartReplies = data.suggestions || [];
@@ -170,6 +172,7 @@
 					role: 'assistant',
 					text: fallback.text,
 					action: fallback.action,
+					actions: fallback.actions,
 					mapEmbed: fallback.mapEmbed
 				};
 			}
@@ -179,6 +182,7 @@
 				role: 'assistant',
 				text: fallback.text,
 				action: fallback.action,
+				actions: fallback.actions,
 				mapEmbed: fallback.mapEmbed
 			};
 		}
@@ -313,15 +317,32 @@
 								</div>
 							{/if}
 
-							{#if msg.action}
+							{#if msg.actions}
+								<div class="message-actions" transition:slide style="display: flex; gap: 8px; flex-wrap: wrap;">
+									{#each msg.actions as act}
+										<button 
+											class="action-btn" 
+											onclick={() => {
+												if (act.path.startsWith('tel:') || act.path.startsWith('mailto:') || act.path.startsWith('http')) {
+													window.location.href = act.path;
+												} else {
+													goto(act.path);
+												}
+											}}
+										>
+											{act.label}
+										</button>
+									{/each}
+								</div>
+							{:else if msg.action}
 								<div class="message-action" transition:slide>
 									<button 
 										class="action-btn" 
 										onclick={() => {
-											if (msg.action.path.startsWith('tel:') || msg.action.path.startsWith('mailto:') || msg.action.path.startsWith('http')) {
-												window.location.href = msg.action.path;
+											if (msg.action!.path.startsWith('tel:') || msg.action!.path.startsWith('mailto:') || msg.action!.path.startsWith('http')) {
+												window.location.href = msg.action!.path;
 											} else {
-												goto(msg.action.path);
+												goto(msg.action!.path);
 											}
 										}}
 									>

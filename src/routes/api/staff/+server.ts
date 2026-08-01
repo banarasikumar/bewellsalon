@@ -12,11 +12,13 @@ export async function GET() {
 		snapshot.forEach((doc) => {
 			const data = doc.data();
 			const name = data.name || data.displayName;
-			if (data.accountStatus !== 'merged' && name) {
+			if (data.accountStatus !== 'merged' && name && data.onService === true) {
 				staffList.push({
 					id: doc.id,
 					name: name,
-					specialty: data.specialty || ''
+					specialty: data.specialty || '',
+					photoURL: data.photoURL || data.photo || data.avatar || data.image || '',
+					role: data.specialty || data.role || 'Staff'
 				});
 			}
 		});
@@ -27,3 +29,4 @@ export async function GET() {
 		return json({ error: error.message }, { status: 500 });
 	}
 }
+

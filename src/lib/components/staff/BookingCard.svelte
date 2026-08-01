@@ -3,6 +3,7 @@
 	import StatusBadge from '$lib/components/staff/StatusBadge.svelte';
 	import { getElapsedSeconds } from '$lib/stores/serviceTimer';
 	import { auth } from '$lib/firebase';
+	import { Calendar, Clock, Timer } from 'lucide-svelte';
 
 	let {
 		booking,
@@ -267,17 +268,17 @@
 
 			<!-- COMPACT META -->
 			<div class="bc-meta-compact">
-				<div class="meta-item">
-					<span class="meta-lbl">Date</span>
+				<div class="meta-icon-item date-col">
+					<Calendar size={14} color="var(--s-text-tertiary)" />
 					<span class="meta-val">{formatDate(booking.date)}</span>
 				</div>
-				<div class="meta-item">
-					<span class="meta-lbl">Time</span>
+				<div class="meta-icon-item time-col">
+					<Clock size={14} color="var(--s-text-tertiary)" />
 					<span class="meta-val">{formatTime12h(booking.time)}</span>
 				</div>
 				{#if booking.servicesList?.some((s: any) => s.duration)}
-					<div class="meta-item">
-						<span class="meta-lbl">Duration</span>
+					<div class="meta-icon-item duration-col">
+						<Timer size={14} color="var(--s-text-tertiary)" />
 						<span class="meta-val">{formatDuration(booking.servicesList.reduce((a: number, s: any) => a + (s.duration || 0), 0))}</span>
 					</div>
 				{/if}
@@ -308,10 +309,10 @@
 		position: relative;
 		background: var(--s-surface);
 		border-radius: 20px;
-		padding: 20px;
+		padding: 16px;
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: 12px;
 		box-shadow: 
 			0 15px 35px -5px rgba(0, 0, 0, 0.12), 
 			0 5px 15px rgba(0, 0, 0, 0.05),
@@ -507,27 +508,37 @@
 
 	/* --- COMPACT META --- */
 	.bc-meta-compact {
-		display: flex;
-		background: var(--s-bg-primary);
-		padding: 10px 14px;
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		align-items: center;
+		background: var(--s-bg-secondary);
+		padding: 8px 12px;
 		border-radius: 10px;
 		border: 1px solid var(--s-border);
-		gap: 16px;
 		margin-top: 4px;
 	}
 
-	.meta-item {
+	.meta-icon-item {
 		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		flex: 1;
+		align-items: center;
+		gap: 6px;
 	}
 
-	.meta-lbl {
-		font-size: 0.65rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+	.date-col {
+		justify-content: center;
+	}
+
+	.time-col {
+		justify-content: center;
+	}
+
+	.duration-col {
+		justify-content: center;
+	}
+
+	.meta-dot {
 		color: var(--s-text-tertiary);
+		font-size: 0.8rem;
 		font-weight: 700;
 	}
 
@@ -542,9 +553,9 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 12px 16px;
-		border-radius: 12px;
-		background: var(--s-bg-primary);
+		padding: 8px 12px;
+		border-radius: 10px;
+		background: var(--s-bg-secondary);
 		border: 1px solid var(--s-border);
 	}
 

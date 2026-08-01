@@ -112,7 +112,7 @@
 					<Icon size={22} />
 				{/if}
 			</button>
-		{:else}
+		{:else if $headerActions.length > 0}
 			<div style="position: relative;">
 				<button
 					class="admin-header-btn"
@@ -125,7 +125,7 @@
 					<MoreVertical size={22} />
 				</button>
 
-				{#if showMenu && $headerActions.length > 0}
+				{#if showMenu}
 					<div class="admin-header-dropdown">
 						{#each $headerActions as action}
 							<button

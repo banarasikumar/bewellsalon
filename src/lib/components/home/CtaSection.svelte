@@ -10,7 +10,11 @@
 
 			<div class="buttons">
 				<a href="tel:+918928390360" class="btn primary">
-					<span>📞</span> Call Now
+					<span>📞</span>
+					<span class="btn-text-col">
+						<span class="btn-label">Call Now</span>
+						<span class="btn-phone">+91 89283 90360</span>
+					</span>
 				</a>
 				<a href="https://wa.me/918928390360" target="_blank" class="btn secondary">
 					<span>💬</span> WhatsApp
@@ -45,13 +49,13 @@
 
 	.badge {
 		display: inline-block;
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--color-surface, rgba(255, 255, 255, 0.1));
 		padding: 6px 16px;
 		border-radius: var(--radius-full);
 		font-size: 0.9rem;
 		color: var(--color-accent-gold);
 		margin-bottom: 20px;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
 	}
 
 	.title {
@@ -107,15 +111,35 @@
 		box-shadow: var(--shadow-gold);
 	}
 
+	/* Phone number column layout inside Call Now button */
+	.btn-text-col {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		line-height: 1.2;
+	}
+
+	.btn-label {
+		font-size: 1rem;
+		font-weight: 700;
+	}
+
+	.btn-phone {
+		font-size: 0.75rem;
+		font-weight: 500;
+		opacity: 0.8;
+	}
+
 	.btn.secondary {
-		background: rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		color: white;
+		background: var(--color-surface, rgba(255, 255, 255, 0.1));
+		border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.2));
+		color: var(--color-text-primary);
 		backdrop-filter: blur(5px);
 	}
 
 	.btn.secondary:hover {
-		background: rgba(255, 255, 255, 0.2);
+		background: var(--color-surface-hover, rgba(255, 255, 255, 0.2));
+		border-color: var(--color-border-hover, rgba(255, 255, 255, 0.3));
 	}
 
 	.response-time {

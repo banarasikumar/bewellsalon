@@ -1,45 +1,32 @@
 <script lang="ts">
-	import imgPriya from '$lib/assets/stock/professional_beauty__59c2cb84.jpg';
-	import imgMeera from '$lib/assets/stock/professional_beauty__30f1cabb.jpg';
-	import imgAnjali from '$lib/assets/stock/professional_beauty__4b0e7940.jpg';
-	import imgRiya from '$lib/assets/stock/professional_beauty__bd79d0cb.jpg';
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 
-	const staff = [
-		{
-			name: 'Priya Sharma',
-			role: 'Senior Hair Stylist',
-			rating: '4.9',
-			exp: '12+ Years Experience',
-			specialties: ['Hair Coloring', 'Balayage', 'Bridal Hair'],
-			img: imgPriya
-		},
-		{
-			name: 'Meera Patel',
-			role: 'Makeup Artist',
-			rating: '4.8',
-			exp: '8+ Years Experience',
-			specialties: ['Bridal Makeup', 'HD Makeup', 'Party Looks'],
-			img: imgMeera
-		},
-		{
-			name: 'Anjali Singh',
-			role: 'Skin Care Specialist',
-			rating: '4.9',
-			exp: '10+ Years Experience',
-			specialties: ['Facials', 'Skin Treatments', 'Anti-Aging'],
-			img: imgAnjali
-		},
-		{
-			name: 'Riya Gupta',
-			role: 'Nail Art Expert',
-			rating: '4.7',
-			exp: '6+ Years Experience',
-			specialties: ['Gel Nails', 'Nail Art', 'Extensions'],
-			img: imgRiya
-		}
-	];
+	interface StaffMember {
+		id: string;
+		name: string;
+		specialty: string;
+		photoURL: string;
+		role: string;
+	}
 
+	let staff: StaffMember[] = $state([]);
+	let isLoading = $state(true);
 	let scrollContainer: HTMLElement;
+
+	onMount(async () => {
+		try {
+			const res = await fetch('/api/staff');
+			if (res.ok) {
+				const data = await res.json();
+				staff = data.staff || [];
+			}
+		} catch (error) {
+			console.error('[StaffSpotlight] Failed to fetch staff:', error);
+		} finally {
+			isLoading = false;
+		}
+	});
 
 	const scroll = (direction: number) => {
 		if (scrollContainer) {
@@ -47,6 +34,10 @@
 			scrollContainer.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
 		}
 	};
+
+	function bookWithStaff(member: StaffMember) {
+		goto(`/booking?staffId=${encodeURIComponent(member.id)}&staffName=${encodeURIComponent(member.name)}`);
+	}
 </script>
 
 <section class="staff-section container section-padding" id="team">
@@ -59,39 +50,54 @@
 		<p class="section-subtitle">Passionate professionals dedicated to your beauty</p>
 	</div>
 
-	<div class="carousel-wrapper">
-		<button class="nav-btn prev" on:click={() => scroll(-1)}>❮</button>
-
-		<div class="staff-carousel" bind:this={scrollContainer}>
-			{#each staff as member}
-				<div class="staff-card">
-					<div class="photo-wrapper">
-						<img src={member.img} alt={member.name} loading="lazy" />
-					</div>
-					<div class="info">
-						<div class="name-row">
-							<h3>{member.name}</h3>
-							<div class="rating">⭐ {member.rating}</div>
-						</div>
-						<p class="role">{member.role}</p>
-						<div class="exp-badge">{member.exp}</div>
-						<div class="tags">
-							{#each member.specialties as tag}
-								<span class="tag">{tag}</span>
-							{/each}
-						</div>
-						<a
-							href="https://wa.me/918928390360?text=Hi%2C%20I%20want%20to%20book%20with%20{member.name}"
-							target="_blank"
-							class="book-btn">Book with {member.name.split(' ')[0]}</a
-						>
-					</div>
-				</div>
-			{/each}
+	{#if isLoading}
+		<div class="loading-state">
+			<div class="loading-shimmer"></div>
+			<div class="loading-shimmer"></div>
+			<div class="loading-shimmer"></div>
 		</div>
+	{:else if staff.length === 0}
+		<p class="empty-state">Our team info is being updated. Check back soon!</p>
+	{:else}
+		<div class="carousel-wrapper">
+			<button class="nav-btn prev" onclick={() => scroll(-1)}>❮</button>
 
-		<button class="nav-btn next" on:click={() => scroll(1)}>❯</button>
-	</div>
+			<div class="staff-carousel" bind:this={scrollContainer}>
+				{#each staff as member (member.id)}
+					<div class="staff-card">
+						<div class="photo-wrapper">
+							<img 
+								src={member.photoURL || ''} 
+								alt={member.name} 
+								loading="lazy" 
+								style={member.photoURL ? '' : 'display:none;'}
+								referrerpolicy="no-referrer"
+								onerror={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'flex'; }}
+							/>
+							<div class="avatar-fallback" style={member.photoURL ? 'display:none;' : 'display:flex;'}>
+								<span>{member.name.charAt(0).toUpperCase()}</span>
+							</div>
+						</div>
+						<div class="info">
+							<div class="name-row">
+								<h3>{member.name}</h3>
+							</div>
+							<p class="role">{member.role}</p>
+							{#if member.specialty}
+								<div class="specialty-badge">{member.specialty}</div>
+							{/if}
+							<button
+								class="book-btn"
+								onclick={() => bookWithStaff(member)}
+							>Book with {member.name.split(' ')[0]}</button>
+						</div>
+					</div>
+				{/each}
+			</div>
+
+			<button class="nav-btn next" onclick={() => scroll(1)}>❯</button>
+		</div>
+	{/if}
 </section>
 
 <style>
@@ -115,6 +121,30 @@
 		color: var(--color-text-secondary);
 	}
 
+	/* Loading & Empty States */
+	.loading-state {
+		display: flex;
+		gap: 20px;
+		overflow: hidden;
+		padding: 0 16px;
+	}
+	.loading-shimmer {
+		flex: 0 0 280px;
+		height: 380px;
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-lg);
+		animation: shimmer 1.5s ease-in-out infinite alternate;
+	}
+	@keyframes shimmer {
+		0% { opacity: 0.4; }
+		100% { opacity: 0.8; }
+	}
+	.empty-state {
+		text-align: center;
+		color: var(--color-text-secondary);
+		padding: 40px;
+	}
+
 	.carousel-wrapper {
 		position: relative;
 	}
@@ -136,7 +166,7 @@
 		background: var(--color-bg-secondary);
 		border-radius: var(--radius-lg);
 		overflow: hidden;
-		border: 1px solid rgba(255, 255, 255, 0.05);
+		border: 1px solid var(--color-border, rgba(255, 255, 255, 0.05));
 		transition: transform 0.3s;
 		scroll-snap-align: center;
 	}
@@ -162,6 +192,26 @@
 		transform: scale(1.05);
 	}
 
+	/* Fallback avatar when no photo */
+	.avatar-fallback {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%);
+		border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.05));
+	}
+
+	.avatar-fallback span {
+		font-size: 5rem;
+		font-weight: 800;
+		color: var(--color-accent-gold);
+		opacity: 0.7;
+		font-family: var(--font-heading);
+		text-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+	}
+
 	.info {
 		padding: 20px;
 	}
@@ -179,40 +229,20 @@
 		margin: 0;
 	}
 
-	.rating {
-		font-size: 0.9rem;
-		color: #ffd700;
-	}
-
 	.role {
 		color: var(--color-accent-gold);
 		font-size: 0.9rem;
 		margin-bottom: 12px;
 	}
 
-	.exp-badge {
+	.specialty-badge {
 		display: inline-block;
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--color-surface, rgba(255, 255, 255, 0.1));
 		color: var(--color-text-secondary);
 		font-size: 0.75rem;
 		padding: 4px 8px;
 		border-radius: 4px;
-		margin-bottom: 12px;
-	}
-
-	.tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-		margin-bottom: 20px;
-	}
-
-	.tag {
-		background: rgba(212, 175, 55, 0.1);
-		color: var(--color-accent-gold);
-		font-size: 0.7rem;
-		padding: 3px 8px;
-		border-radius: var(--radius-full);
+		margin-bottom: 16px;
 	}
 
 	.book-btn {
@@ -227,6 +257,8 @@
 		font-weight: 600;
 		font-size: 0.9rem;
 		transition: opacity 0.2s;
+		border: none;
+		cursor: pointer;
 	}
 
 	.book-btn:hover {
@@ -262,3 +294,4 @@
 		}
 	}
 </style>
+

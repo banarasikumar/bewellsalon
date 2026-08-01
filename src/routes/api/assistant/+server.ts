@@ -29,6 +29,7 @@ export async function POST({ request }) {
 			return json({ 
 				reply: nlpResult.text,
 				action: nlpResult.action,
+				actions: nlpResult.actions,
 				mapEmbed: nlpResult.mapEmbed
 			});
 		}

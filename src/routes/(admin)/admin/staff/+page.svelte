@@ -363,6 +363,24 @@
 			showToast('Failed to copy ID', 'error');
 		}
 	}
+
+	async function toggleOnService(user: AppUser, e: Event) {
+		e.stopPropagation();
+		
+		const newValue = !user.onService;
+		
+		try {
+			await setDoc(
+				doc(db, 'users', user.id),
+				{ onService: newValue, updatedAt: new Date().toISOString() },
+				{ merge: true }
+			);
+			showToast(`${getUserDisplayName(user)} is now ${newValue ? 'on' : 'off'} service`, 'success');
+		} catch (error) {
+			console.error('Failed to toggle onService:', error);
+			showToast('Failed to change service status', 'error');
+		}
+	}
 </script>
 
 <div class="role-header-row">
@@ -438,14 +456,29 @@
 						{@const phone = getUserPhone(user)}
 						{@const note = memberNote(user)}
 						<div class="role-card admin-card" class:protected-card={isProtectedAdmin(user)}>
+							<div class="service-toggle-container">
+								<span class="service-toggle-label">On service</span>
+								<button
+									class="admin-toggle-btn"
+									class:active={user.onService}
+									onclick={(e) => toggleOnService(user, e)}
+									aria-label={user.onService ? 'Turn off service' : 'Turn on service'}
+								>
+									<div class="admin-toggle-thumb"></div>
+								</button>
+							</div>
 							<div class="role-card-head">
-								{#if photo}
-									<img src={photo} alt={name} class="role-avatar" />
-								{:else}
-									<div class="role-avatar fallback" style="background: {getAvatarColor(name)};">
-										{name.charAt(0).toUpperCase()}
-									</div>
-								{/if}
+								<img 
+									src={photo || ''} 
+									alt={name} 
+									class="role-avatar" 
+									style={photo ? '' : 'display:none;'} 
+									referrerpolicy="no-referrer"
+									onerror={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'flex'; }}
+								/>
+								<div class="role-avatar fallback" style="background: {getAvatarColor(name)}; {photo ? 'display:none;' : ''}">
+									{name.charAt(0).toUpperCase()}
+								</div>
 								<div class="role-card-main">
 									<div class="role-card-title">
 										<h4>{name}</h4>
@@ -555,14 +588,29 @@
 						{@const phone = getUserPhone(user)}
 						{@const note = memberNote(user)}
 						<div class="role-card staff-card">
+							<div class="service-toggle-container">
+								<span class="service-toggle-label">On service</span>
+								<button
+									class="admin-toggle-btn"
+									class:active={user.onService}
+									onclick={(e) => toggleOnService(user, e)}
+									aria-label={user.onService ? 'Turn off service' : 'Turn on service'}
+								>
+									<div class="admin-toggle-thumb"></div>
+								</button>
+							</div>
 							<div class="role-card-head">
-								{#if photo}
-									<img src={photo} alt={name} class="role-avatar" />
-								{:else}
-									<div class="role-avatar fallback" style="background: {getAvatarColor(name)};">
-										{name.charAt(0).toUpperCase()}
-									</div>
-								{/if}
+								<img 
+									src={photo || ''} 
+									alt={name} 
+									class="role-avatar" 
+									style={photo ? '' : 'display:none;'} 
+									referrerpolicy="no-referrer"
+									onerror={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'flex'; }}
+								/>
+								<div class="role-avatar fallback" style="background: {getAvatarColor(name)}; {photo ? 'display:none;' : ''}">
+									{name.charAt(0).toUpperCase()}
+								</div>
 								<div class="role-card-main">
 									<div class="role-card-title">
 										<h4>{name}</h4>
@@ -2071,5 +2119,57 @@
 		background: rgba(108, 93, 211, 0.25);
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
+	}
+
+	.service-toggle-container {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 16px;
+		width: 100%;
+	}
+
+	.service-toggle-label {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--admin-text-secondary);
+	}
+
+	.admin-toggle-btn {
+		width: 44px;
+		height: 24px;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 12px;
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		position: relative;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		padding: 0;
+	}
+
+	.admin-toggle-btn:hover {
+		background: rgba(255, 255, 255, 0.15);
+	}
+
+	.admin-toggle-btn.active {
+		background: var(--admin-accent);
+		border-color: transparent;
+	}
+
+	.admin-toggle-thumb {
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 18px;
+		height: 18px;
+		background: white;
+		border-radius: 50%;
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.admin-toggle-btn.active .admin-toggle-thumb {
+		transform: translateX(20px);
 	}
 </style>

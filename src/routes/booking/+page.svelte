@@ -226,6 +226,17 @@
 			}
 			const data = await res.json();
 			availableStaff = data.staff || [];
+
+			// Auto-select staff from URL query params (e.g. from StaffSpotlight "Book with X")
+			if (browser) {
+				const params = new URLSearchParams(window.location.search);
+				const urlStaffId = params.get('staffId');
+				const urlStaffName = params.get('staffName');
+				if (urlStaffId && availableStaff.some((s: any) => s.id === urlStaffId)) {
+					selectedStaffId = urlStaffId;
+					selectedStaffName = urlStaffName || availableStaff.find((s: any) => s.id === urlStaffId)?.name || 'Staff';
+				}
+			}
 		} catch (error) {
 			console.error('Failed to fetch staff:', error);
 		} finally {
@@ -853,7 +864,7 @@
 													<span class="price-offer">{fmt(item.price)}</span>
 												</div>
 											</div>
-											<button class="btn-remove" on:click={() => cart.remove(item.id)}>
+											<button class="btn-remove" onclick={() => cart.remove(item.id)}>
 												<Trash2 size={16} />
 											</button>
 										</div>
@@ -930,7 +941,20 @@
 											selectedStaffName = staff.name;
 										}}
 									>
-										<span class="staff-avatar" style="background: var(--surface-3);">{staff.name.charAt(0).toUpperCase()}</span>
+										<span class="staff-avatar" style="background: var(--surface-3); {staff.photoURL ? 'padding: 0;' : ''}">
+											<img 
+												src={staff.photoURL || ''} 
+												alt={staff.name} 
+												style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; {staff.photoURL ? '' : 'display:none;'}" 
+												referrerpolicy="no-referrer"
+												onerror={(e) => { 
+													e.currentTarget.style.display = 'none'; 
+													e.currentTarget.nextElementSibling.style.display = 'inline'; 
+													e.currentTarget.parentElement.style.padding = '';
+												}}
+											/>
+											<span style="{staff.photoURL ? 'display:none;' : ''}">{staff.name.charAt(0).toUpperCase()}</span>
+										</span>
 										<span class="staff-name">{staff.name}</span>
 									</button>
 								{/each}

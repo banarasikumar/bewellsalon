@@ -157,6 +157,7 @@ interface Intent {
 	response: (tokens: string[], originalMessage: string) => { 
 		text: string; 
 		action?: { label: string; path: string };
+		actions?: { label: string; path: string }[];
 		mapEmbed?: string;
 	};
 }
@@ -181,7 +182,10 @@ const intents: Intent[] = [
 		keywords: ['contact', 'call', 'phone', 'number'],
 		response: () => ({
 			text: 'You can reach us directly at +91 8928390360, +91 9702243497 or email us at hello@bewellfamilysalon.in. We are here to help!',
-			action: { label: 'Call Now', path: 'tel:+91 8928390360, +91 9702243497' }
+			actions: [
+				{ label: 'Call +91 8928390360', path: 'tel:+918928390360' },
+				{ label: 'Call +91 9702243497', path: 'tel:+919702243497' }
+			]
 		})
 	},
 	{
