@@ -66,6 +66,31 @@
 	let selectedStaffName: string = 'Any available staff';
 	let isLoadingStaff = true;
 
+	const avatarGradients = [
+		'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+		'linear-gradient(135deg, #8A2387 0%, #E94057 50%, #F27121 100%)',
+		'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)',
+		'linear-gradient(135deg, #11998E 0%, #38EF7D 100%)',
+		'linear-gradient(135deg, #FF8008 0%, #FFC837 100%)',
+		'linear-gradient(135deg, #FC466B 0%, #3F5EFB 100%)',
+		'linear-gradient(135deg, #00B4DB 0%, #0083B0 100%)',
+		'linear-gradient(135deg, #F355DA 0%, #6E0DD0 100%)',
+		'linear-gradient(135deg, #FF512F 0%, #DD2476 100%)',
+		'linear-gradient(135deg, #1D976C 0%, #93F9B9 100%)',
+		'linear-gradient(135deg, #DA22FF 0%, #9733EE 100%)',
+		'linear-gradient(135deg, #E52D27 0%, #B31217 100%)'
+	];
+
+	function getAvatarBg(name: string): string {
+		if (!name) return avatarGradients[0];
+		let hash = 0;
+		for (let i = 0; i < name.length; i++) {
+			hash = name.charCodeAt(i) + ((hash << 5) - hash);
+		}
+		const index = Math.abs(hash) % avatarGradients.length;
+		return avatarGradients[index];
+	}
+
 	let selectedDate = '';
 	let selectedTime = '';
 	let userName = '';
@@ -941,7 +966,7 @@
 											selectedStaffName = staff.name;
 										}}
 									>
-										<span class="staff-avatar" style="background: var(--surface-3); {staff.photoURL ? 'padding: 0;' : ''}">
+										<span class="staff-avatar" style="background: {staff.photoURL ? 'var(--surface-3)' : getAvatarBg(staff.name || staff.id)}; {staff.photoURL ? 'padding: 0;' : ''}">
 											<img 
 												src={staff.photoURL || ''} 
 												alt={staff.name} 
@@ -949,11 +974,15 @@
 												referrerpolicy="no-referrer"
 												onerror={(e) => { 
 													e.currentTarget.style.display = 'none'; 
-													e.currentTarget.nextElementSibling.style.display = 'inline'; 
-													e.currentTarget.parentElement.style.padding = '';
+													const sibling = e.currentTarget.nextElementSibling as HTMLElement | null;
+													if (sibling) sibling.style.display = 'inline'; 
+													if (e.currentTarget.parentElement) {
+														e.currentTarget.parentElement.style.padding = '';
+														e.currentTarget.parentElement.style.background = getAvatarBg(staff.name || staff.id);
+													}
 												}}
 											/>
-											<span style="{staff.photoURL ? 'display:none;' : ''}">{staff.name.charAt(0).toUpperCase()}</span>
+											<span style="{staff.photoURL ? 'display:none;' : ''} color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.4);">{staff.name.charAt(0).toUpperCase()}</span>
 										</span>
 										<span class="staff-name">{staff.name}</span>
 									</button>
@@ -1629,17 +1658,32 @@
 
 	/* STAFF SELECTION */
 	.staff-selection-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		overflow-x: auto;
 		gap: 12px;
 		margin-top: 16px;
+		padding: 4px 4px 12px 4px;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+		touch-action: pan-x;
+		scroll-snap-type: x mandatory;
+	}
+
+	.staff-selection-grid::-webkit-scrollbar {
+		display: none;
 	}
 
 	.staff-chip {
+		flex: 0 0 auto;
+		width: 110px;
+		scroll-snap-align: start;
 		background: var(--surface-2);
 		border: 1px solid var(--border-color);
-		border-radius: 12px;
-		padding: 12px 8px;
+		border-radius: 20px;
+		padding: 14px 10px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -1649,14 +1693,15 @@
 	}
 
 	.staff-chip.active {
-		background: rgba(212, 175, 55, 0.1);
+		background: rgba(212, 175, 55, 0.15);
 		border-color: var(--color-gold);
+		border-radius: 20px;
 		box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
 	}
 
 	.staff-avatar {
-		width: 40px;
-		height: 40px;
+		width: 44px;
+		height: 44px;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
@@ -1677,6 +1722,7 @@
 		color: var(--text-primary);
 		text-align: center;
 		line-height: 1.2;
+		word-break: break-word;
 	}
 
 
@@ -3255,16 +3301,31 @@
 
 	/* Select Staff Grid */
 	.staff-selection-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		overflow-x: auto;
 		gap: 12px;
 		margin-top: 16px;
+		padding: 4px 4px 12px 4px;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+		touch-action: pan-x;
+		scroll-snap-type: x mandatory;
+	}
+
+	.staff-selection-grid::-webkit-scrollbar {
+		display: none;
 	}
 
 	.staff-chip {
+		flex: 0 0 auto;
+		width: 110px;
+		scroll-snap-align: start;
 		background: var(--surface-2);
 		border: 1px solid var(--border-color);
-		border-radius: var(--radius-xl);
+		border-radius: 20px;
 		padding: 16px 12px;
 		display: flex;
 		flex-direction: column;
@@ -3285,6 +3346,7 @@
 		background: var(--gradient-gold);
 		border-color: var(--color-accent-gold);
 		color: black;
+		border-radius: 20px;
 		box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
 		transform: translateY(-2px);
 	}
@@ -3312,6 +3374,7 @@
 		font-size: 0.9rem;
 		text-align: center;
 		line-height: 1.2;
+		word-break: break-word;
 	}
 
 	/* Totals Section (Outside Card) */

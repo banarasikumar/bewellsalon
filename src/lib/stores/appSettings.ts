@@ -10,6 +10,9 @@ export interface AppSettings {
 	promoTickerColor1?: string;
 	promoTickerColor2?: string;
 	promoTickerHeight?: number;
+	promoTickerImage?: string;
+	promoTickerMediaType?: 'image' | 'video';
+	promoTickerVideoUrl?: string;
 	specialOffers: Array<{
 		id: number;
 		badge: string;
@@ -30,6 +33,8 @@ export interface AppSettings {
 	menuPdfEnabled: boolean;
 	menuWidgetEnabled: boolean;
 	specialOffersEnabled: boolean;
+	quickActionsEnabled?: boolean;
+	quickActionsPhoneNumber?: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -40,6 +45,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 	promoTickerColor1: '#9333ea',
 	promoTickerColor2: '#db2777',
 	promoTickerHeight: 40,
+	promoTickerImage: '',
+	promoTickerMediaType: 'image',
+	promoTickerVideoUrl: '',
 	specialOffers: [
 		{
 			id: 1,
@@ -79,7 +87,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 	menuPdfUrl: '',
 	menuPdfEnabled: true,
 	menuWidgetEnabled: true,
-	specialOffersEnabled: true
+	specialOffersEnabled: true,
+	quickActionsEnabled: true,
+	quickActionsPhoneNumber: '+918928390360'
 };
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);

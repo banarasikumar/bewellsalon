@@ -2,8 +2,7 @@
 	import { onMount } from 'svelte';
 	import { appSettings, updateAppSetting, initAppSettingsListener } from '$lib/stores/appSettings';
 	import { showToast } from '$lib/stores/toast';
-	import { storage } from '$lib/firebase';
-	import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+	import { upload } from '@vercel/blob/client';
 	import { fade, fly, slide } from 'svelte/transition';
 	import {
 		Save,
@@ -31,13 +30,15 @@
 		X,
 		FileText,
 		Download,
-		Phone
+		Phone,
+		Upload
 	} from 'lucide-svelte';
 	import QuickActions from '$lib/components/home/QuickActions.svelte';
 
 	// Save States
 	let savingAll = $state(false);
 	let savingTicker = $state(false);
+	let savingTickerImage = $state(false);
 	let savingVideo = $state(false);
 	let savingOffers = $state(false);
 	let savingQuickActions = $state(false);
@@ -69,6 +70,9 @@
 	let localTickerColor1 = $state($appSettings.promoTickerColor1 || '#9333ea');
 	let localTickerColor2 = $state($appSettings.promoTickerColor2 || '#db2777');
 	let localTickerHeight = $state($appSettings.promoTickerHeight || 40);
+	let localTickerImage = $state($appSettings.promoTickerImage || '');
+	let localTickerMediaType = $state<'image' | 'video'>($appSettings.promoTickerMediaType || 'image');
+	let localTickerVideoUrl = $state($appSettings.promoTickerVideoUrl || '');
 	let localVideoUrl = $state($appSettings.promoVideoUrl || '');
 	let localVideoEnabled = $state($appSettings.promoVideoEnabled || false);
 	let localMenuWidgetEnabled = $state($appSettings.menuWidgetEnabled ?? true);
@@ -122,6 +126,7 @@
 				localTickerColor1 !== ($appSettings.promoTickerColor1 || '#9333ea') ||
 				localTickerColor2 !== ($appSettings.promoTickerColor2 || '#db2777') ||
 				localTickerHeight !== ($appSettings.promoTickerHeight || 40) ||
+				localTickerImage !== ($appSettings.promoTickerImage || '') ||
 				localMenuWidgetEnabled !== ($appSettings.menuWidgetEnabled ?? true) ||
 				localMenuImageUrl !== ($appSettings.menuImageUrl || '') ||
 				localMenuImageEnabled !== ($appSettings.menuImageEnabled ?? true) ||
@@ -165,6 +170,7 @@
 				localTickerColor1 = $appSettings.promoTickerColor1 || '#9333ea';
 				localTickerColor2 = $appSettings.promoTickerColor2 || '#db2777';
 				localTickerHeight = $appSettings.promoTickerHeight || 40;
+				localTickerImage = $appSettings.promoTickerImage || '';
 				localMenuWidgetEnabled = $appSettings.menuWidgetEnabled ?? true;
 				localMenuImageUrl = $appSettings.menuImageUrl || '';
 				localMenuImageEnabled = $appSettings.menuImageEnabled ?? true;
@@ -260,22 +266,99 @@
 		return 'badge-default';
 	}
 
+	function parseMarqueeYouTubeEmbedUrl(url: string): { embedUrl: string | null; isShorts: boolean; isValid: boolean } {
+		if (!url) return { embedUrl: null, isShorts: false, isValid: true };
+		try {
+			if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+				return { embedUrl: null, isShorts: false, isValid: false };
+			}
+			let videoId = '';
+			let isShorts = false;
+			if (url.includes('/shorts/')) {
+				isShorts = true;
+				const parts = url.split('/shorts/');
+				if (parts[1]) videoId = parts[1].split('?')[0].split('&')[0];
+			} else if (url.includes('youtu.be/')) {
+				const parts = url.split('youtu.be/');
+				if (parts[1]) videoId = parts[1].split('?')[0].split('&')[0];
+			} else if (url.includes('v=')) {
+				const searchParams = new URLSearchParams(url.split('?')[1]);
+				videoId = searchParams.get('v') || '';
+			} else if (url.includes('/embed/')) {
+				const parts = url.split('/embed/');
+				if (parts[1]) videoId = parts[1].split('?')[0].split('&')[0];
+			}
+			if (videoId) {
+				return { embedUrl: `https://www.youtube.com/embed/${videoId}?rel=0`, isShorts, isValid: true };
+			}
+		} catch (e) {
+			console.error(e);
+		}
+		return { embedUrl: null, isShorts: false, isValid: false };
+	}
+
+	const marqueeYtInfo = $derived(parseMarqueeYouTubeEmbedUrl(localTickerVideoUrl));
+
+	function selectMarqueeMediaType(type: 'image' | 'video') {
+		localTickerMediaType = type;
+		if (type === 'video') {
+			localVideoEnabled = false;
+		}
+	}
+
 	// Save Marquee Ticker
 	async function saveTicker() {
 		if (savingTicker) return;
 		savingTicker = true;
-		const success1 = await updateAppSetting('promoTickerText', localTickerText);
-		const success2 = await updateAppSetting('promoTickerEnabled', localTickerEnabled);
-		const success3 = await updateAppSetting('promoTickerColor1', localTickerColor1);
-		const success4 = await updateAppSetting('promoTickerColor2', localTickerColor2);
-		const success5 = await updateAppSetting('promoTickerHeight', localTickerHeight);
+		try {
+			if (localTickerMediaType === 'image' && localTickerImage && localTickerImage.startsWith('data:image/')) {
+				localTickerImage = await uploadDataUrlToStorage(localTickerImage, 'marquee_images');
+			}
+			const success1 = await updateAppSetting('promoTickerText', localTickerText);
+			const success2 = await updateAppSetting('promoTickerEnabled', localTickerEnabled);
+			const success3 = await updateAppSetting('promoTickerColor1', localTickerColor1);
+			const success4 = await updateAppSetting('promoTickerColor2', localTickerColor2);
+			const success5 = await updateAppSetting('promoTickerHeight', localTickerHeight);
+			const success6 = await updateAppSetting('promoTickerImage', localTickerImage);
+			const success7 = await updateAppSetting('promoTickerMediaType', localTickerMediaType);
+			const success8 = await updateAppSetting('promoTickerVideoUrl', localTickerVideoUrl);
 
-		if (success1 && success2 && success3 && success4 && success5) {
-			showToast('Promo Marquee Ticker published successfully!', 'success');
-		} else {
+			if (success1 && success2 && success3 && success4 && success5 && success6 && success7 && success8) {
+				showToast('Promo Marquee Ticker published successfully!', 'success');
+			} else {
+				showToast('Failed to publish marquee ticker.', 'error');
+			}
+		} catch (err) {
+			console.error('Error saving marquee ticker:', err);
 			showToast('Failed to publish marquee ticker.', 'error');
+		} finally {
+			savingTicker = false;
 		}
-		savingTicker = false;
+	}
+
+	// Save Marquee Media (Image / Video)
+	async function saveTickerMedia() {
+		if (savingTickerImage) return;
+		savingTickerImage = true;
+		try {
+			if (localTickerMediaType === 'image' && localTickerImage && localTickerImage.startsWith('data:image/')) {
+				localTickerImage = await uploadDataUrlToStorage(localTickerImage, 'marquee_images');
+			}
+			const success1 = await updateAppSetting('promoTickerMediaType', localTickerMediaType);
+			const success2 = await updateAppSetting('promoTickerImage', localTickerImage);
+			const success3 = await updateAppSetting('promoTickerVideoUrl', localTickerVideoUrl);
+
+			if (success1 && success2 && success3) {
+				showToast(`Marquee ${localTickerMediaType === 'video' ? 'YouTube Video' : '9:16 Image'} media published successfully!`, 'success');
+			} else {
+				showToast('Failed to publish marquee media.', 'error');
+			}
+		} catch (err) {
+			console.error('Error saving marquee media:', err);
+			showToast('Failed to publish marquee media.', 'error');
+		} finally {
+			savingTickerImage = false;
+		}
 	}
 
 	// Reset Marquee Ticker to factory defaults
@@ -285,6 +368,7 @@
 		localTickerColor1 = '#9333ea';
 		localTickerColor2 = '#db2777';
 		localTickerHeight = 40;
+		localTickerImage = '';
 		showToast('Reset marquee settings to default values.', 'info');
 	}
 
@@ -303,7 +387,7 @@
 		savingVideo = false;
 	}
 
-	// Upload base64 data URL to Firebase Storage and get permanent HTTPS URL
+	// Upload base64 data URL to Vercel Blob Storage and get permanent HTTPS URL
 	async function uploadDataUrlToStorage(dataUrl: string, folder: string = 'menu_images'): Promise<string> {
 		if (!dataUrl || !dataUrl.startsWith('data:image/')) {
 			return dataUrl;
@@ -312,12 +396,14 @@
 			const res = await fetch(dataUrl);
 			const blob = await res.blob();
 			const filename = `${folder}/img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.webp`;
-			const imgRef = storageRef(storage, filename);
-			await uploadBytes(imgRef, blob, { contentType: 'image/webp' });
-			const downloadUrl = await getDownloadURL(imgRef);
-			return downloadUrl;
+			const file = new File([blob], filename, { type: 'image/webp' });
+			const newBlob = await upload(file.name, file, {
+				access: 'public',
+				handleUploadUrl: '/api/upload'
+			});
+			return newBlob.url;
 		} catch (err) {
-			console.error('Failed to upload image to Firebase Storage:', err);
+			console.error('Failed to upload image to Vercel Blob Storage:', err);
 			return dataUrl;
 		}
 	}
@@ -611,7 +697,7 @@
 
 	// Interactive Image Cropper Modal State
 	let cropperModalOpen = $state(false);
-	let cropperMode = $state<'offer' | 'menu'>('offer');
+	let cropperMode = $state<'offer' | 'menu' | 'marquee'>('offer');
 	let cropperOfferIndex = $state<number | null>(null);
 	let cropperImageSrc = $state<string>('');
 	let cropperZoom = $state<number>(1);
@@ -631,18 +717,23 @@
 					270 / (cropperNaturalWidth || 270),
 					382 / (cropperNaturalHeight || 382)
 				)
+			: cropperMode === 'marquee'
+			? Math.max(
+					225 / (cropperNaturalWidth || 225),
+					400 / (cropperNaturalHeight || 400)
+				)
 			: Math.max(
 					360 / (cropperNaturalWidth || 360),
 					270 / (cropperNaturalHeight || 270)
 				)
 	);
 
-	let cropperRenderWidth = $derived((cropperNaturalWidth || 360) * cropperBaseScale);
-	let cropperRenderHeight = $derived((cropperNaturalHeight || 270) * cropperBaseScale);
+	let cropperRenderWidth = $derived((cropperNaturalWidth || (cropperMode === 'marquee' ? 225 : 360)) * cropperBaseScale);
+	let cropperRenderHeight = $derived((cropperNaturalHeight || (cropperMode === 'marquee' ? 400 : 270)) * cropperBaseScale);
 
 	function clampCropperOffsets(targetX: number = cropperOffsetX, targetY: number = cropperOffsetY) {
-		const viewportWidth = cropperMode === 'menu' ? 270 : 360;
-		const viewportHeight = cropperMode === 'menu' ? 382 : 270;
+		const viewportWidth = cropperMode === 'menu' ? 270 : cropperMode === 'marquee' ? 225 : 360;
+		const viewportHeight = cropperMode === 'menu' ? 382 : cropperMode === 'marquee' ? 400 : 270;
 
 		const currentW = cropperRenderWidth * cropperZoom;
 		const currentH = cropperRenderHeight * cropperZoom;
@@ -708,10 +799,12 @@
 
 		uploadingPdf = true;
 		try {
-			const pdfRef = storageRef(storage, `menu/salon_menu_${Date.now()}.pdf`);
-			await uploadBytes(pdfRef, file);
-			const downloadUrl = await getDownloadURL(pdfRef);
-			localMenuPdfUrl = downloadUrl;
+			const filename = `menu/salon_menu_${Date.now()}.pdf`;
+			const newBlob = await upload(filename, file, {
+				access: 'public',
+				handleUploadUrl: '/api/upload'
+			});
+			localMenuPdfUrl = newBlob.url;
 			localMenuPdfEnabled = true;
 			showToast('PDF uploaded successfully! Click publish to save.', 'success');
 		} catch (error) {
@@ -766,6 +859,66 @@
 		};
 		reader.readAsDataURL(file);
 		target.value = '';
+	}
+
+	function handleMarqueeImageUpload(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (!file) return;
+
+		if (file.size > 8 * 1024 * 1024) {
+			showToast('File size should be less than 8 MB.', 'error');
+			target.value = '';
+			return;
+		}
+
+		const validFormats = ['image/jpeg', 'image/png', 'image/webp'];
+		if (!validFormats.includes(file.type)) {
+			showToast('Invalid format. Use JPG, PNG or WEBP.', 'error');
+			target.value = '';
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const rawDataUrl = e.target?.result as string;
+
+			const img = new Image();
+			img.onload = () => {
+				cropperMode = 'marquee';
+				cropperNaturalWidth = img.naturalWidth || 225;
+				cropperNaturalHeight = img.naturalHeight || 400;
+				cropperImageSrc = rawDataUrl;
+				cropperOfferIndex = null;
+				cropperZoom = 1;
+				cropperOffsetX = 0;
+				cropperOffsetY = 0;
+				cropperModalOpen = true;
+				clampCropperOffsets(0, 0);
+			};
+			img.src = rawDataUrl;
+		};
+		reader.readAsDataURL(file);
+		target.value = '';
+	}
+
+	function openCropperForMarqueeImage() {
+		if (!localTickerImage) return;
+
+		const img = new Image();
+		img.onload = () => {
+			cropperMode = 'marquee';
+			cropperNaturalWidth = img.naturalWidth || 225;
+			cropperNaturalHeight = img.naturalHeight || 400;
+			cropperImageSrc = localTickerImage;
+			cropperOfferIndex = null;
+			cropperZoom = 1;
+			cropperOffsetX = 0;
+			cropperOffsetY = 0;
+			cropperModalOpen = true;
+			clampCropperOffsets(0, 0);
+		};
+		img.src = localTickerImage;
 	}
 
 	function openCropperForCurrentOffer(offerIndex: number) {
@@ -860,15 +1013,15 @@
 		const img = new Image();
 		img.crossOrigin = 'anonymous';
 		img.onload = () => {
-			const canvasWidth = cropperMode === 'menu' ? 397 : 1200;
-			const canvasHeight = cropperMode === 'menu' ? 562 : 900;
+			const canvasWidth = cropperMode === 'menu' ? 397 : cropperMode === 'marquee' ? 900 : 1200;
+			const canvasHeight = cropperMode === 'menu' ? 562 : cropperMode === 'marquee' ? 1600 : 900;
 			const canvas = document.createElement('canvas');
 			canvas.width = canvasWidth;
 			canvas.height = canvasHeight;
 			const ctx = canvas.getContext('2d');
 			if (!ctx) return;
 
-			const canvasScale = cropperMode === 'menu' ? canvasWidth / 270 : canvasWidth / 360;
+			const canvasScale = cropperMode === 'menu' ? canvasWidth / 270 : cropperMode === 'marquee' ? canvasWidth / 225 : canvasWidth / 360;
 
 			const canvasBaseScale = Math.max(
 				canvasWidth / (img.naturalWidth || canvasWidth),
@@ -889,6 +1042,8 @@
 				const croppedUrl = canvas.toDataURL('image/webp', quality);
 				if (cropperMode === 'menu') {
 					localMenuImageUrl = croppedUrl;
+				} else if (cropperMode === 'marquee') {
+					localTickerImage = croppedUrl;
 				} else if (cropperOfferIndex !== null) {
 					localOffers[cropperOfferIndex].image = croppedUrl;
 					localOffers[cropperOfferIndex].rawImage = cropperImageSrc;
@@ -899,6 +1054,8 @@
 				const croppedUrl = canvas.toDataURL('image/jpeg', quality);
 				if (cropperMode === 'menu') {
 					localMenuImageUrl = croppedUrl;
+				} else if (cropperMode === 'marquee') {
+					localTickerImage = croppedUrl;
 				} else if (cropperOfferIndex !== null) {
 					localOffers[cropperOfferIndex].image = croppedUrl;
 					localOffers[cropperOfferIndex].rawImage = cropperImageSrc;
@@ -1082,25 +1239,27 @@
 			<!-- SECTION 1: SCROLLING MARQUEE TICKER WIDGET -->
 			<div class="accordion-widget-card glass-panel marquee-border {activeSection === 'marquee' ? 'expanded' : 'collapsed'}">
 				<!-- WIDGET HEADER BAR (Click to Expand / Collapse) -->
-				<button class="widget-header-bar" onclick={() => toggleSection('marquee')}>
-					<div class="widget-header-left">
-						<div class="panel-icon purple">
-							<Sparkles size="20" />
+				<div class="widget-header-bar">
+					<button class="widget-expand-btn" onclick={() => toggleSection('marquee')} aria-expanded={activeSection === 'marquee'}>
+						<div class="widget-header-left">
+							<div class="panel-icon purple">
+								<Sparkles size="20" />
+							</div>
+							<div class="widget-title-box">
+								<h2>Scrolling Announcement Marquee</h2>
+							</div>
 						</div>
-						<div class="widget-title-box">
-							<h2>Scrolling Announcement Marquee</h2>
-						</div>
-					</div>
+					</button>
 
 					<div class="widget-header-right">
-						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
+						<div class="header-toggle-wrap">
 							<label class="toggle-switch-wrap" title="Toggle Marquee Banner ON/OFF">
 								<input type="checkbox" bind:checked={localTickerEnabled} />
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
 					</div>
-				</button>
+				</div>
 
 				<!-- EXPANDABLE CONTENT BODY -->
 				{#if activeSection === 'marquee'}
@@ -1214,6 +1373,147 @@
 							</div>
 						</div>
 
+						<!-- DEDICATED ANNOUNCEMENT MEDIA SELECTOR (IMAGE OR YOUTUBE VIDEO) -->
+						<div style="margin-top: 24px; margin-bottom: 24px; background: rgba(147,51,234,0.03); padding: 20px; border-radius: 16px; border: 1px dashed rgba(147,51,234,0.25);">
+							<!-- MEDIA TYPE TAB SELECTOR -->
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+								<div>
+									<h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+										<ImageIcon size="18" color="#9333ea" />
+										<span>Dedicated Page Media Spotlight</span>
+									</h4>
+									<p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">
+										Select whether customers see a 9:16 Image Poster or a YouTube Video when tapping the announcement text.
+									</p>
+								</div>
+
+								<!-- TAB BUTTONS -->
+								<div style="display: flex; background: #ffffff; padding: 4px; border-radius: 12px; border: 1px solid #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+									<button
+										type="button"
+										class="preset-chip"
+										style="border-radius: 8px; font-weight: 700; padding: 6px 14px; {localTickerMediaType === 'image' ? 'background: #9333ea; color: #ffffff;' : 'background: transparent; color: #64748b;'}"
+										onclick={() => selectMarqueeMediaType('image')}
+									>
+										🖼️ 9:16 Image Poster
+									</button>
+									<button
+										type="button"
+										class="preset-chip"
+										style="border-radius: 8px; font-weight: 700; padding: 6px 14px; {localTickerMediaType === 'video' ? 'background: #9333ea; color: #ffffff;' : 'background: transparent; color: #64748b;'}"
+										onclick={() => selectMarqueeMediaType('video')}
+									>
+										▶️ YouTube Video
+									</button>
+								</div>
+							</div>
+
+							{#if localTickerMediaType === 'image'}
+								<!-- 9:16 IMAGE UPLOAD & CROPPER SUB-SECTION -->
+								<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+									<div style="flex: 1; min-width: 240px;">
+										<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
+											<label class="btn btn-outline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+												<Upload size="15" />
+												<span>{localTickerImage ? 'Change 9:16 Image' : 'Upload 9:16 Image'}</span>
+												<input type="file" accept="image/jpeg,image/png,image/webp" onchange={handleMarqueeImageUpload} style="display: none;" />
+											</label>
+											
+											{#if localTickerImage}
+												<button type="button" class="btn btn-outline" onclick={openCropperForMarqueeImage} title="Re-crop / position image">
+													<Crop size="15" />
+													<span>Crop / Position</span>
+												</button>
+												<button type="button" class="btn btn-outline" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" onclick={() => (localTickerImage = '')} title="Remove Image">
+													<Trash2 size="15" />
+													<span>Remove</span>
+												</button>
+												<button type="button" class="btn btn-save-sm" style="background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);" onclick={saveTickerMedia} disabled={savingTickerImage}>
+													{#if savingTickerImage}
+														<div class="spinner-sm"></div>
+														<span>Publishing...</span>
+													{:else}
+														<Save size="15" />
+														<span>Publish 9:16 Image</span>
+													{/if}
+												</button>
+											{/if}
+										</div>
+									</div>
+
+									{#if localTickerImage}
+										<div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+											<div style="width: 90px; aspect-ratio: 9 / 16; border-radius: 12px; overflow: hidden; border: 2px solid #9333ea; box-shadow: 0 4px 12px rgba(147,51,234,0.25); background: #000;">
+												<img src={localTickerImage} alt="9:16 Marquee Banner Preview" style="width: 100%; height: 100%; object-fit: cover;" />
+											</div>
+											<span style="font-size: 10.5px; font-weight: 800; color: #9333ea;">9:16 Cropped</span>
+										</div>
+									{/if}
+								</div>
+							{:else}
+								<!-- YOUTUBE VIDEO LINK SUB-SECTION -->
+								<div style="display: flex; flex-direction: column; gap: 14px;">
+									<div class="input-group" style="margin-bottom: 0;">
+										<div class="input-header">
+											<label for="marquee-video-url-input" style="font-size: 12.5px; font-weight: 700; color: #0f172a;">YouTube Video Link (Shorts or Widescreen)</label>
+											<span class="char-count" style="font-size: 11px; color: #64748b;">Only YouTube links permitted</span>
+										</div>
+										<div class="input-with-icon">
+											<Play size="18" class="field-icon" />
+											<input
+												id="marquee-video-url-input"
+												type="text"
+												class="form-input indented"
+												bind:value={localTickerVideoUrl}
+												placeholder="https://www.youtube.com/shorts/... or https://www.youtube.com/watch?v=..."
+											/>
+										</div>
+									</div>
+
+									{#if !marqueeYtInfo.isValid}
+										<div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 10px 14px; color: #dc2626; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+											<AlertCircle size="16" />
+											<span>Only valid YouTube video links are allowed (e.g. youtube.com/watch?v=... or youtube.com/shorts/...).</span>
+										</div>
+									{/if}
+
+									<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+										<div style="font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px;">
+											<Tv size="15" color="#9333ea" />
+											<span>Auto-detects YouTube Shorts (9:16) vs Landscape (16:9).</span>
+										</div>
+
+										<button type="button" class="btn btn-save-sm" style="background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);" onclick={saveTickerMedia} disabled={savingTickerImage || !marqueeYtInfo.isValid}>
+											{#if savingTickerImage}
+												<div class="spinner-sm"></div>
+												<span>Publishing Video...</span>
+											{:else}
+												<Save size="15" />
+												<span>Publish YouTube Video</span>
+											{/if}
+										</button>
+									</div>
+
+									<!-- Live YouTube Embed Preview -->
+									{#if marqueeYtInfo.embedUrl}
+										<div style="margin-top: 10px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+											<div style="font-size: 11px; font-weight: 800; color: #9333ea; letter-spacing: 0.5px;">LIVE EMBED PREVIEW ({marqueeYtInfo.isShorts ? '9:16 Shorts' : '16:9 Landscape'})</div>
+											<div style="width: 100%; max-width: {marqueeYtInfo.isShorts ? '220px' : '380px'}; aspect-ratio: {marqueeYtInfo.isShorts ? '9/16' : '16/9'}; border-radius: 14px; overflow: hidden; border: 2px solid #9333ea; box-shadow: 0 8px 24px rgba(147,51,234,0.25); background: #000;">
+												<iframe
+													src={marqueeYtInfo.embedUrl}
+													title="Marquee Video Preview"
+													frameborder="0"
+													allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+													allowfullscreen
+													style="width: 100%; height: 100%; border: none;"
+												></iframe>
+											</div>
+										</div>
+									{/if}
+								</div>
+							{/if}
+						</div>
+
 						<!-- Bottom Right Corner Publish Bar -->
 						<div class="widget-footer-bar" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
 							<button type="button" class="btn btn-outline" onclick={resetTickerDefaults} title="Reset marquee settings to default values">
@@ -1237,24 +1537,27 @@
 			<!-- SECTION 2: QUICK ACTIONS WIDGET -->
 			<div class="accordion-widget-card glass-panel {activeSection === 'quick-actions' ? 'expanded' : 'collapsed'}">
 				<!-- WIDGET HEADER BAR (Click to Expand / Collapse) -->
-				<button class="widget-header-bar" onclick={() => toggleSection('quick-actions')}>
-					<div class="widget-header-left">
-						<div class="panel-icon gold">
-							<Zap size="20" />
+				<div class="widget-header-bar">
+					<button class="widget-expand-btn" onclick={() => toggleSection('quick-actions')} aria-expanded={activeSection === 'quick-actions'}>
+						<div class="widget-header-left">
+							<div class="panel-icon gold">
+								<Zap size="20" />
+							</div>
+							<div class="widget-title-box">
+								<h2>Quick Actions Settings</h2>
+							</div>
 						</div>
-						<div class="widget-title-box">
-							<h2>Quick Actions Settings</h2>
-						</div>
-					</div>
+					</button>
+
 					<div class="widget-header-right">
-						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
+						<div class="header-toggle-wrap">
 							<label class="toggle-switch-wrap" title="Toggle Quick Actions ON/OFF">
 								<input type="checkbox" bind:checked={localQuickActionsEnabled} />
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
 					</div>
-				</button>
+				</div>
 
 				<!-- EXPANDABLE CONTENT BODY -->
 				{#if activeSection === 'quick-actions'}
@@ -1317,25 +1620,27 @@
 
 			<!-- SECTION: MENU IMAGE WIDGET -->
 			<div class="accordion-widget-card glass-panel menu-border {activeSection === 'menu' ? 'expanded' : 'collapsed'}">
-				<button class="widget-header-bar" onclick={() => toggleSection('menu')}>
-					<div class="widget-header-left">
-						<div class="panel-icon teal">
-							<ImageIcon size="20" />
+				<div class="widget-header-bar">
+					<button class="widget-expand-btn" onclick={() => toggleSection('menu')} aria-expanded={activeSection === 'menu'}>
+						<div class="widget-header-left">
+							<div class="panel-icon teal">
+								<ImageIcon size="20" />
+							</div>
+							<div class="widget-title-box">
+								<h2>Salon Menu Image</h2>
+							</div>
 						</div>
-						<div class="widget-title-box">
-							<h2>Salon Menu Image</h2>
-						</div>
-					</div>
+					</button>
 
 					<div class="widget-header-right">
-						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
+						<div class="header-toggle-wrap">
 							<label class="toggle-switch-wrap" title="Toggle Master Salon Menu Widget ON/OFF">
 								<input type="checkbox" bind:checked={localMenuWidgetEnabled} />
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
 					</div>
-				</button>
+				</div>
 
 				{#if activeSection === 'menu'}
 					<div class="accordion-body" in:slide={{ duration: 250 }} out:slide={{ duration: 200 }}>
@@ -1473,29 +1778,47 @@
 			<!-- SECTION 2: PROMOTIONAL VIDEO AD SPOTLIGHT WIDGET -->
 			<div class="accordion-widget-card glass-panel video-border {activeSection === 'video' ? 'expanded' : 'collapsed'}">
 				<!-- WIDGET HEADER BAR (Click to Expand / Collapse) -->
-				<button class="widget-header-bar" onclick={() => toggleSection('video')}>
-					<div class="widget-header-left">
-						<div class="panel-icon orange">
-							<Tv size="20" />
+				<div class="widget-header-bar">
+					<button class="widget-expand-btn" onclick={() => toggleSection('video')} aria-expanded={activeSection === 'video'}>
+						<div class="widget-header-left">
+							<div class="panel-icon orange">
+								<Tv size="20" />
+							</div>
+							<div class="widget-title-box">
+								<h2>Promotional Video Ad Spotlight</h2>
+							</div>
 						</div>
-						<div class="widget-title-box">
-							<h2>Promotional Video Ad Spotlight</h2>
-						</div>
-					</div>
+					</button>
 
 					<div class="widget-header-right">
-						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
-							<label class="toggle-switch-wrap" title="Toggle Video Spotlight ON/OFF">
-								<input type="checkbox" bind:checked={localVideoEnabled} />
+						<div class="header-toggle-wrap">
+							<label
+								class="toggle-switch-wrap"
+								class:opacity-50={localTickerMediaType === 'video'}
+								title={localTickerMediaType === 'video' ? 'Disabled: Marquee Video Mode is active. Both video spotlight widgets cannot be enabled simultaneously.' : 'Toggle Video Spotlight ON/OFF'}
+							>
+								<input
+									type="checkbox"
+									bind:checked={localVideoEnabled}
+									disabled={localTickerMediaType === 'video'}
+								/>
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
 					</div>
-				</button>
+				</div>
 
 				<!-- EXPANDABLE CONTENT BODY -->
 				{#if activeSection === 'video'}
 					<div class="accordion-body" in:slide={{ duration: 250 }} out:slide={{ duration: 200 }}>
+						{#if localTickerMediaType === 'video'}
+							<div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; color: #d97706;">
+								<AlertCircle size="20" />
+								<span style="font-size: 12.5px; font-weight: 600;">
+									Marquee Video mode is active in Section 1. Promotional Video Ad Spotlight is disabled so both video spotlight widgets cannot be active simultaneously.
+								</span>
+							</div>
+						{/if}
 						<div class="section-controls-top">
 							<p class="section-desc">Embed an exciting YouTube promotional video ad on the customer homepage.</p>
 						</div>
@@ -1564,25 +1887,27 @@
 			<!-- SECTION 3: FEATURED SPECIAL OFFER CARDS STUDIO WIDGET -->
 			<div class="accordion-widget-card glass-panel offers-border {activeSection === 'offers' ? 'expanded' : 'collapsed'}">
 				<!-- WIDGET HEADER BAR (Click to Expand / Collapse) -->
-				<button class="widget-header-bar" onclick={() => toggleSection('offers')}>
-					<div class="widget-header-left">
-						<div class="panel-icon gold">
-							<TrendingUp size="20" />
+				<div class="widget-header-bar">
+					<button class="widget-expand-btn" onclick={() => toggleSection('offers')} aria-expanded={activeSection === 'offers'}>
+						<div class="widget-header-left">
+							<div class="panel-icon gold">
+								<TrendingUp size="20" />
+							</div>
+							<div class="widget-title-box">
+								<h2>Featured Deal Cards Studio</h2>
+							</div>
 						</div>
-						<div class="widget-title-box">
-							<h2>Featured Deal Cards Studio</h2>
-						</div>
-					</div>
+					</button>
 
 					<div class="widget-header-right">
-						<div class="header-toggle-wrap" onclick={(e) => e.stopPropagation()} role="presentation">
+						<div class="header-toggle-wrap">
 							<label class="toggle-switch-wrap" title="Toggle Featured Deal Cards ON/OFF">
 								<input type="checkbox" bind:checked={localSpecialOffersEnabled} />
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
 					</div>
-				</button>
+				</div>
 
 				<!-- EXPANDABLE CONTENT BODY -->
 				{#if activeSection === 'offers'}
@@ -2030,6 +2355,8 @@
 					<p class="cropper-hint">
 						{#if cropperMode === 'menu'}
 							Drag image to position inside A4 portrait frame. Adjust scale ruler to zoom in/out.
+						{:else if cropperMode === 'marquee'}
+							Drag image to position inside 9:16 vertical poster frame. Adjust scale ruler to zoom in/out.
 						{:else}
 							Drag image to position inside 4:3 deal card frame. Adjust scale ruler to zoom in/out.
 						{/if}
@@ -2042,6 +2369,8 @@
 							<span class="res-value gold">
 								{#if cropperMode === 'menu'}
 									397 × 562 px (A4)
+								{:else if cropperMode === 'marquee'}
+									900 × 1600 px (9:16 Vertical)
 								{:else}
 									1200 × 900 px (4:3 HD)
 								{/if}
@@ -2056,6 +2385,8 @@
 								{:else}
 									<span class="res-badge orange">Auto-Fitted</span>
 								{/if}
+							{:else if cropperMode === 'marquee'}
+								<span class="res-badge green">9:16 Flexible</span>
 							{:else}
 								{#if cropperNaturalWidth >= 1200 && cropperNaturalHeight >= 900}
 									<span class="res-badge green">HD Quality</span>
@@ -2070,7 +2401,7 @@
 					<div class="crop-viewport-wrapper">
 						<div
 							class="crop-viewport-box"
-							style="width: {cropperMode === 'menu' ? 270 : 360}px; height: {cropperMode === 'menu' ? 382 : 270}px;"
+							style="width: {cropperMode === 'menu' ? 270 : cropperMode === 'marquee' ? 225 : 360}px; height: {cropperMode === 'menu' ? 382 : cropperMode === 'marquee' ? 400 : 270}px;"
 							onmousedown={handleCropperMouseDown}
 							onmousemove={handleCropperMouseMove}
 							onmouseup={handleCropperMouseUp}
@@ -2096,6 +2427,8 @@
 								<span class="crop-aspect-badge">
 									{#if cropperMode === 'menu'}
 										A4 Menu Portrait (397×562)
+									{:else if cropperMode === 'marquee'}
+										9 : 16 Vertical Poster (900×1600)
 									{:else}
 										4 : 3 Deal Card Frame (1200×900 HD)
 									{/if}
@@ -2444,9 +2777,19 @@
 		padding: 20px 24px;
 		background: transparent;
 		border: none;
-		cursor: pointer;
 		text-align: left;
 		transition: background 0.2s ease;
+	}
+
+	.widget-expand-btn {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		background: transparent;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		text-align: left;
 	}
 
 	.widget-header-bar:hover {

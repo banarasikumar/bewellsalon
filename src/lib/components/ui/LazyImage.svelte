@@ -10,19 +10,33 @@
 	export let loading: 'lazy' | 'eager' = 'lazy';
 
 	let isLoaded = false;
+	let hasError = false;
 
 	function handleLoad() {
 		isLoaded = true;
+	}
+
+	function handleError() {
+		hasError = true;
+	}
+
+	// Trigger error state immediately if src is falsy
+	$: if (!src) {
+		hasError = true;
 	}
 </script>
 
 <div class="image-wrapper {className}" style="width: {width}; height: {height};">
 	<!-- Place holder / Skeleton -->
-	{#if !isLoaded}
+	{#if !isLoaded && !hasError}
 		<div class="skeleton"></div>
 	{/if}
 
-	<img {src} {alt} {loading} class:loaded={isLoaded} on:load={handleLoad} draggable="false" />
+	{#if src}
+		<img {src} {alt} {loading} class:loaded={isLoaded || hasError} on:load={handleLoad} on:error={handleError} draggable="false" />
+	{:else}
+		<div class="fallback-icon"></div>
+	{/if}
 </div>
 
 <style>

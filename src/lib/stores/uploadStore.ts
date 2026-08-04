@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
-import { storage, db } from '$lib/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { db } from '$lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { upload } from '@vercel/blob/client';
 
 export type UploadStatus = 'pending' | 'uploading' | 'completed' | 'error';
 
@@ -22,7 +22,7 @@ function createUploadStore() {
 		subscribe,
 		addUpload: (
 			file: File,
-			storagePath: string,
+			storagePath: string, // Kept for API compatibility, though Vercel Blob handles naming automatically
 			docPathToUpdate: string,
 			fieldToUpdate: string,
 			onComplete?: (url: string) => void
@@ -37,96 +37,51 @@ function createUploadStore() {
 			};
 
 			update((items) => [newItem, ...items]);
+			update((items) => items.map((item) => (item.id === id ? { ...item, status: 'uploading' } : item)));
 
-			const storageRef = ref(storage, storagePath);
-			const uploadTask = uploadBytesResumable(storageRef, file);
+			// Start the upload asynchronously
+			(async () => {
+				try {
+					const newBlob = await upload(file.name, file, {
+						access: 'public',
+						handleUploadUrl: '/api/upload',
+						onUploadProgress: (progressEvent) => {
+							update((items) => 
+								items.map((item) => (item.id === id ? { ...item, progress: progressEvent.percentage } : item))
+							);
+						}
+					});
 
-			let timeoutId: ReturnType<typeof setTimeout>;
-			const resetTimeout = () => {
-				if (timeoutId) clearTimeout(timeoutId);
-				timeoutId = setTimeout(() => {
-					uploadTask.cancel();
+					// Update firestore document
+					if (docPathToUpdate) {
+						await updateDoc(doc(db, docPathToUpdate), {
+							[fieldToUpdate]: newBlob.url,
+							isActive: true // Make active when image is uploaded successfully
+						});
+					}
+
 					update((items) =>
 						items.map((item) =>
-							item.id === id ? { ...item, status: 'error', error: 'Upload taking too long. Failed.' } : item
+							item.id === id ? { ...item, status: 'completed', progress: 100, downloadUrl: newBlob.url } : item
 						)
 					);
-				}, 30000);
-			};
-			resetTimeout();
 
-			update((items) =>
-				items.map((item) => (item.id === id ? { ...item, status: 'uploading' } : item))
-			);
-
-			uploadTask.on(
-				'state_changed',
-				(snapshot) => {
-					resetTimeout();
-					const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-					update((items) => items.map((item) => (item.id === id ? { ...item, progress } : item)));
-				},
-				(error: any) => {
-					clearTimeout(timeoutId);
-					const code = error?.code || '';
-					let userMessage = error.message;
-					if (code === 'storage/unauthorized') {
-						userMessage = 'Permission denied. Check Firebase Storage rules.';
-					} else if (code === 'storage/canceled') {
-						// Don't overwrite the timeout message if we cancelled it
-						userMessage = 'Upload was cancelled.';
-					} else if (code === 'storage/unknown') {
-						userMessage = 'Upload failed. Firebase Storage may not be enabled for this project.';
-					} else if (
-						code.includes('storage/bucket-not-found') ||
-						code.includes('storage/invalid-url')
-					) {
-						userMessage = 'Storage bucket not found. Firebase Storage needs to be set up.';
-					}
-					console.error(`[UploadStore] Upload failed (${code}):`, error);
-					update((items) => {
-						return items.map((item) => {
-							if (item.id === id) {
-								// Keep the existing error if it was a timeout
-								const finalMessage =
-									item.error && item.error.includes('taking too long')
-										? item.error
-										: userMessage;
-								return { ...item, status: 'error', error: finalMessage };
-							}
-							return item;
-						});
+					if (onComplete) onComplete(newBlob.url);
+				} catch (err: any) {
+					console.error('[UploadStore] Upload failed:', err);
+					const userMessage = err.message || 'An error occurred while uploading.';
+					
+					import('$lib/stores/toast').then(({ showToast }) => {
+						showToast(userMessage, 'error');
 					});
-				},
-				async () => {
-					clearTimeout(timeoutId);
-					try {
-						const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-						// Update firestore document
-						if (docPathToUpdate) {
-							await updateDoc(doc(db, docPathToUpdate), {
-								[fieldToUpdate]: downloadUrl,
-								isActive: true // Make active when image is uploaded successfully
-							});
-						}
 
-						update((items) =>
-							items.map((item) =>
-								item.id === id ? { ...item, status: 'completed', progress: 100, downloadUrl } : item
-							)
-						);
-
-						if (onComplete) onComplete(downloadUrl);
-					} catch (err: any) {
-						console.error('[UploadStore] Post-upload update failed:', err);
-						update((items) =>
-							items.map((item) =>
-								item.id === id ? { ...item, status: 'error', error: err.message } : item
-							)
-						);
-					}
+					update((items) =>
+						items.map((item) =>
+							item.id === id ? { ...item, status: 'error', error: userMessage } : item
+						)
+					);
 				}
-			);
+			})();
 
 			return id;
 		},
@@ -136,3 +91,4 @@ function createUploadStore() {
 }
 
 export const uploadStore = createUploadStore();
+

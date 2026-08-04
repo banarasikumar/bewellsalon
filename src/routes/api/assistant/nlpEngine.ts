@@ -173,7 +173,7 @@ const intents: Intent[] = [
 		keywords: ['location', 'address', 'where', 'shop', 'kaha', 'kahan', 'kidhar'],
 		response: () => ({
 			text: 'Our salon is located at:\nShop 2/3, Master Niwas, Quarry Rd, near Mangatram petrol pump, Ganesh Nagar, Bhandup West, Mumbai, Maharashtra 400078.\n\nWe look forward to seeing you!',
-			action: { label: 'Get Directions', path: 'https://maps.app.goo.gl/v45B3sD3BuPLpftr6' },
+			action: { label: 'Get Directions', path: 'https://maps.app.goo.gl/eFfiqqZ46m4HrXCy6' },
 			mapEmbed: 'https://maps.google.com/maps?q=Bewell%20Family%20Salon%20Tattoos%2C%20Bhandup%20West%2C%20Mumbai&t=&z=17&ie=UTF8&iwloc=B&output=embed'
 		})
 	},

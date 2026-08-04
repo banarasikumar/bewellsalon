@@ -208,13 +208,8 @@
 			}
 
 			if (needsBackgroundUpload && imageFile) {
-				const ext = imageFile.name.split('.').pop() || 'jpg';
-				const safeName = name.trim().replace(/\s+/g, '_');
-				const newFileName = `${safeName}_${Date.now()}.${ext}`;
-				const renamedFile = new File([imageFile], newFileName, { type: imageFile.type });
-
-				const storagePath = `services/${newFileName}`;
-				uploadStore.addUpload(renamedFile, storagePath, docRefPath, 'image');
+				const storagePath = `services/${imageFile.name}`;
+				uploadStore.addUpload(imageFile, storagePath, docRefPath, 'image');
 				showToast('Image uploading in background...', 'success');
 			}
 

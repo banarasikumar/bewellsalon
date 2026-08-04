@@ -57,12 +57,36 @@
 		</div>
 	</div>
 
-	<div class="address-card">
-		<div class="address-icon">📍</div>
-		<address>
-			<strong>Bewell Family Salon</strong><br />
-			Shop 2/3, Master Niwas, Quarry Rd,<br />near Mangatram petrol pump, Ganesh Nagar, Bhandup West, Mumbai, Maharashtra 400078
-		</address>
+	<div class="address-container">
+		<div class="address-card">
+			<div class="address-icon">📍</div>
+			<address>
+				<strong>Bewell Family Salon</strong><br />
+				Shop 2/3, Master Niwas, Quarry Rd,<br />near Mangatram petrol pump, Ganesh Nagar, Bhandup West, Mumbai, Maharashtra 400078
+			</address>
+		</div>
+
+		<div class="map-wrapper">
+			<iframe
+				title="Bewell Family Salon Location Map"
+				src="https://maps.google.com/maps?q=Bewell%20Family%20Salon%20Tattoos%2C%20Bhandup%20West%2C%20Mumbai&t=&z=17&ie=UTF8&iwloc=B&output=embed"
+				width="100%"
+				height="260"
+				style="border:0; border-radius: 16px;"
+				allowfullscreen
+				loading="lazy"
+			></iframe>
+			<div class="map-action">
+				<a
+					href="https://maps.app.goo.gl/eFfiqqZ46m4HrXCy6"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="get-directions-btn"
+				>
+					Get Directions
+				</a>
+			</div>
+		</div>
 	</div>
 </section>
 
@@ -184,15 +208,23 @@
 		color: var(--color-accent-gold);
 	}
 
+	.address-container {
+		max-width: 600px;
+		margin: 0 auto;
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+
 	.address-card {
 		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid rgba(255, 255, 255, 0.05);
 		border-radius: var(--radius-md);
 		padding: 20px;
 		display: flex;
 		align-items: center;
 		gap: 15px;
-		max-width: 500px;
-		margin: 0 auto;
+		width: 100%;
 	}
 
 	.address-icon {
@@ -210,5 +242,43 @@
 		color: var(--color-text-primary);
 		display: block;
 		margin-bottom: 4px;
+	}
+
+	.map-wrapper {
+		background: rgba(255, 255, 255, 0.02);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 20px;
+		padding: 12px;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	}
+
+	.map-action {
+		display: flex;
+		justify-content: flex-end;
+	}
+
+	.get-directions-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: linear-gradient(135deg, var(--color-accent-gold) 0%, #b89628 100%);
+		color: #000;
+		font-weight: 700;
+		font-size: 0.88rem;
+		padding: 10px 20px;
+		border-radius: 12px;
+		text-decoration: none;
+		transition: all 0.2s ease;
+		box-shadow: 0 2px 6px rgba(212, 175, 55, 0.12);
+	}
+
+	.get-directions-btn:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 3px 10px rgba(212, 175, 55, 0.2);
+		color: #000;
 	}
 </style>

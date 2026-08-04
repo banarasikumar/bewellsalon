@@ -52,9 +52,8 @@
 
 {#if isEnabled}
 	<a
-		href="#special-offers"
+		href="/announcement"
 		class="promo-ticker"
-		onclick={scrollToOffers}
 		style="background: linear-gradient(135deg, {color1}, {color2}); height: {height}px;"
 	>
 		<div class="ticker-content">
