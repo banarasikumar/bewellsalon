@@ -2,7 +2,7 @@
 	import { adminUser, adminLogout } from '$lib/stores/adminAuth';
 	import { goto } from '$app/navigation';
 	import { showToast } from '$lib/stores/toast';
-	import { UserCircle, Bell, LogOut, ChevronRight, Database, CreditCard, Settings, Volume2, Shield, Users, Gift, MonitorSmartphone } from 'lucide-svelte';
+	import { UserCircle, Bell, LogOut, ChevronRight, Database, CreditCard, Settings, Volume2, Shield, Users, Gift, MonitorSmartphone, Camera, Edit3, X, Save, Loader2 } from 'lucide-svelte';
 	import { migrateServices } from '$lib/migrateServices';
 	import { onMount, onDestroy } from 'svelte';
 	import {
@@ -11,12 +11,135 @@
 		destroyAppSettingsListener,
 		updateAppSetting
 	} from '$lib/stores/appSettings';
+	import { updateProfile } from 'firebase/auth';
+	import { auth, db } from '$lib/firebase';
+	import { doc, getDoc, setDoc } from 'firebase/firestore';
+	import { upload } from '@vercel/blob/client';
 
 	let userName = $derived($adminUser?.displayName || 'Admin User');
 	let userEmail = $derived($adminUser?.email || '');
 	let userInitial = $derived((userName || 'A').charAt(0).toUpperCase());
 
 	let isMigrating = $state(false);
+
+	// Edit Profile Modal State
+	let showEditModal = $state(false);
+	let editName = $state('');
+	let editEmail = $state('');
+	let editPhone = $state('');
+	let editPhotoURL = $state('');
+	let isSavingProfile = $state(false);
+	let isUploadingAvatar = $state(false);
+	let fileInput: HTMLInputElement;
+	let avatarError = $state(false);
+
+	async function loadAdminProfileData() {
+		if (!$adminUser) return;
+		editName = $adminUser.displayName || '';
+		editEmail = $adminUser.email || '';
+		editPhone = $adminUser.phoneNumber || '';
+		editPhotoURL = $adminUser.photoURL || '';
+
+		try {
+			const docRef = doc(db, 'users', $adminUser.uid);
+			const snap = await getDoc(docRef);
+			if (snap.exists()) {
+				const data = snap.data();
+				if (data.displayName) editName = data.displayName;
+				if (data.email) editEmail = data.email;
+				if (data.phone) editPhone = data.phone;
+				if (data.photoURL || data.photo || data.avatar) {
+					editPhotoURL = data.photoURL || data.photo || data.avatar;
+				}
+			}
+		} catch (e) {
+			console.error('Failed to load admin profile data:', e);
+		}
+	}
+
+	async function openAdminEditModal() {
+		await loadAdminProfileData();
+		showEditModal = true;
+	}
+
+	async function handleAdminAvatarUpload(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file || !auth.currentUser) return;
+
+		if (file.size > 8 * 1024 * 1024) {
+			showToast('File size must be less than 8MB', 'error');
+			if (fileInput) fileInput.value = '';
+			return;
+		}
+
+		isUploadingAvatar = true;
+		try {
+			const ext = file.name.split('.').pop() || 'jpg';
+			const fileName = `avatars/admin_${auth.currentUser.uid}_${Date.now()}.${ext}`;
+			const newBlob = await upload(fileName, file, {
+				access: 'public',
+				handleUploadUrl: '/api/upload'
+			});
+			editPhotoURL = newBlob.url;
+
+			// Update Auth and Firestore immediately for avatar
+			await updateProfile(auth.currentUser, { photoURL: editPhotoURL });
+			const userRef = doc(db, 'users', auth.currentUser.uid);
+			await setDoc(userRef, { photoURL: editPhotoURL, photo: editPhotoURL, avatar: editPhotoURL, image: editPhotoURL }, { merge: true });
+
+			adminUser.update((u) => (u ? ({ ...u, photoURL: editPhotoURL } as any) : null));
+			showToast('Profile picture updated successfully!', 'success');
+			avatarError = false;
+		} catch (err: any) {
+			console.error('Failed to upload avatar:', err);
+			showToast(err?.message || 'Failed to upload image', 'error');
+		} finally {
+			isUploadingAvatar = false;
+			if (fileInput) fileInput.value = '';
+		}
+	}
+
+	async function saveAdminProfile() {
+		if (!auth.currentUser) return;
+		isSavingProfile = true;
+		try {
+			if (editName !== auth.currentUser.displayName || editPhotoURL !== auth.currentUser.photoURL) {
+				await updateProfile(auth.currentUser, {
+					displayName: editName,
+					photoURL: editPhotoURL
+				});
+			}
+
+			const userRef = doc(db, 'users', auth.currentUser.uid);
+			await setDoc(
+				userRef,
+				{
+					displayName: editName,
+					name: editName,
+					email: editEmail,
+					phone: editPhone,
+					photoURL: editPhotoURL,
+					photo: editPhotoURL,
+					updatedAt: new Date().toISOString()
+				},
+				{ merge: true }
+			);
+
+			adminUser.update((u) =>
+				u
+					? ({ ...u, displayName: editName, email: editEmail, phoneNumber: editPhone, photoURL: editPhotoURL } as any)
+					: null
+			);
+
+			showToast('Profile updated successfully!', 'success');
+			showEditModal = false;
+		} catch (error: any) {
+			console.error('Failed to save profile:', error);
+			showToast('Failed to save profile', 'error');
+		} finally {
+			isSavingProfile = false;
+		}
+	}
 
 	async function handleLogout() {
 		if (!confirm('Are you sure you want to logout?')) return;
@@ -108,14 +231,23 @@
 	<div class="settings-header">
 		<div class="profile-card">
 			<div class="profile-avatar">
-				{userInitial}
+				{#if $adminUser?.photoURL && !avatarError}
+					<img
+						src={$adminUser.photoURL}
+						alt={userName}
+						class="admin-profile-img"
+						onerror={() => (avatarError = true)}
+					/>
+				{:else}
+					{userInitial}
+				{/if}
 			</div>
 			<div class="profile-info">
 				<h2>{userName}</h2>
 				<p>{userEmail}</p>
 			</div>
-			<button class="edit-btn" onclick={() => comingSoon('Edit Profile')} aria-label="Edit Profile">
-				<Settings size={20} />
+			<button class="edit-btn" onclick={openAdminEditModal} aria-label="Edit Profile" title="Edit Profile">
+				<Edit3 size={20} />
 			</button>
 		</div>
 	</div>
@@ -391,7 +523,308 @@
 	</div>
 {/if}
 
+<!-- Edit Admin Profile Modal -->
+{#if showEditModal}
+	<div
+		class="modal-backdrop"
+		onclick={() => (showEditModal = false)}
+		role="button"
+		tabindex="0"
+		onkeydown={(e) => e.key === 'Escape' && (showEditModal = false)}
+	>
+		<div
+			class="modal-content admin-edit-modal"
+			onclick={(e) => e.stopPropagation()}
+			role="dialog"
+			tabindex="-1"
+			aria-modal="true"
+		>
+			<div class="modal-header-row">
+				<h3>Edit Admin Profile</h3>
+				<button class="icon-close-btn" onclick={() => (showEditModal = false)} aria-label="Close">
+					<X size={20} />
+				</button>
+			</div>
+
+			<div class="modal-body-content">
+				<!-- Avatar Edit Section -->
+				<div class="avatar-edit-wrapper">
+					<div class="avatar-circle-box">
+						{#if editPhotoURL}
+							<img src={editPhotoURL} alt="Admin Avatar" class="avatar-circle-img" />
+						{:else}
+							<span class="avatar-initial-text">{userInitial}</span>
+						{/if}
+						{#if isUploadingAvatar}
+							<div class="avatar-upload-loading">
+								<Loader2 size={24} class="spin-icon" color="#ffffff" />
+							</div>
+						{/if}
+					</div>
+					<input
+						type="file"
+						accept="image/jpeg,image/png,image/webp,image/gif"
+						bind:this={fileInput}
+						onchange={handleAdminAvatarUpload}
+						style="display: none;"
+					/>
+					<button
+						type="button"
+						class="change-photo-btn"
+						onclick={() => fileInput?.click()}
+						disabled={isUploadingAvatar}
+					>
+						<Camera size={16} />
+						<span>{isUploadingAvatar ? 'Uploading...' : 'Change Profile Picture'}</span>
+					</button>
+				</div>
+
+				<div class="input-field-group">
+					<label for="adminDisplayName">Display Name</label>
+					<input
+						id="adminDisplayName"
+						type="text"
+						class="custom-admin-input"
+						bind:value={editName}
+						placeholder="Admin Name"
+					/>
+				</div>
+
+				<div class="input-field-group">
+					<label for="adminDisplayEmail">Email Address</label>
+					<input
+						id="adminDisplayEmail"
+						type="email"
+						class="custom-admin-input"
+						bind:value={editEmail}
+						placeholder="admin@example.com"
+					/>
+				</div>
+
+				<div class="input-field-group">
+					<label for="adminDisplayPhone">Phone Number</label>
+					<input
+						id="adminDisplayPhone"
+						type="tel"
+						class="custom-admin-input"
+						bind:value={editPhone}
+						placeholder="+919876543210"
+					/>
+				</div>
+			</div>
+
+			<div class="modal-footer-row">
+				<button type="button" class="cancel-action-btn" onclick={() => (showEditModal = false)}>
+					Cancel
+				</button>
+				<button
+					type="button"
+					class="save-action-btn"
+					onclick={saveAdminProfile}
+					disabled={isSavingProfile || isUploadingAvatar}
+				>
+					{#if isSavingProfile}
+						<Loader2 size={16} class="spin-icon" style="margin-right: 6px;" /> Saving...
+					{:else}
+						Save Changes
+					{/if}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 <style>
+	.admin-profile-img {
+		width: 100%;
+		height: 100%;
+		border-radius: 18px;
+		object-fit: cover;
+	}
+
+	.admin-edit-modal {
+		max-width: 440px;
+		width: 90%;
+		border-radius: 20px;
+		padding: 24px;
+		background: var(--admin-surface, #ffffff);
+		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+	}
+
+	.modal-header-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 20px;
+	}
+
+	.modal-header-row h3 {
+		margin: 0;
+		font-size: 18px;
+		font-weight: 700;
+		color: var(--admin-text, #111827);
+	}
+
+	.icon-close-btn {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: var(--admin-text-tertiary, #9ca3af);
+		padding: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 8px;
+		transition: background 0.2s;
+	}
+
+	.icon-close-btn:hover {
+		background: var(--admin-bg, #f3f4f6);
+		color: var(--admin-text, #111827);
+	}
+
+	.modal-body-content {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.avatar-edit-wrapper {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 0;
+	}
+
+	.avatar-circle-box {
+		width: 80px;
+		height: 80px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, var(--admin-accent), var(--admin-indigo));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+	}
+
+	.avatar-circle-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		border-radius: 50%;
+	}
+
+	.avatar-initial-text {
+		color: white;
+		font-size: 32px;
+		font-weight: 700;
+	}
+
+	.avatar-upload-loading {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.spin-icon {
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		from { transform: rotate(0deg); }
+		to { transform: rotate(360deg); }
+	}
+
+	.change-photo-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		background: var(--admin-bg, #f3f4f6);
+		color: var(--admin-text, #111827);
+		border: 1px solid var(--admin-border, #e5e7eb);
+		padding: 8px 16px;
+		border-radius: 10px;
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.change-photo-btn:hover {
+		background: var(--admin-border, #e5e7eb);
+	}
+
+	.input-field-group {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		text-align: left;
+	}
+
+	.input-field-group label {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--admin-text-secondary, #4b5563);
+	}
+
+	.custom-admin-input {
+		width: 100%;
+		padding: 10px 14px;
+		border-radius: 10px;
+		border: 1px solid var(--admin-border, #d1d5db);
+		background: var(--admin-surface, #ffffff);
+		color: var(--admin-text, #111827);
+		font-size: 14px;
+		outline: none;
+		transition: border-color 0.2s;
+	}
+
+	.custom-admin-input:focus {
+		border-color: var(--admin-accent, #6366f1);
+	}
+
+	.modal-footer-row {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 12px;
+		margin-top: 24px;
+	}
+
+	.cancel-action-btn {
+		padding: 10px 18px;
+		border-radius: 10px;
+		border: 1px solid var(--admin-border, #d1d5db);
+		background: transparent;
+		color: var(--admin-text, #374151);
+		font-size: 14px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.save-action-btn {
+		padding: 10px 20px;
+		border-radius: 10px;
+		border: none;
+		background: var(--admin-accent, #6366f1);
+		color: white;
+		font-size: 14px;
+		font-weight: 600;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.save-action-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
 	.settings-container {
 		padding-bottom: 30px;
 		animation: fadeIn 0.4s ease;

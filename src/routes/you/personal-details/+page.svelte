@@ -2,10 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { fade, fly } from 'svelte/transition';
-	import { auth, db, storage } from '$lib/firebase';
+	import { auth, db } from '$lib/firebase';
 	import { doc, getDoc, updateDoc } from 'firebase/firestore';
 	import { updateProfile } from 'firebase/auth';
-	import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+	import { upload } from '@vercel/blob/client';
 	import { onMount } from 'svelte';
 	import { ChevronLeft, Camera, User, Mail, Phone, Calendar, Save } from 'lucide-svelte';
 	import { showToast } from '$lib/stores/toast';
@@ -211,34 +211,30 @@
 		uploadingImage = true;
 
 		try {
-			// Upload the cropped WebP blob to Firebase Storage
-			const storageRef = ref(storage, `users/${user.uid}/profile_${Date.now()}.webp`);
-
-			await uploadBytes(storageRef, blob, { contentType: 'image/webp' });
-
-			const url = await getDownloadURL(storageRef);
+			const filename = `avatars/customer_${user.uid}_${Date.now()}.webp`;
+			const file = new File([blob], filename, { type: 'image/webp' });
+			const newBlob = await upload(filename, file, {
+				access: 'public',
+				handleUploadUrl: '/api/upload'
+			});
+			const url = newBlob.url;
 
 			// Update auth profile
-			await updateProfile(user, { photoURL: url });
+			if (auth.currentUser) {
+				await updateProfile(auth.currentUser, { photoURL: url });
+			}
 
 			// Update local state so it shows immediately
 			user = { ...user, photoURL: url };
 
 			// Update firestore as well
 			const userRef = doc(db, 'users', user.uid);
-			await updateDoc(userRef, { photoURL: url });
+			await updateDoc(userRef, { photoURL: url, photo: url, avatar: url, image: url });
 
 			showToast('Profile picture updated!', 'success');
 		} catch (error: any) {
 			console.error('Error uploading image:', error);
-			const code = error?.code || '';
-			if (code === 'storage/unauthorized') {
-				showToast('Permission denied. Please sign in again.', 'error');
-			} else if (code.includes('storage')) {
-				showToast('Storage error. Please try again.', 'error');
-			} else {
-				showToast('Failed to upload image.', 'error');
-			}
+			showToast(error?.message || 'Failed to upload image.', 'error');
 		} finally {
 			uploadingImage = false;
 			cropImageSrc = null; // Close cropper modal AFTER uploading

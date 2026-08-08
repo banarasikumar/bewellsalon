@@ -26,8 +26,11 @@
 		BarChart,
 		Trash2,
 		User,
-		UserPlus
+		UserPlus,
+		Camera,
+		Loader2
 	} from 'lucide-svelte';
+	import { upload } from '@vercel/blob/client';
 	import { onMount } from 'svelte';
 	import { addDoc, collection, deleteField, doc, setDoc } from 'firebase/firestore';
 
@@ -66,9 +69,169 @@
 	let newMemberRole = $state<ManagedRole>('staff');
 
 	let editingMember = $state<AppUser | null>(null);
+	let editName = $state('');
+	let editEmail = $state('');
+	let editPhone = $state('');
 	let editSpecialty = $state('');
 	let editCommission = $state('');
+	let editPhotoURL = $state('');
+	let isUploadingStaffPhoto = $state(false);
 	let showScrollTop = $state(false);
+
+	// Duplicate User Detection & Auto-Linking Logic
+	let duplicateEditName = $state('');
+	let duplicateEditEmail = $state('');
+	let duplicateEditPhone = $state('');
+	let duplicateEditSpecialty = $state('');
+	let showDuplicateEditor = $state(false);
+
+	function normalizeEmailStr(val: string | null | undefined): string {
+		return (val || '').trim().toLowerCase();
+	}
+
+	function normalizeDigitsStr(val: string | null | undefined): string {
+		return (val || '').replace(/\D/g, '').slice(-10);
+	}
+
+	/**
+	 * Ensures that a target email or phone number is NOT already taken by another user in Firestore.
+	 */
+	function checkContactUniqueness(
+		targetUserId: string,
+		newEmail?: string,
+		newPhone?: string
+	): { isUnique: boolean; errorMessage?: string } {
+		const cleanEmail = normalizeEmailStr(newEmail);
+		const cleanPhoneDigits = normalizeDigitsStr(newPhone);
+
+		for (const user of $allUsers) {
+			if (user.id === targetUserId || user.accountStatus === 'merged') continue;
+
+			// Check Email Collision
+			if (cleanEmail && user.email && normalizeEmailStr(user.email) === cleanEmail) {
+				return {
+					isUnique: false,
+					errorMessage: `Email "${cleanEmail}" is already used by ${getUserDisplayName(user)}. Cannot update to an existing user's email.`
+				};
+			}
+
+			// Check Phone Collision
+			if (cleanPhoneDigits.length === 10) {
+				const userPhoneDigits = normalizeDigitsStr(getUserPhone(user));
+				if (userPhoneDigits.length === 10 && userPhoneDigits === cleanPhoneDigits) {
+					return {
+						isUnique: false,
+						errorMessage: `Phone number is already associated with ${getUserDisplayName(user)}. Cannot update to an existing user's phone number.`
+					};
+				}
+			}
+		}
+
+		return { isUnique: true };
+	}
+
+	const duplicateExistingUser = $derived.by(() => {
+		if (addMethod !== 'new') return null;
+
+		const cleanEmail = normalizeEmailStr(newMemberEmail);
+		const cleanPhoneDigits = normalizeDigitsStr(newMemberPhone);
+
+		if (!cleanEmail && cleanPhoneDigits.length < 10) return null;
+
+		return (
+			$allUsers.find((user) => {
+				if (user.accountStatus === 'merged') return false;
+
+				// Check Email Match
+				if (cleanEmail && user.email && normalizeEmailStr(user.email) === cleanEmail) {
+					return true;
+				}
+
+				// Check Phone Match (core 10 digits)
+				if (cleanPhoneDigits.length === 10) {
+					const uPhoneDigits = normalizeDigitsStr(getUserPhone(user));
+					if (uPhoneDigits.length === 10 && uPhoneDigits === cleanPhoneDigits) {
+						return true;
+					}
+				}
+
+				return false;
+			}) || null
+		);
+	});
+
+	const duplicateMatchReason = $derived.by(() => {
+		if (!duplicateExistingUser) return null;
+		const cleanEmail = normalizeEmailStr(newMemberEmail);
+		const cleanPhoneDigits = normalizeDigitsStr(newMemberPhone);
+
+		const matchEmail = Boolean(cleanEmail && duplicateExistingUser.email && normalizeEmailStr(duplicateExistingUser.email) === cleanEmail);
+		const userPhoneDigits = normalizeDigitsStr(getUserPhone(duplicateExistingUser));
+		const matchPhone = Boolean(cleanPhoneDigits.length === 10 && userPhoneDigits.length === 10 && userPhoneDigits === cleanPhoneDigits);
+
+		if (matchEmail && matchPhone) return 'email and phone';
+		if (matchEmail) return 'email address';
+		if (matchPhone) return 'phone number';
+		return 'contact details';
+	});
+
+	$effect(() => {
+		if (duplicateExistingUser) {
+			duplicateEditName = getUserDisplayName(duplicateExistingUser);
+			duplicateEditEmail = duplicateExistingUser.email || '';
+			duplicateEditPhone = getUserPhone(duplicateExistingUser) || '';
+			duplicateEditSpecialty = duplicateExistingUser.specialty || '';
+		} else {
+			showDuplicateEditor = false;
+		}
+	});
+
+	async function updateAndGrantDuplicateRole(nextRole: NextRole) {
+		if (!duplicateExistingUser) return;
+
+		// Check uniqueness before updating duplicate user details
+		const check = checkContactUniqueness(
+			duplicateExistingUser.id,
+			duplicateEditEmail,
+			duplicateEditPhone
+		);
+		if (!check.isUnique) {
+			showToast(check.errorMessage!, 'error');
+			return;
+		}
+
+		isProcessing = true;
+		try {
+			const updates: Record<string, any> = { updatedAt: new Date().toISOString() };
+			if (duplicateEditName.trim()) {
+				updates.displayName = duplicateEditName.trim();
+				updates.name = duplicateEditName.trim();
+			}
+			if (duplicateEditEmail.trim()) {
+				updates.email = duplicateEditEmail.trim().toLowerCase();
+			}
+			if (duplicateEditPhone.trim()) {
+				const digits = normalizeDigitsStr(duplicateEditPhone);
+				updates.phone = digits.length === 10 ? `+91${digits}` : duplicateEditPhone.trim();
+			}
+			if (duplicateEditSpecialty.trim()) {
+				updates.specialty = duplicateEditSpecialty.trim();
+			}
+
+			if (Object.keys(updates).length > 1) {
+				await setDoc(doc(db, 'users', duplicateExistingUser.id), updates, { merge: true });
+				showToast('Updated contact details for existing user', 'success');
+			}
+
+			const updatedUser = { ...duplicateExistingUser, ...updates };
+			openConfirm(updatedUser, nextRole);
+		} catch (error) {
+			console.error('[RoleMgmt] Error updating duplicate user details:', error);
+			showToast('Failed to update existing user details', 'error');
+		} finally {
+			isProcessing = false;
+		}
+	}
 
 	const managedUsers = $derived(
 		$allUsers.filter(
@@ -198,16 +361,65 @@
 	function startEditing(user: AppUser) {
 		if (editingMember?.id === user.id) {
 			editingMember = null;
+			editName = '';
+			editEmail = '';
+			editPhone = '';
 			editSpecialty = '';
 			editCommission = '';
+			editPhotoURL = '';
 			return;
 		}
 		editingMember = user;
+		editName = getUserDisplayName(user);
+		editEmail = user.email || '';
+		editPhone = getUserPhone(user) || '';
 		editSpecialty = user.specialty || '';
 		editCommission =
 			user.commissionRate === undefined || user.commissionRate === null
 				? ''
 				: String(user.commissionRate);
+		editPhotoURL = getUserPhoto(user) || '';
+	}
+
+	async function handleStaffPhotoUpload(e: Event, userId: string) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+
+		if (file.size > 8 * 1024 * 1024) {
+			showToast('File size should be less than 8MB', 'error');
+			return;
+		}
+
+		isUploadingStaffPhoto = true;
+		try {
+			const ext = file.name.split('.').pop() || 'jpg';
+			const fileName = `avatars/staff_${userId}_${Date.now()}.${ext}`;
+			const newBlob = await upload(fileName, file, {
+				access: 'public',
+				handleUploadUrl: '/api/upload'
+			});
+			editPhotoURL = newBlob.url;
+
+			// Instantly update Firestore document
+			await setDoc(
+				doc(db, 'users', userId),
+				{
+					photoURL: newBlob.url,
+					photo: newBlob.url,
+					avatar: newBlob.url,
+					image: newBlob.url,
+					updatedAt: new Date().toISOString()
+				},
+				{ merge: true }
+			);
+
+			showToast('Staff profile picture updated successfully!', 'success');
+		} catch (err: any) {
+			console.error('[RoleMgmt] Error uploading staff photo:', err);
+			showToast(err?.message || 'Failed to upload photo', 'error');
+		} finally {
+			isUploadingStaffPhoto = false;
+		}
 	}
 
 	function openConfirm(user: AppUser, nextRole: NextRole) {
@@ -291,24 +503,55 @@
 	}
 
 	async function saveMemberDetails(user: AppUser) {
+		// Run contact uniqueness validation before modifying Firestore
+		const uniqueness = checkContactUniqueness(user.id, editEmail, editPhone);
+		if (!uniqueness.isUnique) {
+			showToast(uniqueness.errorMessage!, 'error');
+			return;
+		}
+
 		isProcessing = true;
 		try {
+			const updates: Record<string, any> = { updatedAt: new Date().toISOString() };
+
+			if (editName.trim() && editName.trim() !== getUserDisplayName(user)) {
+				updates.displayName = editName.trim();
+				updates.name = editName.trim();
+			}
+
+			if (editEmail.trim() !== (user.email || '')) {
+				updates.email = editEmail.trim() ? editEmail.trim().toLowerCase() : deleteField();
+			}
+
+			const currentPhone = getUserPhone(user) || '';
+			const digits = normalizeDigitsStr(editPhone);
+			const formattedPhone = digits.length === 10 ? `+91${digits}` : editPhone.trim();
+			if (formattedPhone !== currentPhone) {
+				updates.phone = formattedPhone ? formattedPhone : deleteField();
+			}
+
 			const specialty = editSpecialty.trim();
+			updates.specialty = specialty ? specialty : deleteField();
+
 			const rate = editCommission.trim();
 			const parsed = Number.parseFloat(rate);
-			await setDoc(
-				doc(db, 'users', user.id),
-				{
-					specialty: specialty ? specialty : deleteField(),
-					commissionRate: rate && Number.isFinite(parsed) ? parsed : deleteField(),
-					updatedAt: new Date().toISOString()
-				},
-				{ merge: true }
-			);
+			updates.commissionRate = rate && Number.isFinite(parsed) ? parsed : deleteField();
+
+			if (editPhotoURL) {
+				updates.photoURL = editPhotoURL;
+				updates.photo = editPhotoURL;
+				updates.avatar = editPhotoURL;
+			}
+
+			await setDoc(doc(db, 'users', user.id), updates, { merge: true });
 			showToast('Member details updated', 'success');
 			editingMember = null;
+			editName = '';
+			editEmail = '';
+			editPhone = '';
 			editSpecialty = '';
 			editCommission = '';
+			editPhotoURL = '';
 		} catch (error: any) {
 			console.error('[RoleMgmt] Failed to save details:', error);
 			showToast('Failed to save member details', 'error');
@@ -318,6 +561,13 @@
 	}
 
 	async function createMember() {
+		if (duplicateExistingUser) {
+			showToast(
+				`User already exists (${getUserDisplayName(duplicateExistingUser)}). Grant access directly to the existing account.`,
+				'error'
+			);
+			return;
+		}
 		if (!newMemberName.trim()) {
 			showToast('Name is required', 'error');
 			return;
@@ -336,8 +586,11 @@
 				createdBy: auth.currentUser?.uid || 'admin',
 				accountType: 'user'
 			};
-			if (newMemberEmail.trim()) member.email = newMemberEmail.trim();
-			if (newMemberPhone.trim()) member.phone = newMemberPhone.trim();
+			if (newMemberEmail.trim()) member.email = newMemberEmail.trim().toLowerCase();
+			if (newMemberPhone.trim()) {
+				const digits = newMemberPhone.trim().replace(/\D/g, '').slice(-10);
+				member.phone = digits.length === 10 ? `+91${digits}` : newMemberPhone.trim();
+			}
 			if (newMemberSpecialty.trim()) member.specialty = newMemberSpecialty.trim();
 			await addDoc(collection(db, 'users'), member);
 			showToast(`${newMemberName.trim()} created as ${formatRole(newMemberRole)}`, 'success');
@@ -530,6 +783,30 @@
 								<div class="role-editor">
 									<div class="role-editor-grid">
 										<label>
+											<span>Full Name</span>
+											<input
+												type="text"
+												bind:value={editName}
+												placeholder="Enter full name"
+											/>
+										</label>
+										<label>
+											<span>Email</span>
+											<input
+												type="email"
+												bind:value={editEmail}
+												placeholder="member@example.com"
+											/>
+										</label>
+										<label>
+											<span>Phone Number</span>
+											<input
+												type="tel"
+												bind:value={editPhone}
+												placeholder="+91 XXXXX XXXXX"
+											/>
+										</label>
+										<label>
 											<span>Specialty</span>
 											<input
 												type="text"
@@ -546,6 +823,40 @@
 												min="0"
 												max="100"
 											/>
+										</label>
+										<label class="avatar-editor-label">
+											<span>Profile Picture</span>
+											<div class="staff-photo-edit-row">
+												<div class="staff-photo-thumb-box">
+													{#if editPhotoURL}
+														<img src={editPhotoURL} alt={name} class="staff-photo-thumb" />
+													{:else}
+														<span class="staff-photo-initial">{name.charAt(0).toUpperCase()}</span>
+													{/if}
+													{#if isUploadingStaffPhoto}
+														<div class="staff-photo-spin-overlay">
+															<Loader2 size={16} class="spin-icon" color="#ffffff" />
+														</div>
+													{/if}
+												</div>
+												<input
+													type="file"
+													accept="image/jpeg,image/png,image/webp,image/gif"
+													id={`staff-photo-input-${user.id}`}
+													onchange={(e) => handleStaffPhotoUpload(e, user.id)}
+													style="display: none;"
+												/>
+												<button
+													type="button"
+													class="role-btn role-btn-secondary"
+													style="height: 36px; gap: 6px; font-size: 13px;"
+													onclick={() => document.getElementById(`staff-photo-input-${user.id}`)?.click()}
+													disabled={isUploadingStaffPhoto}
+												>
+													<Camera size={14} />
+													{isUploadingStaffPhoto ? 'Uploading...' : 'Change Photo'}
+												</button>
+											</div>
 										</label>
 									</div>
 									<div class="role-editor-tools">
@@ -661,6 +972,30 @@
 								<div class="role-editor">
 									<div class="role-editor-grid">
 										<label>
+											<span>Full Name</span>
+											<input
+												type="text"
+												bind:value={editName}
+												placeholder="Enter full name"
+											/>
+										</label>
+										<label>
+											<span>Email</span>
+											<input
+												type="email"
+												bind:value={editEmail}
+												placeholder="member@example.com"
+											/>
+										</label>
+										<label>
+											<span>Phone Number</span>
+											<input
+												type="tel"
+												bind:value={editPhone}
+												placeholder="+91 XXXXX XXXXX"
+											/>
+										</label>
+										<label>
 											<span>Specialty</span>
 											<input
 												type="text"
@@ -677,6 +1012,40 @@
 												min="0"
 												max="100"
 											/>
+										</label>
+										<label class="avatar-editor-label">
+											<span>Profile Picture</span>
+											<div class="staff-photo-edit-row">
+												<div class="staff-photo-thumb-box">
+													{#if editPhotoURL}
+														<img src={editPhotoURL} alt={name} class="staff-photo-thumb" />
+													{:else}
+														<span class="staff-photo-initial">{name.charAt(0).toUpperCase()}</span>
+													{/if}
+													{#if isUploadingStaffPhoto}
+														<div class="staff-photo-spin-overlay">
+															<Loader2 size={16} class="spin-icon" color="#ffffff" />
+														</div>
+													{/if}
+												</div>
+												<input
+													type="file"
+													accept="image/jpeg,image/png,image/webp,image/gif"
+													id={`staff-photo-input-stf-${user.id}`}
+													onchange={(e) => handleStaffPhotoUpload(e, user.id)}
+													style="display: none;"
+												/>
+												<button
+													type="button"
+													class="role-btn role-btn-secondary"
+													style="height: 36px; gap: 6px; font-size: 13px;"
+													onclick={() => document.getElementById(`staff-photo-input-stf-${user.id}`)?.click()}
+													disabled={isUploadingStaffPhoto}
+												>
+													<Camera size={14} />
+													{isUploadingStaffPhoto ? 'Uploading...' : 'Change Photo'}
+												</button>
+											</div>
 										</label>
 									</div>
 									<div class="role-editor-tools">
@@ -821,15 +1190,94 @@
 				<p class="role-helper">
 					Email or phone is required. This creates a placeholder profile that can be linked later.
 				</p>
-				<button
-					class="role-btn role-btn-primary role-save"
-					onclick={createMember}
-					disabled={isProcessing}
-				>
-					{#if isProcessing}Creating...{:else}{newMemberRole === 'admin'
-							? 'Create Admin Profile'
-							: 'Create Staff Profile'}{/if}
-				</button>
+
+				{#if duplicateExistingUser}
+					<div
+						class="duplicate-user-banner"
+						class:is-managed={duplicateExistingUser.role === 'admin' || duplicateExistingUser.role === 'staff'}
+					>
+						<div class="duplicate-banner-header">
+							<AlertTriangle size={20} class="duplicate-icon" />
+							<div>
+								<h4>User Already Exists</h4>
+								<p>
+									An account for <strong>{getUserDisplayName(duplicateExistingUser)}</strong>
+									({duplicateExistingUser.email || getUserPhone(duplicateExistingUser) || 'No contact info'})
+									already exists in the database. (Matched by {duplicateMatchReason})
+								</p>
+							</div>
+						</div>
+
+						{#if duplicateExistingUser.role === 'admin' || duplicateExistingUser.role === 'staff'}
+							<div class="duplicate-banner-status">
+								<p>
+									This user already has <strong>{formatRole(duplicateExistingUser.role as ManagedRole)}</strong> access.
+								</p>
+								<button
+									type="button"
+									class="role-btn role-btn-secondary"
+									onclick={() => {
+										activeTab = 'directory';
+										searchQuery = getUserDisplayName(duplicateExistingUser);
+									}}
+								>
+									View {getUserDisplayName(duplicateExistingUser)} in Directory
+								</button>
+							</div>
+						{:else}
+							<div class="duplicate-banner-actions">
+								<button
+									type="button"
+									class="role-btn role-btn-primary role-save"
+									onclick={() => updateAndGrantDuplicateRole(newMemberRole)}
+									disabled={isProcessing}
+								>
+									<ShieldCheck size={16} />
+									Grant {formatRole(newMemberRole)} Access to {getUserDisplayName(duplicateExistingUser)}
+								</button>
+								<button
+									type="button"
+									class="role-btn role-btn-secondary"
+									onclick={() => (showDuplicateEditor = !showDuplicateEditor)}
+								>
+									<Pencil size={14} />
+									{showDuplicateEditor ? 'Hide Edit Form' : 'Edit Contact Details First'}
+								</button>
+							</div>
+						{/if}
+
+						{#if showDuplicateEditor}
+							<div class="duplicate-editor-grid">
+								<div class="staff-form-group">
+									<label for="dup-edit-name">Full Name</label>
+									<input id="dup-edit-name" type="text" bind:value={duplicateEditName} />
+								</div>
+								<div class="staff-form-group">
+									<label for="dup-edit-email">Email</label>
+									<input id="dup-edit-email" type="email" bind:value={duplicateEditEmail} />
+								</div>
+								<div class="staff-form-group">
+									<label for="dup-edit-phone">Phone Number</label>
+									<input id="dup-edit-phone" type="tel" bind:value={duplicateEditPhone} />
+								</div>
+								<div class="staff-form-group">
+									<label for="dup-edit-specialty">Specialty Note</label>
+									<input id="dup-edit-specialty" type="text" bind:value={duplicateEditSpecialty} />
+								</div>
+							</div>
+						{/if}
+					</div>
+				{:else}
+					<button
+						class="role-btn role-btn-primary role-save"
+						onclick={createMember}
+						disabled={isProcessing}
+					>
+						{#if isProcessing}Creating...{:else}{newMemberRole === 'admin'
+								? 'Create Admin Profile'
+								: 'Create Staff Profile'}{/if}
+					</button>
+				{/if}
 			{/if}
 		</section>
 	</div>
@@ -2171,5 +2619,122 @@
 
 	.admin-toggle-btn.active .admin-toggle-thumb {
 		transform: translateX(20px);
+	}
+
+	.duplicate-user-banner {
+		margin-top: 16px;
+		padding: 20px;
+		border-radius: var(--admin-radius-lg, 16px);
+		border: 1px solid rgba(255, 159, 10, 0.35);
+		background: rgba(255, 159, 10, 0.09);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.duplicate-user-banner.is-managed {
+		border-color: rgba(10, 132, 255, 0.35);
+		background: rgba(10, 132, 255, 0.09);
+	}
+
+	.duplicate-banner-header {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+	}
+
+	:global(.duplicate-icon) {
+		color: #ff9f0a;
+		flex-shrink: 0;
+		margin-top: 2px;
+	}
+
+	.duplicate-user-banner.is-managed :global(.duplicate-icon) {
+		color: #0a84ff;
+	}
+
+	.duplicate-banner-header h4 {
+		margin: 0 0 4px 0;
+		font-size: 15px;
+		font-weight: 700;
+		color: var(--admin-text-primary);
+	}
+
+	.duplicate-banner-header p {
+		margin: 0;
+		font-size: 13px;
+		line-height: 1.5;
+		color: var(--admin-text-secondary);
+	}
+
+	.duplicate-banner-actions,
+	.duplicate-banner-status {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		align-items: center;
+	}
+
+	.duplicate-editor-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 12px;
+		padding-top: 14px;
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	@media (max-width: 600px) {
+		.duplicate-editor-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.avatar-editor-label {
+		grid-column: 1 / -1;
+	}
+
+	.staff-photo-edit-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-top: 6px;
+	}
+
+	.staff-photo-thumb-box {
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		background: var(--admin-surface, #2c2c2e);
+		border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.15));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		overflow: hidden;
+		flex-shrink: 0;
+	}
+
+	.staff-photo-thumb {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		border-radius: 12px;
+	}
+
+	.staff-photo-initial {
+		font-size: 18px;
+		font-weight: 700;
+		color: var(--admin-text-primary, #ffffff);
+	}
+
+	.staff-photo-spin-overlay {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 </style>

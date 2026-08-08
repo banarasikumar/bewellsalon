@@ -510,6 +510,7 @@
 				}
 			}
 
+			const staffUidForBooking = get(staffUser)?.uid;
 			const bookingData = {
 				userName: name,
 				userPhone: phone,
@@ -522,7 +523,10 @@
 				// Legacy fields for backward compat (use first service or summary)
 				serviceName: selectedServices.map((s) => s.name).join(', '),
 				price: totalAmount,
-				notes
+				notes,
+				// Walk-in: mark as unassigned (no staffId) and record who created it
+				...(staffUidForBooking ? { createdBy: `staff_${staffUidForBooking}` } : {}),
+				accountType: 'walkin'
 			};
 
 			if (mode === 'create') {

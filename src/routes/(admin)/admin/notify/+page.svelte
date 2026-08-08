@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { auth, storage } from '$lib/firebase';
+	import { auth } from '$lib/firebase';
 	import Loader from '$lib/components/ui/Loader.svelte';
-	import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+	import { upload } from '@vercel/blob/client';
 	import {
 		allUsers,
 		getUserDisplayName,
@@ -413,9 +413,12 @@
 		if (!imageFile) return null;
 		try {
 			isUploadingImage = true;
-			const storageRef = ref(storage, `notifications/${Date.now()}_${imageFile.name}`);
-			await uploadBytes(storageRef, imageFile);
-			return await getDownloadURL(storageRef);
+			const fileName = `notifications/${Date.now()}_${imageFile.name}`;
+			const newBlob = await upload(fileName, imageFile, {
+				access: 'public',
+				handleUploadUrl: '/api/upload'
+			});
+			return newBlob.url;
 		} catch (err) {
 			console.error('[Notify] Image upload error:', err);
 			showToast('Failed to upload image', 'error');

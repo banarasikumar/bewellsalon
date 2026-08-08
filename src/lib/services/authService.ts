@@ -29,6 +29,7 @@ const BOT_SECRET_KEY = 'X9vP2kL5jM8zQ4wN7cR3bT1f';
 // --- Google Login with Popup/Redirect Fallback ---
 export async function handleGoogleLogin(): Promise<boolean> {
 	const provider = new GoogleAuthProvider();
+	provider.setCustomParameters({ prompt: 'select_account' });
 
 	try {
 		let resultUser: any;
@@ -450,6 +451,17 @@ export function handleLoginRedirect(): void {
 // --- Logout ---
 export async function logout(): Promise<void> {
 	try {
+		if (Capacitor.isNativePlatform()) {
+			try {
+				await FirebaseAuthentication.signOut();
+			} catch (e) {
+				console.warn('[Auth] Native FirebaseAuthentication.signOut error:', e);
+			}
+		}
+		if (typeof localStorage !== 'undefined') {
+			localStorage.removeItem('login_redirect_state');
+			localStorage.removeItem('pending_user_fcm_token');
+		}
 		await signOut(auth);
 		showToast("See you soon! You've been logged out. 👋", 'logout');
 

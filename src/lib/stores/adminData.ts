@@ -352,6 +352,30 @@ export async function rejectTransferRequest(bookingId: string, request: NonNulla
 }
 
 export async function updateUserDetails(userId: string, details: Partial<AppUser>): Promise<void> {
+	const currentUsers = get(allUsers);
+	const cleanEmail = (details.email || '').trim().toLowerCase();
+	const newPhone = details.phone || details.phoneNumber || details.mobile || '';
+	const cleanDigits = newPhone.replace(/\D/g, '').slice(-10);
+
+	if (cleanEmail || cleanDigits.length === 10) {
+		for (const u of currentUsers) {
+			if (u.id === userId || u.accountStatus === 'merged') continue;
+
+			if (cleanEmail && u.email && u.email.trim().toLowerCase() === cleanEmail) {
+				const owner = getUserDisplayName(u);
+				throw new Error(`Email "${cleanEmail}" is already used by ${owner}. Cannot update email.`);
+			}
+
+			if (cleanDigits.length === 10) {
+				const uPhone = getUserPhone(u);
+				if (uPhone && uPhone.replace(/\D/g, '').slice(-10) === cleanDigits) {
+					const owner = getUserDisplayName(u);
+					throw new Error(`Phone number is already associated with ${owner}. Cannot update phone.`);
+				}
+			}
+		}
+	}
+
 	await updateDoc(doc(db, 'users', userId), {
 		...details,
 		updatedAt: new Date().toISOString()

@@ -21,9 +21,9 @@
 	} from '$lib/utils/notificationSound';
 	import { onMount } from 'svelte';
 	import { updateProfile } from 'firebase/auth';
-	import { auth, db, storage } from '$lib/firebase';
+	import { auth, db } from '$lib/firebase';
 	import { doc, getDoc, setDoc } from 'firebase/firestore';
-	import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+	import { upload } from '@vercel/blob/client';
 
 	// Real stats from bookings
 	let completedAll = $derived($staffBookings.filter((b) => b.status === 'completed').length);
@@ -173,23 +173,33 @@
 		const file = (e.target as HTMLInputElement).files?.[0];
 		if (!file || !auth.currentUser) return;
 
+		if (file.size > 8 * 1024 * 1024) {
+			showToast('File size should be less than 8MB', 'error');
+			if (fileInput) fileInput.value = '';
+			return;
+		}
+
 		isUploadingAvatar = true;
 		try {
-			const storageRef = ref(storage, `users/${auth.currentUser.uid}/avatar_${Date.now()}`);
-			await uploadBytes(storageRef, file);
-			const downloadURL = await getDownloadURL(storageRef);
+			const ext = file.name.split('.').pop() || 'jpg';
+			const fileName = `avatars/staff_${auth.currentUser.uid}_${Date.now()}.${ext}`;
+			const newBlob = await upload(fileName, file, {
+				access: 'public',
+				handleUploadUrl: '/api/upload'
+			});
+			const downloadURL = newBlob.url;
 
 			// Update Auth and Firestore
 			await updateProfile(auth.currentUser, { photoURL: downloadURL });
 			const userRef = doc(db, 'users', auth.currentUser.uid);
-			await setDoc(userRef, { photoURL: downloadURL }, { merge: true });
+			await setDoc(userRef, { photoURL: downloadURL, photo: downloadURL, avatar: downloadURL, image: downloadURL }, { merge: true });
 
 			staffUser.update((u) => (u ? ({ ...u, photoURL: downloadURL } as any) : null));
-			showToast('Profile picture updated!', 'success');
+			showToast('Profile picture updated successfully!', 'success');
 			avatarError = false; // Reset error state for new image
-		} catch (err) {
+		} catch (err: any) {
 			console.error('Failed to upload image:', err);
-			showToast('Failed to upload image', 'error');
+			showToast(err?.message || 'Failed to upload image', 'error');
 		} finally {
 			isUploadingAvatar = false;
 			if (fileInput) fileInput.value = '';
