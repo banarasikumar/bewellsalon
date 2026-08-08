@@ -60,8 +60,12 @@
 										: 'Bewell Stylist'
 	);
 
+	let isStandalonePage = $derived(
+		page.url.pathname.includes('/staff/bookings/') && !page.url.pathname.endsWith('/bookings')
+	);
+
 	let isNavVisible = $derived(
-		!page.url.pathname.includes('/staff/bookings/') || page.url.pathname.endsWith('/bookings')
+		(!page.url.pathname.includes('/staff/bookings/') || page.url.pathname.endsWith('/bookings')) && !isStandalonePage
 	);
 
 	// Derived theme color for mobile status bar & address bar
@@ -220,11 +224,13 @@
 		{@render children()}
 	{:else if $staffAuthState === 'authorized'}
 		<div class="staff-layout">
-			<div class="staff-header-container">
-				<StaffHeader title={currentTitle} />
-			</div>
+			{#if !isStandalonePage}
+				<div class="staff-header-container">
+					<StaffHeader title={currentTitle} />
+				</div>
+			{/if}
 
-			<main class="staff-main {!isNavVisible ? 'no-nav' : ''}">
+			<main class="staff-main {isStandalonePage ? 'standalone' : !isNavVisible ? 'no-nav' : ''}">
 				{@render children()}
 			</main>
 
@@ -282,7 +288,6 @@
 		transition: padding-bottom 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		/* Hardware acceleration for smooth scrolling */
 		-webkit-overflow-scrolling: touch;
-		transform: translateZ(0);
 	}
 
 	:global(body:has(.modal-backdrop)) .staff-main {
@@ -291,6 +296,10 @@
 
 	.staff-main.no-nav {
 		padding-bottom: 24px;
+	}
+
+	.staff-main.standalone {
+		padding: 0;
 	}
 
 	.staff-nav-container {

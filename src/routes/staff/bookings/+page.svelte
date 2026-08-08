@@ -460,16 +460,16 @@
 
 							<div class="bc-meta-compact">
 								<div class="meta-icon-item date-col">
-									<Calendar size={14} color="var(--s-text-tertiary)" />
+									<Calendar size={14} color="var(--s-accent-2)" />
 									<span class="meta-val">{formatDate(booking.date)}</span>
 								</div>
 								<div class="meta-icon-item time-col">
-									<Clock size={14} color="var(--s-text-tertiary)" />
+									<Clock size={14} color="var(--s-accent-teal)" />
 									<span class="meta-val">{formatTime12h(booking.time)}</span>
 								</div>
 								{#if booking.servicesList?.some((s: any) => s.duration)}
 									<div class="meta-icon-item duration-col">
-										<Timer size={14} color="var(--s-text-tertiary)" />
+										<Timer size={14} color="var(--s-accent-3)" />
 										<span class="meta-val">{formatDuration(booking.servicesList.reduce((a: number, s: any) => a + (s.duration || 0), 0))}</span>
 									</div>
 								{/if}
@@ -1091,10 +1091,10 @@
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
 		align-items: center;
-		background: var(--s-bg-secondary);
-		padding: 8px 12px;
-		border-radius: 10px;
-		border: 1px solid var(--s-border);
+		background: transparent;
+		padding: 4px 0;
+		border-radius: 0;
+		border: none;
 		margin-top: 4px;
 	}
 
@@ -1134,11 +1134,13 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 8px 12px;
-		border-radius: 10px;
-		background: var(--s-bg-secondary);
-		border: 1px solid var(--s-border);
-		margin-top: 4px;
+		padding: 4px 0;
+		border-radius: 0;
+		background: transparent;
+		border: none;
+		border-top: 1px dashed rgba(120, 120, 128, 0.15);
+		margin-top: 6px;
+		padding-top: 8px;
 	}
 
 	.payment-badge {

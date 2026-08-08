@@ -9,6 +9,8 @@
 		calculateCountdown,
 		updateBookingStatus,
 		updateBookingDetails,
+		approveTransferRequest,
+		rejectTransferRequest,
 		adminStaffUsers,
 		type Booking
 	} from '$lib/stores/adminData';
@@ -170,6 +172,32 @@
 
 	function scrollToTop() {
 		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	async function handleTransferAction(bookingId: string, request: any, action: 'approve' | 'reject') {
+		if (action === 'approve') {
+			if (!confirm(`Approve ${request.type} request from ${request.requestedByStaffName}?`)) return;
+			try {
+				processingIds[bookingId] = 'processing';
+				await approveTransferRequest(bookingId, request);
+				showToast('Request approved', 'success');
+			} catch (e) {
+				showToast('Failed to approve request', 'error');
+			} finally {
+				delete processingIds[bookingId];
+			}
+		} else {
+			if (!confirm(`Reject request from ${request.requestedByStaffName}?`)) return;
+			try {
+				processingIds[bookingId] = 'processing';
+				await rejectTransferRequest(bookingId, request);
+				showToast('Request rejected', 'success');
+			} catch (e) {
+				showToast('Failed to reject request', 'error');
+			} finally {
+				delete processingIds[bookingId];
+			}
+		}
 	}
 
 	// --- Filter Chips ---
@@ -501,6 +529,20 @@
 				<div class="admin-processing-overlay">
 					<div class="admin-spinner"></div>
 					<span class="admin-processing-text">Processing...</span>
+				</div>
+			{/if}
+
+			{#if booking.transferRequest?.status === 'pending'}
+				<div class="transfer-request-banner" onclick={(e) => e.stopPropagation()}>
+					<div class="tr-info">
+						<strong>{booking.transferRequest.requestedByStaffName}</strong> requested to 
+						{booking.transferRequest.type === 'takeover' ? 'take over' : 'unassign'} 
+						this booking.
+					</div>
+					<div class="tr-actions">
+						<button class="tr-btn approve" onclick={(e) => { e.stopPropagation(); handleTransferAction(booking.id, booking.transferRequest, 'approve'); }}>Approve</button>
+						<button class="tr-btn reject" onclick={(e) => { e.stopPropagation(); handleTransferAction(booking.id, booking.transferRequest, 'reject'); }}>Reject</button>
+					</div>
 				</div>
 			{/if}
 
@@ -964,5 +1006,67 @@
 	}
 	.admin-select-checkbox.checked {
 		color: var(--admin-accent);
+	}
+
+	/* Transfer Request Banner */
+	.transfer-request-banner {
+		background: #fef3c7;
+		border: 1px solid #fde68a;
+		border-radius: var(--admin-radius-md);
+		padding: 10px 14px;
+		margin: 14px 14px 0 14px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	
+	:global(.admin-app.dark) .transfer-request-banner {
+		background: rgba(245, 158, 11, 0.15);
+		border-color: rgba(245, 158, 11, 0.3);
+	}
+
+	.tr-info {
+		font-size: 13px;
+		color: #92400e;
+		line-height: 1.4;
+	}
+	
+	:global(.admin-app.dark) .tr-info {
+		color: #fcd34d;
+	}
+
+	.tr-actions {
+		display: flex;
+		gap: 8px;
+		justify-content: flex-end;
+	}
+
+	.tr-btn {
+		padding: 6px 12px;
+		font-size: 12px;
+		font-weight: 600;
+		border-radius: 6px;
+		border: none;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.tr-btn.approve {
+		background: #10b981;
+		color: white;
+	}
+	
+	.tr-btn.approve:hover {
+		background: #059669;
+	}
+
+	.tr-btn.reject {
+		background: transparent;
+		color: #ef4444;
+		border: 1px solid currentColor;
+	}
+	
+	.tr-btn.reject:hover {
+		background: rgba(239, 68, 68, 0.1);
 	}
 </style>

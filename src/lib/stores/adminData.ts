@@ -26,6 +26,13 @@ export interface Booking {
 	timerStart?: number; // timestamp in ms when timer was last started/resumed
 	timerElapsed?: number; // total accumulated seconds before current start
 	isTimerRunning?: boolean;
+	transferRequest?: {
+		type: 'takeover' | 'unassign';
+		requestedByStaffId: string;
+		requestedByStaffName: string;
+		status: 'pending' | 'approved' | 'rejected';
+		timestamp: string;
+	};
 	[key: string]: any;
 }
 
@@ -310,6 +317,36 @@ export async function updateBookingDetails(
 ): Promise<void> {
 	await updateDoc(doc(db, 'bookings', bookingId), {
 		...details,
+		updatedAt: new Date().toISOString()
+	});
+}
+
+export async function approveTransferRequest(bookingId: string, request: NonNullable<Booking['transferRequest']>): Promise<void> {
+	const updates: Partial<Booking> = {
+		updatedAt: new Date().toISOString(),
+		transferRequest: {
+			...request,
+			status: 'approved'
+		}
+	};
+	
+	if (request.type === 'takeover') {
+		updates.staffId = request.requestedByStaffId;
+		updates.staffName = request.requestedByStaffName;
+	} else if (request.type === 'unassign') {
+		updates.staffId = 'unassigned';
+		updates.staffName = '';
+	}
+	
+	await updateDoc(doc(db, 'bookings', bookingId), updates);
+}
+
+export async function rejectTransferRequest(bookingId: string, request: NonNullable<Booking['transferRequest']>): Promise<void> {
+	await updateDoc(doc(db, 'bookings', bookingId), {
+		transferRequest: {
+			...request,
+			status: 'rejected'
+		},
 		updatedAt: new Date().toISOString()
 	});
 }

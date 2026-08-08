@@ -314,6 +314,30 @@ export async function updateBookingDetails(id: string, updates: Partial<Booking>
 	}
 }
 
+export async function requestBookingTransfer(
+	bookingId: string,
+	type: 'takeover' | 'unassign',
+	staffId: string,
+	staffName: string
+) {
+	try {
+		const docRef = doc(db, 'bookings', bookingId);
+		await updateDoc(docRef, {
+			transferRequest: {
+				type,
+				requestedByStaffId: staffId,
+				requestedByStaffName: staffName,
+				status: 'pending',
+				timestamp: new Date().toISOString()
+			},
+			updatedAt: new Date().toISOString()
+		});
+	} catch (e) {
+		console.error('Error requesting booking transfer:', e);
+		throw e;
+	}
+}
+
 export async function addCustomService(service: Partial<Service>) {
 	try {
 		const newService = {

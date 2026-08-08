@@ -42,9 +42,9 @@
 
 	/* --- Background --- */
 	--s-bg: var(--s-bg-primary);
-	--s-bg-primary: #e5e7eb;
-	--s-bg-secondary: #e5e7eb;
-	--s-bg-tertiary: #d1d5db;
+	--s-bg-primary: #f1eefc; /* Soft rich lilac/indigo canvas (no grey!) */
+	--s-bg-secondary: #f1eefc;
+	--s-bg-tertiary: #e4dcf7;
 	--s-bg-elevated: #ffffff;
 	--s-bg-glass: rgba(255, 255, 255, 0.85);
 	--s-bg-glass-strong: rgba(255, 255, 255, 0.95);
@@ -200,9 +200,9 @@
 	--s-grad-aurora: linear-gradient(135deg, #a78bfa 0%, #fb7185 50%, #f5c040 100%);
 	--s-grad-hero: linear-gradient(135deg, #09090b 0%, #18181b 40%, #27272a 100%);
 
-	--s-bg-primary: #000000;
-	--s-bg-secondary: #000000;
-	--s-bg-tertiary: #1c1c1e;
+	--s-bg-primary: #0a0a0c;
+	--s-bg-secondary: #121214;
+	--s-bg-tertiary: #1a1a1c;
 	--s-bg-elevated: #1c1c1e;
 	--s-bg-glass: rgba(0, 0, 0, 0.82);
 	--s-bg-glass-strong: rgba(0, 0, 0, 0.94);
@@ -591,10 +591,10 @@
 
 /* Card styles */
 .s-card {
-	background: var(--s-surface);
-	border: 1px solid var(--s-border);
+	background: #ffffff;
+	border: 1px solid rgba(15, 23, 42, 0.08);
 	border-radius: var(--s-radius-lg);
-	box-shadow: var(--s-shadow-md);
+	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
 	transition:
 		transform var(--s-duration-fast) var(--s-ease),
 		box-shadow var(--s-duration-fast) var(--s-ease);

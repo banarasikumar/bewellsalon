@@ -3,6 +3,8 @@
 	import StatusBadge from '$lib/components/staff/StatusBadge.svelte';
 	import { getElapsedSeconds } from '$lib/stores/serviceTimer';
 	import { auth } from '$lib/firebase';
+	import { requestBookingTransfer } from '$lib/stores/staffData';
+	import { showToast } from '$lib/stores/toast';
 	import { Calendar, Clock, Timer } from 'lucide-svelte';
 
 	let {
@@ -14,6 +16,28 @@
 		onComplete = () => {},
 		onClientClick = () => {}
 	} = $props();
+
+	async function handleTransferRequest(type: 'takeover' | 'unassign') {
+		if (!auth.currentUser) return;
+		
+		const msg = type === 'takeover' 
+			? `Request to take over this booking from ${booking.staffName}?`
+			: `Request to unassign yourself from this booking?`;
+			
+		if (confirm(msg)) {
+			try {
+				await requestBookingTransfer(
+					booking.id, 
+					type, 
+					auth.currentUser.uid, 
+					auth.currentUser.displayName || 'Staff'
+				);
+				showToast('Request sent to admin for approval.', 'success');
+			} catch (e) {
+				showToast('Failed to send request.', 'error');
+			}
+		}
+	}
 
 	function maskPhone(phone: string): string {
 		if (!phone) return '';
@@ -226,11 +250,26 @@
 					
 					{#if booking.status === 'confirmed'}
 						{@const isAssignedToOther = booking.staffId && booking.staffId !== 'unassigned' && auth.currentUser?.uid && booking.staffId !== auth.currentUser.uid}
-						{#if isAssignedToOther}
-							<button class="bc-small-action-btn req-btn">
-								✋ Req
+						{@const isAssignedToMe = booking.staffId === auth.currentUser?.uid}
+						{@const pendingTransfer = booking.transferRequest?.status === 'pending'}
+						
+						{#if pendingTransfer}
+							<span class="bc-small-action-btn pending-req-btn" style="background: var(--s-bg-tertiary); color: var(--s-text-secondary); border: 1px dashed var(--s-border);">
+								⏳
+							</span>
+						{:else if isAssignedToOther}
+							<button class="bc-small-action-btn req-btn" onclick={(e) => { e.stopPropagation(); handleTransferRequest('takeover'); }}>
+								✋
 							</button>
-						{:else}
+						{:else if isAssignedToMe}
+							<button class="bc-small-action-btn req-btn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;" onclick={(e) => { e.stopPropagation(); handleTransferRequest('unassign'); }}>
+								✋
+							</button>
+						{/if}
+					{/if}
+					
+					{#if booking.status === 'confirmed'}
+						{#if !booking.staffId || booking.staffId === 'unassigned' || booking.staffId === auth.currentUser?.uid}
 							<button class="bc-small-action-btn premium-btn">
 								Start
 							</button>
@@ -269,16 +308,16 @@
 			<!-- COMPACT META -->
 			<div class="bc-meta-compact">
 				<div class="meta-icon-item date-col">
-					<Calendar size={14} color="var(--s-text-tertiary)" />
+					<Calendar size={14} color="var(--s-accent-2)" />
 					<span class="meta-val">{formatDate(booking.date)}</span>
 				</div>
 				<div class="meta-icon-item time-col">
-					<Clock size={14} color="var(--s-text-tertiary)" />
+					<Clock size={14} color="var(--s-accent-teal)" />
 					<span class="meta-val">{formatTime12h(booking.time)}</span>
 				</div>
 				{#if booking.servicesList?.some((s: any) => s.duration)}
 					<div class="meta-icon-item duration-col">
-						<Timer size={14} color="var(--s-text-tertiary)" />
+						<Timer size={14} color="var(--s-accent-3)" />
 						<span class="meta-val">{formatDuration(booking.servicesList.reduce((a: number, s: any) => a + (s.duration || 0), 0))}</span>
 					</div>
 				{/if}
@@ -307,26 +346,30 @@
 	/* Premium Card Reset */
 	.booking-card {
 		position: relative;
-		background: var(--s-surface);
-		border-radius: 20px;
+		background: #ffffff;
+		border-radius: 18px;
 		padding: 16px;
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
-		box-shadow: 
-			0 15px 35px -5px rgba(0, 0, 0, 0.12), 
-			0 5px 15px rgba(0, 0, 0, 0.05),
-			0 2px 5px rgba(0, 0, 0, 0.03);
-		border: 1px solid rgba(0, 0, 0, 0.04);
-		transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+		box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
+		border: 1px solid rgba(15, 23, 42, 0.08);
+		border-left: 5px solid #3b82f6;
+		transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.2s ease;
 		cursor: pointer;
 		overflow: hidden;
 		animation: s-fadeInUp 0.4s var(--s-ease-spring) backwards;
-		margin-bottom: 16px;
+		margin-bottom: 14px;
 		/* GPU Hardware Acceleration for smooth scrolling */
 		transform: translateZ(0);
 		will-change: transform;
 	}
+
+	.booking-card.card-pending { border-left-color: #f97316; }
+	.booking-card.card-confirmed { border-left-color: #3b82f6; }
+	.booking-card.card-in-progress { border-left-color: #a855f7; }
+	.booking-card.card-completed { border-left-color: #22c55e; }
+	.booking-card.card-cancelled { border-left-color: #ef4444; background: #fef2f2; }
 
 
 
@@ -406,8 +449,8 @@
 	}
 
 	.bc-staff-badge.assigned {
-		background: rgba(120, 120, 128, 0.1);
-		color: var(--s-text-secondary);
+		background: rgba(124, 58, 237, 0.06);
+		color: #6d28d9;
 	}
 
 	.bc-staff-badge.unassigned {
@@ -428,8 +471,8 @@
 	}
 
 	.req-btn {
-		background: var(--s-bg-tertiary);
-		color: var(--s-text-secondary);
+		background: #e0e7ff;
+		color: #3730a3;
 		box-shadow: none;
 	}
 
@@ -444,15 +487,15 @@
 		width: 44px;
 		height: 44px;
 		border-radius: 50%;
-		background: var(--s-bg-primary);
-		color: var(--s-text-primary);
+		background: #e0e7ff;
+		color: #4338ca;
 		font-weight: 800;
 		font-size: 1.2rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		border: 1px solid var(--s-border);
+		border: 2px solid #c7d2fe;
 		cursor: pointer;
 		transition: transform 0.2s ease, background 0.2s ease;
 	}
@@ -517,10 +560,10 @@
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
 		align-items: center;
-		background: var(--s-bg-secondary);
-		padding: 8px 12px;
-		border-radius: 10px;
-		border: 1px solid var(--s-border);
+		background: transparent;
+		padding: 4px 0;
+		border-radius: 0;
+		border: none;
 		margin-top: 4px;
 	}
 
@@ -559,10 +602,13 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 8px 12px;
-		border-radius: 10px;
-		background: var(--s-bg-secondary);
-		border: 1px solid var(--s-border);
+		padding: 4px 0;
+		border-radius: 0;
+		background: transparent;
+		border: none;
+		border-top: 1px dashed rgba(120, 120, 128, 0.15);
+		margin-top: 6px;
+		padding-top: 8px;
 	}
 
 	.payment-badge {
@@ -575,9 +621,9 @@
 		gap: 4px;
 	}
 
-	.payment-badge.full { background: var(--s-success-bg); color: var(--s-success); }
-	.payment-badge.token { background: var(--s-warning-bg); color: var(--s-warning); }
-	.payment-badge.free { background: var(--s-bg-secondary); color: var(--s-text-secondary); }
+	.payment-badge.full { background: rgba(16, 185, 129, 0.1); color: var(--s-success); }
+	.payment-badge.token { background: rgba(245, 158, 11, 0.1); color: var(--s-warning); }
+	.payment-badge.free { background: rgba(59, 130, 246, 0.08); color: var(--s-info); }
 
 	.payment-price {
 		font-weight: 700;

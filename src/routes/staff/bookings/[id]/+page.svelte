@@ -1362,6 +1362,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--s-space-md);
+		padding: var(--s-space-lg);
 		padding-bottom: 120px; /* Space for fixed bottom actions */
 	}
 
@@ -1714,8 +1715,10 @@
 	.bottom-actions {
 		position: fixed;
 		bottom: 0;
-		left: 0;
-		right: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 100%;
+		max-width: 600px;
 		padding: 16px 20px;
 		padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 		background: var(--s-surface);

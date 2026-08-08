@@ -1584,7 +1584,7 @@
 	.modal-content {
 		background: linear-gradient(180deg, #fdfbf7 0%, #f7f5ef 100%);
 		width: 100%;
-		max-width: 100%;
+		max-width: 600px;
 		height: 100%;
 		max-height: 100vh;
 		border-radius: 0;
