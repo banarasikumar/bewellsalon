@@ -16,7 +16,7 @@ export async function POST({ request }) {
 	try {
 		console.log('[API] Starting auto-cancellation cleanup...');
 		const now = Date.now();
-		const oneHour = 60 * 60 * 1000;
+		const thirtyMinutes = 30 * 60 * 1000;
 
 		// 2. Query Pending Bookings using Admin SDK
 		const snapshot = await adminDb.collection('bookings').where('status', '==', 'pending').get();
@@ -29,23 +29,48 @@ export async function POST({ request }) {
 			// Helper to get timestamp
 			let ts = 0;
 			if (data.date) {
-				if (data.date.seconds) ts = data.date.seconds * 1000;
-				else if (typeof data.date === 'string' && data.date.includes('-')) {
+				if (data.date.seconds) {
+					ts = data.date.seconds * 1000;
+				} else if (typeof data.date === 'string' && data.date.includes('-')) {
 					const parts = data.date.split('-');
-					if (parts.length === 3 && parts[2].length === 4) {
-						ts = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+					if (parts.length === 3) {
+						let d: Date;
+						if (parts[0].length === 4) {
+							// YYYY-MM-DD
+							d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+						} else if (parts[2].length === 4) {
+							// DD-MM-YYYY
+							d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+						} else {
+							d = new Date(data.date);
+						}
+						if (data.time && typeof data.time === 'string') {
+							const [tPart, mod] = data.time.trim().split(' ');
+							if (tPart) {
+								let [h, m] = tPart.split(':').map(Number);
+								if (!isNaN(h) && !isNaN(m)) {
+									if (mod) {
+										const mUpper = mod.toUpperCase();
+										if (mUpper === 'PM' && h < 12) h += 12;
+										if (mUpper === 'AM' && h === 12) h = 0;
+									}
+									d.setHours(h, m, 0, 0);
+								}
+							}
+						}
+						ts = d.getTime();
 					}
-				} else {
-					ts = new Date(data.date).getTime();
 				}
-			} else if (data.createdAt) {
+				if (!ts) ts = new Date(data.date).getTime();
+			}
+			if (!ts && data.createdAt) {
 				ts = data.createdAt.seconds
 					? data.createdAt.seconds * 1000
 					: new Date(data.createdAt).getTime();
 			}
 
-			// Check if overdue (Appointment Time + 1 Hour < Now)
-			if (ts + oneHour < now) {
+			// Check if overdue (Appointment Time + 30 Minutes <= Now)
+			if (ts + thirtyMinutes <= now) {
 				overdueBookings.push(doc.id);
 			}
 		});

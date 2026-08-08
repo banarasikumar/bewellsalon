@@ -237,8 +237,12 @@
 		return counts;
 	});
 
-	// Recent bookings (last 5)
-	const recentBookings = $derived($allBookings.slice(0, 5));
+	// Recent bookings (upcoming/latest appointment first)
+	const recentBookings = $derived(
+		[...$allBookings]
+			.sort((a, b) => getBookingTimestamp(b) - getBookingTimestamp(a))
+			.slice(0, 5)
+	);
 
 	// Total 7-day revenue
 	const weekRevenue = $derived(

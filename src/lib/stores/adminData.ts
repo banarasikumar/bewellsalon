@@ -346,17 +346,18 @@ export function formatFirestoreDate(dateField: any): string {
 }
 
 export function getBookingTimestamp(b: Booking): number {
-	if (b.date) {
-		if (b.date.seconds) return b.date.seconds * 1000;
-		if (typeof b.date === 'string' && b.date.includes('-')) {
-			const parts = b.date.split('-');
-			if (parts.length === 3 && parts[2].length === 4) {
-				return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
-			}
-		}
-		return new Date(b.date).getTime();
+	const dt = getBookingDateTime(b);
+	if (dt && !isNaN(dt.getTime())) {
+		return dt.getTime();
 	}
-	return b.createdAt?.seconds ? b.createdAt.seconds * 1000 : new Date(b.createdAt).getTime();
+	if (b.createdAt) {
+		if (typeof b.createdAt === 'object' && b.createdAt.seconds) {
+			return b.createdAt.seconds * 1000;
+		}
+		const cDate = new Date(b.createdAt);
+		if (!isNaN(cDate.getTime())) return cDate.getTime();
+	}
+	return 0;
 }
 
 export function formatRelativeTime(dateField: any): string {
@@ -388,29 +389,11 @@ export function calculateCountdown(
 	dateField: any,
 	timeStr: string | undefined
 ): { label: string; isOverdue: boolean } | null {
-	if (!dateField || !timeStr) return null;
+	if (!dateField) return null;
+	const dt = getBookingDateTime({ date: dateField, time: timeStr } as Booking);
+	if (!dt || isNaN(dt.getTime())) return null;
 
-	let targetDate: Date;
-	if (dateField.seconds) {
-		targetDate = new Date(dateField.seconds * 1000);
-	} else if (typeof dateField === 'string' && dateField.includes('-')) {
-		const parts = dateField.split('-');
-		if (parts.length === 3 && parts[2].length === 4)
-			targetDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-		else targetDate = new Date(dateField);
-	} else {
-		targetDate = new Date(dateField);
-	}
-
-	if (isNaN(targetDate.getTime())) return null;
-
-	const [time, modifier] = timeStr.split(' ');
-	let [hours, minutes] = time.split(':').map(Number);
-	if (hours === 12) hours = 0;
-	if (modifier === 'PM') hours += 12;
-	targetDate.setHours(hours, minutes, 0, 0);
-
-	const diffMs = targetDate.getTime() - Date.now();
+	const diffMs = dt.getTime() - Date.now();
 	if (diffMs < 0) return { label: 'Overdue', isOverdue: true };
 
 	const diffHours = diffMs / (1000 * 60 * 60);
@@ -437,17 +420,24 @@ export function getUserPhone(user: AppUser): string | null {
 }
 
 export function getBookingDateTime(b: Booking): Date | null {
-	if (!b.date) return null;
+	if (!b || !b.date) return null;
 
-	let targetDate: Date;
+	let targetDate: Date | null = null;
 	// 1. Parse Date
-	if (b.date.seconds) {
+	if (typeof b.date === 'object' && b.date.seconds) {
 		targetDate = new Date(b.date.seconds * 1000);
 	} else if (typeof b.date === 'string' && b.date.includes('-')) {
 		const parts = b.date.split('-');
-		if (parts.length === 3 && parts[2].length === 4) {
-			// DD-MM-YYYY
-			targetDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+		if (parts.length === 3) {
+			if (parts[0].length === 4) {
+				// YYYY-MM-DD
+				targetDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+			} else if (parts[2].length === 4) {
+				// DD-MM-YYYY
+				targetDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+			} else {
+				targetDate = new Date(b.date);
+			}
 		} else {
 			targetDate = new Date(b.date);
 		}
@@ -455,25 +445,28 @@ export function getBookingDateTime(b: Booking): Date | null {
 		targetDate = new Date(b.date);
 	}
 
-	if (isNaN(targetDate.getTime())) return null;
+	if (!targetDate || isNaN(targetDate.getTime())) return null;
+
+	// Reset hours to 0 in local time first
+	targetDate.setHours(0, 0, 0, 0);
 
 	// 2. Parse Time (if exists)
 	if (b.time) {
-		const [timePart, modifier] = b.time.split(' ');
+		const [timePart, modifier] = b.time.trim().split(' ');
 		if (timePart) {
 			let [hours, minutes] = timePart.split(':').map(Number);
 			if (!isNaN(hours) && !isNaN(minutes)) {
-				if (hours === 12) hours = 0;
-				if (modifier === 'PM') hours += 12;
+				if (modifier) {
+					const mod = modifier.toUpperCase();
+					if (mod === 'PM' && hours < 12) hours += 12;
+					if (mod === 'AM' && hours === 12) hours = 0;
+				}
 				targetDate.setHours(hours, minutes, 0, 0);
 			}
 		}
 	} else {
-		// If no time is specified, maybe default to end of day?
-		// Or start of day? For auto-cancel, we should be conservative.
-		// Let's assume start of day (00:00) if no time, so 24h later means
-		// 00:00 next day.
-		targetDate.setHours(0, 0, 0, 0);
+		// If no time is specified, default to end of day (23:59:59)
+		targetDate.setHours(23, 59, 59, 999);
 	}
 
 	return targetDate;

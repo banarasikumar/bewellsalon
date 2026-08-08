@@ -17,9 +17,8 @@
 		initServiceListener,
 		destroyListeners,
 		allBookings,
-		getBookingTimestamp,
-		updateBookingStatus,
-		getBookingDateTime
+		getBookingDateTime,
+		updateBookingStatus
 	} from '$lib/stores/adminData';
 	import {
 		initRecycleBinListener,
@@ -220,46 +219,40 @@
 		destroyRecycleBinListener();
 	});
 
-	// --- Auto-Cancel Overdue Logic ---
+	// --- Auto-Cancel Overdue Pending Bookings (>30 mins past appointment time) ---
 	$effect(() => {
 		if ($adminAuthState !== 'authorized') return;
 
 		const now = Date.now();
-		// 24 Hours in milliseconds
-		const twentyFourHours = 24 * 60 * 60 * 1000;
+		// 30 Minutes slot grace period in milliseconds
+		const thirtyMinutes = 30 * 60 * 1000;
 
-		// Iterate over all bookings to find overdue pending ones
 		const overdueBookings = $allBookings.filter((b) => {
-			if ((b.status || 'pending').toLowerCase() !== 'pending') return false;
+			const status = (b.status || 'pending').toLowerCase();
+			if (status !== 'pending') return false;
 
-			// Use the new helper that respects Time
 			const bookingDate = getBookingDateTime(b);
-			if (!bookingDate) return false; // Safety fallback
+			if (!bookingDate) return false;
 
-			// Check if appointment date/time + 24 hours is in the past
-			return now > bookingDate.getTime() + twentyFourHours;
+			// Auto-cancel ONLY if 30 minutes (1 slot duration) has passed after appointment date/time
+			return now >= bookingDate.getTime() + thirtyMinutes;
 		});
 
 		if (overdueBookings.length > 0) {
-			console.log(`[Auto-Cancel] Found ${overdueBookings.length} overdue bookings.`);
-			// Prevent multiple toasts/loops by checking if we just did this?
-			// The status change removes them from the list, so the effect re-runs and finds 0.
-			// But we need to be careful about not spamming if updates take time.
+			console.log(`[Auto-Cancel] Found ${overdueBookings.length} pending booking(s) >30 mins past appointment time.`);
 
 			let cancelledCount = 0;
 			for (const b of overdueBookings) {
-				// We don't have local processingIds here, but we can just fire and forget
-				// checking status again to be safe
 				if (b.status === 'cancelled') continue;
 
 				updateBookingStatus(b.id, 'cancelled')
 					.then(() => {
 						cancelledCount++;
 						if (cancelledCount === overdueBookings.length) {
-							showToast(`Auto-cancelled ${cancelledCount} overdue bookings`, 'success');
+							showToast(`Auto-cancelled ${cancelledCount} overdue booking(s) (>30m past appointment time)`, 'info');
 						}
 					})
-					.catch((err) => console.error(`Failed to auto-cancel ${b.id}`, err));
+					.catch((err) => console.error(`[Auto-Cancel] Failed for ${b.id}:`, err));
 			}
 		}
 	});

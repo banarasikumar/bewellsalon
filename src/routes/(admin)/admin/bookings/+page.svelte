@@ -40,7 +40,7 @@
 	import { onMount } from 'svelte';
 
 	// --- State ---
-	let currentSort = $state<'createdAt' | 'date' | 'userName'>('createdAt');
+	let currentSort = $state<'date' | 'createdAt' | 'userName'>('date');
 	let searchQuery = $state('');
 	let statusFilter = $state('all');
 	let currentPage = $state(1);
@@ -143,26 +143,7 @@
 		};
 	});
 
-	// --- Auto-cancel overdue pending bookings ---
-	let autoCancelledIds = new Set<string>();
-	$effect(() => {
-		const now = Date.now();
-		for (const b of $allBookings) {
-			const s = (b.status || 'pending').toLowerCase();
-			if (s !== 'pending') continue;
-			if (autoCancelledIds.has(b.id)) continue;
-			const ts = getBookingTimestamp(b);
-			if (ts > 0 && ts < now) {
-				autoCancelledIds.add(b.id);
-				updateBookingStatus(b.id, 'cancelled').then(() => {
-					console.log(`[Auto-Cancel] Pending booking ${b.id} auto-cancelled (appointment passed)`);
-				}).catch((err) => {
-					console.error(`[Auto-Cancel] Failed for ${b.id}:`, err);
-					autoCancelledIds.delete(b.id);
-				});
-			}
-		}
-	});
+
 
 	// --- Helper: compute display status for a booking ---
 	function getDisplayStatus(booking: Booking): { label: string; cssClass: string } {
@@ -264,7 +245,7 @@
 				return tB - tA;
 			}
 			if (currentSort === 'date') {
-				return getBookingTimestamp(a) - getBookingTimestamp(b);
+				return getBookingTimestamp(b) - getBookingTimestamp(a);
 			}
 			if (currentSort === 'userName') {
 				return (a.userName || '').localeCompare(b.userName || '');
