@@ -1,12 +1,16 @@
 <script lang="ts">
+	import type { Component } from 'svelte';
+
 	let {
 		icon = '📭',
+		iconComponent: IconComponent = null,
 		title = 'Nothing here yet',
 		description = '',
 		actionLabel = '',
 		onAction
 	}: {
 		icon?: string;
+		iconComponent?: Component<{ size?: number; class?: string }> | null;
 		title?: string;
 		description?: string;
 		actionLabel?: string;
@@ -15,7 +19,13 @@
 </script>
 
 <div class="empty-state s-anim-fade-up">
-	<div class="empty-icon">{icon}</div>
+	<div class="empty-icon">
+		{#if IconComponent}
+			<IconComponent size={44} />
+		{:else}
+			{icon}
+		{/if}
+	</div>
 	<h3 class="empty-title">{title}</h3>
 	{#if description}
 		<p class="empty-desc">{description}</p>

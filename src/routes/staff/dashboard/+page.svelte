@@ -16,6 +16,7 @@
 	import CircularProgress from '$lib/components/staff/CircularProgress.svelte';
 	import StatusBadge from '$lib/components/staff/StatusBadge.svelte';
 	import EmptyState from '$lib/components/staff/EmptyState.svelte';
+	import { Calendar } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { slide } from 'svelte/transition';
@@ -244,7 +245,7 @@
 			<span class="qa-label">Booking</span>
 		</button>
 		<button class="qa-btn qa-schedule" onclick={() => goto('/staff/schedule')}>
-			<span class="qa-icon">📅</span>
+			<span class="qa-icon"><Calendar size={20} /></span>
 			<span class="qa-label">Schedule</span>
 		</button>
 		<button class="qa-btn qa-services" onclick={() => goto('/staff/custom-services')}>
@@ -265,7 +266,7 @@
 		<button class="stat-card" onclick={() => goto('/staff/bookings?filter=upcoming')}>
 			<span class="stat-value">{todayCount}</span>
 			<span class="stat-label">Today</span>
-			<span class="stat-icon">📅</span>
+			<span class="stat-icon"><Calendar size={18} /></span>
 		</button>
 		<button class="stat-card" onclick={() => goto('/staff/bookings?filter=pending')}>
 			<span class="stat-value">{pendingCount}</span>

@@ -107,7 +107,7 @@ function createNotificationsStore() {
 
 			return this.add({
 				type: 'booking',
-				title: `📅 New Booking from ${customerName}`,
+				title: `New Booking from ${customerName}`,
 				message: `${serviceName} scheduled for ${formattedDate} at ${booking.time || 'TBD'}${booking.totalAmount ? `. Total amount: ₹${booking.totalAmount}` : ''}. Status: ${booking.status}. Please review and confirm this booking.`,
 				bookingId: booking.id,
 				userName: booking.userName,

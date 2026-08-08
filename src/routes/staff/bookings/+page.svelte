@@ -40,11 +40,11 @@
 	});
 
 	const filters = [
-		{ key: 'upcoming', label: '📅 Upcoming', emoji: '📅' },
-		{ key: 'pending', label: '⏳ Pending', emoji: '⏳' },
-		{ key: 'completed', label: '✅ Done', emoji: '✅' },
-		{ key: 'all', label: '📋 All', emoji: '📋' },
-		{ key: 'cancelled', label: '❌ Cancelled', emoji: '❌' }
+		{ key: 'upcoming', label: 'Upcoming' },
+		{ key: 'pending', label: '⏳ Pending' },
+		{ key: 'completed', label: '✅ Done' },
+		{ key: 'all', label: '📋 All' },
+		{ key: 'cancelled', label: '❌ Cancelled' }
 	];
 
 	let filteredBookings = $derived(() => {
@@ -216,11 +216,28 @@
 	let todayDoneBookings = $derived(() => {
 		const today = new Date().toISOString().split('T')[0];
 		if (activeFilter === 'upcoming') {
-			return $staffBookings.filter(
+			let bookings = $staffBookings.filter(
 				(b) => b.date === today && (b.status === 'completed' || b.status === 'cancelled')
 			);
+			if (searchQuery.trim()) {
+				const q = searchQuery.toLowerCase();
+				bookings = bookings.filter(
+					(b) =>
+						b.userName?.toLowerCase().includes(q) ||
+						b.serviceName?.toLowerCase().includes(q) ||
+						b.servicesList?.some((s) => s.name.toLowerCase().includes(q))
+				);
+			}
+			return bookings;
 		}
 		return [];
+	});
+
+	let totalDisplayedBookingsCount = $derived(() => {
+		if (activeFilter === 'upcoming') {
+			return activeBookings().length + todayDoneBookings().length;
+		}
+		return filteredBookings().length;
 	});
 
 	let groupedBookings = $derived(() => {
@@ -237,9 +254,8 @@
 	});
 
 	let filterCounts = $derived(() => {
-		const today = new Date().toISOString().split('T')[0];
 		const counts: Record<string, number> = {
-			upcoming: 0,
+			upcoming: $upcomingBookings.length,
 			pending: 0,
 			completed: 0,
 			cancelled: 0,
@@ -250,12 +266,6 @@
 			if (b.status === 'pending') counts.pending++;
 			if (b.status === 'completed') counts.completed++;
 			if (b.status === 'cancelled') counts.cancelled++;
-
-			if (b.date === today) {
-				counts.upcoming++;
-			} else if (b.date > today && b.status !== 'completed' && b.status !== 'cancelled') {
-				counts.upcoming++;
-			}
 		}
 		return counts;
 	});
@@ -301,7 +311,11 @@
 					goto(`/staff/bookings?filter=${filter.key}`, { replaceState: true });
 				}}
 			>
-				{filter.label}
+				{#if filter.key === 'upcoming'}
+					<Calendar size={14} class="pill-icon" /> Upcoming
+				{:else}
+					{filter.label}
+				{/if}
 				{#if filterCounts()[filter.key] > 0}
 					<span class="pill-badge">{filterCounts()[filter.key]}</span>
 				{/if}
@@ -311,14 +325,14 @@
 
 	<!-- Results Count -->
 	<div class="results-bar">
-		<span class="results-count">{filteredBookings().length} bookings</span>
+		<span class="results-count">{totalDisplayedBookingsCount()} bookings</span>
 	</div>
 
 	<!-- Grouped Bookings -->
-	{#if filteredBookings().length === 0}
+	{#if totalDisplayedBookingsCount() === 0}
 		{#if activeFilter === 'upcoming'}
 			<EmptyState
-				icon="📅"
+				iconComponent={Calendar}
 				title="No bookings for today"
 				description={searchQuery ? 'Try a different search' : 'No upcoming bookings'}
 				actionLabel={searchQuery ? 'Clear Filters' : ''}
@@ -342,7 +356,7 @@
 		<div class="bookings-list s-stagger">
 			{#if activeFilter === 'upcoming'}
 				<div class="date-divider">
-					<span class="dd-label">📅 Upcoming</span>
+					<span class="dd-label"><Calendar size={14} class="dd-icon" /> Upcoming</span>
 					<span class="dd-count">{activeBookings().length}</span>
 				</div>
 				{#if activeBookings().length === 0}

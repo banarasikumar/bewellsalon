@@ -6,6 +6,7 @@
 		type NotificationType
 	} from '$lib/stores/staffNotificationsList';
 	import { staffBookings } from '$lib/stores/staffData';
+	import { Calendar } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { showToast } from '$lib/stores/toast';
 	import { page } from '$app/state';
@@ -23,7 +24,7 @@
 
 	const filters = [
 		{ key: 'all', label: 'All', icon: '🔔' },
-		{ key: 'booking', label: 'Bookings', icon: '📅' },
+		{ key: 'booking', label: 'Bookings', icon: 'calendar' },
 		{ key: 'completed', label: 'Completed', icon: '✅' },
 		{ key: 'cancelled', label: 'Cancelled', icon: '❌' },
 		{ key: 'payment', label: 'Payments', icon: '💰' }
@@ -55,7 +56,7 @@
 	function getNotificationIcon(type: NotificationType): string {
 		switch (type) {
 			case 'booking':
-				return '📅';
+				return 'calendar';
 			case 'completed':
 				return '✅';
 			case 'cancelled':
@@ -127,7 +128,13 @@
 						class:active={activeFilter === filter.key}
 						onclick={() => (activeFilter = filter.key as any)}
 					>
-						<span class="filter-icon">{filter.icon}</span>
+						<span class="filter-icon">
+							{#if filter.icon === 'calendar'}
+								<Calendar size={13} />
+							{:else}
+								{filter.icon}
+							{/if}
+						</span>
 						{filter.label}
 						{#if filter.key !== 'all' && $notifications.filter((n) => n.type === filter.key && !n.read).length > 0}
 							<span class="filter-badge">
@@ -202,6 +209,8 @@
 					>
 						{#if notification.userName}
 							{notification.userName.charAt(0).toUpperCase()}
+						{:else if getNotificationIcon(notification.type) === 'calendar'}
+							<Calendar size={18} />
 						{:else}
 							{getNotificationIcon(notification.type)}
 						{/if}

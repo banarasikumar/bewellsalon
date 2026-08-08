@@ -619,7 +619,7 @@
 					</div>
 				{:else}
 					<div class="empty-state">
-						<div class="empty-icon">📅</div>
+						<div class="empty-icon"><Calendar size={40} /></div>
 						<p>No {currentFilter} bookings found.</p>
 					</div>
 				{/each}

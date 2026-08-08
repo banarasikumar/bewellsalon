@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { Calendar } from 'lucide-svelte';
 	import {
 		adminNotifications,
 		adminUnreadCount,
@@ -11,7 +12,7 @@
 
 	const filters: { key: string; label: string; icon: string }[] = [
 		{ key: 'all', label: 'All', icon: '🔔' },
-		{ key: 'new_booking', label: 'Bookings', icon: '📅' },
+		{ key: 'new_booking', label: 'Bookings', icon: 'calendar' },
 		{ key: 'completed', label: 'Completed', icon: '✅' },
 		{ key: 'cancelled', label: 'Cancelled', icon: '❌' },
 		{ key: 'payment_received', label: 'Payments', icon: '💰' },
@@ -43,7 +44,7 @@
 
 	function getNotificationIcon(type: AdminNotificationType): string {
 		switch (type) {
-			case 'new_booking': return '📅';
+			case 'new_booking': return 'calendar';
 			case 'walk_in_order': return '🚶';
 			case 'status_change': return '🔄';
 			case 'completed': return '✅';
@@ -103,7 +104,13 @@
 						class:active={activeFilter === f.key}
 						onclick={() => (activeFilter = f.key as any)}
 					>
-						<span class="filter-icon">{f.icon}</span>
+						<span class="filter-icon">
+							{#if f.icon === 'calendar'}
+								<Calendar size={13} />
+							{:else}
+								{f.icon}
+							{/if}
+						</span>
 						{f.label}
 						{#if f.key !== 'all' && $adminNotifications.filter((n) => n.type === f.key && !n.read).length > 0}
 							<span class="filter-badge">
@@ -159,6 +166,8 @@
 					>
 						{#if notification.userName}
 							{notification.userName.charAt(0).toUpperCase()}
+						{:else if getNotificationIcon(notification.type) === 'calendar'}
+							<Calendar size={18} />
 						{:else}
 							{getNotificationIcon(notification.type)}
 						{/if}

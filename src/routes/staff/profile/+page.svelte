@@ -3,6 +3,7 @@
 	import { staffBookings } from '$lib/stores/staffData';
 	import { themeMode, setTheme } from '$lib/stores/staffTheme';
 	import { showToast } from '$lib/stores/toast';
+	import { Calendar } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import {
 		requestNotificationPermission,
@@ -136,7 +137,7 @@
 	);
 
 	const menuItems = [
-		{ icon: '📅', label: 'Schedule', sub: 'View your calendar', path: '/staff/schedule' },
+		{ icon: 'calendar', label: 'Schedule', sub: 'View your calendar', path: '/staff/schedule' },
 		{ icon: '📋', label: 'Bookings', sub: 'All your bookings', path: '/staff/bookings' },
 		{ icon: '📊', label: 'Dashboard', sub: 'Overview & stats', path: '/staff/dashboard' }
 	];
@@ -373,7 +374,7 @@
 				</div>
 			</div>
 			<div class="premium-stat-card s-card">
-				<div class="ps-icon-wrapper orange"><span class="ps-icon">📆</span></div>
+				<div class="ps-icon-wrapper orange"><span class="ps-icon"><Calendar size={18} /></span></div>
 				<div class="ps-data">
 					<span class="ps-value">{thisMonthBookings()}</span>
 					<span class="ps-label">This Month</span>
@@ -389,7 +390,13 @@
 			{#each menuItems as item}
 				<a href={item.path} class="premium-nav-card s-card s-card-interactive">
 					<div class="nic-icon-bg">
-						<span class="nic-icon">{item.icon}</span>
+						<span class="nic-icon">
+							{#if item.icon === 'calendar'}
+								<Calendar size={22} />
+							{:else}
+								{item.icon}
+							{/if}
+						</span>
 					</div>
 					<div class="nic-text">
 						<span class="nic-label">{item.label}</span>

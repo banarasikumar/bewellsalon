@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Booking, AppUser } from '$lib/stores/adminData';
 	import { getUserPhoto, getUserPhone } from '$lib/stores/adminData';
+	import { Calendar } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/firebase';
 	import { doc, updateDoc } from 'firebase/firestore';
@@ -337,7 +338,7 @@
 									{/if}
 								</div>
 								<div class="hc-meta">
-									<span>📅 {formatDate(booking.completedAt || booking.date)}</span>
+									<span style="display: inline-flex; align-items: center; gap: 3px;"><Calendar size={12} /> {formatDate(booking.completedAt || booking.date)}</span>
 									<span>⏱ {formatTime(booking.completedAt || booking.time)}</span>
 									{#if booking.activeDuration}
 										<span class="hc-dur">{booking.activeDuration}m</span>

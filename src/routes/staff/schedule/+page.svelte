@@ -3,6 +3,7 @@
 	import { updateBookingStatus } from '$lib/stores/adminData';
 	import { showToast } from '$lib/stores/toast';
 	import BookingModal from '$lib/components/staff/BookingModal.svelte';
+	import { Calendar } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 
 	// Mask phone: show first 3 and last 2 digits, stars in between
@@ -228,7 +229,7 @@
 
 		{#if viewMode === 'day'}
 			<div class="day-chips">
-				<div class="chip chip-blue">📅 {todayStats.count} total</div>
+				<div class="chip chip-blue"><Calendar size={13} /> {todayStats.count} total</div>
 				{#if todayStats.pending > 0}<div class="chip chip-amber">
 						⏳ {todayStats.pending} pending
 					</div>{/if}

@@ -122,7 +122,7 @@ function createAdminNotificationsStore() {
 				type: isWalkIn ? 'walk_in_order' : 'new_booking',
 				title: isWalkIn
 					? `🚶 Walk-in Order from ${customerName}`
-					: `📅 New Booking from ${customerName}`,
+					: `New Booking from ${customerName}`,
 				message: isWalkIn
 					? `${serviceName} walk-in for ${formattedDate} at ${booking.time || 'TBD'}${booking.totalAmount ? `. Amount: ₹${booking.totalAmount}` : ''}. Status: ${booking.status}`
 					: `${serviceName} scheduled for ${formattedDate} at ${booking.time || 'TBD'}${booking.totalAmount ? `. Total: ₹${booking.totalAmount}` : ''}. Status: ${booking.status}`,

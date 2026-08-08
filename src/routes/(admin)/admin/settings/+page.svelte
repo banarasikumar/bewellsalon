@@ -2,7 +2,7 @@
 	import { adminUser, adminLogout } from '$lib/stores/adminAuth';
 	import { goto } from '$app/navigation';
 	import { showToast } from '$lib/stores/toast';
-	import { UserCircle, Bell, LogOut, ChevronRight, Database, CreditCard, Settings, Volume2, Shield, Users, Gift, MonitorSmartphone, Camera, Edit3, X, Save, Loader2 } from 'lucide-svelte';
+	import { UserCircle, Bell, LogOut, ChevronRight, Database, CreditCard, Settings, Volume2, Shield, Users, Gift, MonitorSmartphone, Camera, Edit3, X, Save, Loader2, Calendar } from 'lucide-svelte';
 	import { migrateServices } from '$lib/migrateServices';
 	import { onMount, onDestroy } from 'svelte';
 	import {
@@ -397,7 +397,7 @@
 						<h4 class="sub-group-title">Order Alerts</h4>
 						<div class="sub-setting-grid">
 							<div class="sub-setting-item">
-								<span>📅 New Bookings</span>
+								<span style="display: inline-flex; align-items: center; gap: 6px;"><Calendar size={14} /> New Bookings</span>
 								<button class="sub-toggle" class:on={$adminNotificationPrefs.newBookings} onclick={() => adminNotificationPrefs.toggle('newBookings')} aria-label="Toggle">
 									<div class="sub-toggle-thumb"></div>
 								</button>

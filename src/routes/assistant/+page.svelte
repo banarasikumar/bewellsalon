@@ -52,7 +52,7 @@
 	const predefinedTags = [
 		'📍 Location & Directions',
 		'📞 Contact Number',
-		'📅 Book Appointment',
+		'Book Appointment',
 		// '✨ Virtual Try-On',
 		'💇‍♀️ Services & Pricing',
 		'👰 Bridal Packages',
